@@ -8,6 +8,7 @@ export interface MediaServerInfo {
   name: string;
   userId: string;
   username: string;
+  userAvatar: string;
   accessToken: string;
   createdAt: number;
 }
@@ -20,6 +21,7 @@ interface MediaServerContextType {
   updateServer: (id: string, updates: Partial<MediaServerInfo>) => Promise<void>;
   getServer: (id: string) => MediaServerInfo | undefined;
   getServerByAddress: (address: string) => MediaServerInfo | undefined;
+  refreshServerInfo: (id: string) => Promise<void>;
 }
 
 const MediaServerContext = createContext<MediaServerContextType | undefined>(undefined);
@@ -31,6 +33,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   useEffect(() => {
     loadServers();
+    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const loadServers = async () => {
@@ -39,6 +42,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
       if (stored) {
         const parsedServers = JSON.parse(stored);
         setServers(parsedServers);
+        refreshServerInfo(parsedServers[0].id);
       }
     } catch (error) {
       console.error('Failed to load servers:', error);
@@ -89,6 +93,28 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     return servers.find((server) => server.address === address);
   };
 
+  const refreshServerInfo = async (id: string) => {
+    const server = servers.find((s) => s.id === id);
+    if (!server) return;
+    try {
+      const { createApiFromServerInfo, getUserInfo, getSystemInfo } = await import(
+        '@/services/jellyfin'
+      );
+      const api = createApiFromServerInfo(server);
+      const sysRes = await getSystemInfo(api);
+      const system = sysRes.data;
+      const userRes = await getUserInfo(api, server.userId);
+      const user = userRes.data;
+      await updateServer(id, {
+        name: system.ServerName || user.ServerName || server.address,
+        username: user.Name || server.username,
+        userAvatar: `${server.address}Users/${user.Id}/Images/Primary?quality=90`,
+      });
+    } catch (error) {
+      console.error('Failed to refresh server info:', error);
+    }
+  };
+
   const value: MediaServerContextType = {
     servers,
     addServer,
@@ -97,6 +123,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     updateServer,
     getServer,
     getServerByAddress,
+    refreshServerInfo,
   };
 
   return <MediaServerContext.Provider value={value}>{children}</MediaServerContext.Provider>;
