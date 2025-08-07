@@ -30,13 +30,13 @@ export default function HomeScreen() {
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
 
-  const { servers, getServer } = useMediaServers();
+  const { servers, getServer, currentServer } = useMediaServers();
   const router = useRouter();
   const [activeServerId, setActiveServerId] = useState<string | null>(
     servers.length > 0 ? servers[0].id : null,
   );
 
-  const activeServer = activeServerId ? getServer(activeServerId) : null;
+  const activeServer = activeServerId ? getServer(activeServerId) : currentServer;
 
   const { data: latestItems, isLoading: isLoadingLatest } = useQuery({
     queryKey: ['latestItems', activeServerId],

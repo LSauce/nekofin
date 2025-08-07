@@ -1,6 +1,6 @@
 import { authenticateAndSaveServer } from '@/services/jellyfin';
 import AsyncStorage from '@react-native-async-storage/async-storage';
-import React, { createContext, useContext, useEffect, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 export interface MediaServerInfo {
   id: string;
@@ -15,6 +15,7 @@ export interface MediaServerInfo {
 
 interface MediaServerContextType {
   servers: MediaServerInfo[];
+  currentServer: MediaServerInfo | null;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
   authenticateAndAddServer: (address: string, username: string, password: string) => Promise<void>;
   removeServer: (id: string) => Promise<void>;
@@ -30,19 +31,27 @@ const STORAGE_KEY = 'nekofin_servers';
 
 export function MediaServerProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<MediaServerInfo[]>([]);
+  const [currentServerId, setCurrentServerId] = useState<string | null>(null);
 
   useEffect(() => {
     loadServers();
     // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
+  const currentServer = useMemo(() => {
+    return servers.find((server) => server.id === currentServerId) || null;
+  }, [servers, currentServerId]);
+
   const loadServers = async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
-        const parsedServers = JSON.parse(stored);
+        const parsedServers = JSON.parse(stored) as MediaServerInfo[];
         setServers(parsedServers);
-        refreshServerInfo(parsedServers[0].id);
+        if (parsedServers.length > 0) {
+          setCurrentServerId(parsedServers[0].id);
+          refreshServerInfo(parsedServers[0].id);
+        }
       }
     } catch (error) {
       console.error('Failed to load servers:', error);
@@ -117,6 +126,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const value: MediaServerContextType = {
     servers,
+    currentServer,
     addServer,
     authenticateAndAddServer,
     removeServer,
