@@ -16,6 +16,7 @@ export interface MediaServerInfo {
 interface MediaServerContextType {
   servers: MediaServerInfo[];
   currentServer: MediaServerInfo | null;
+  isInitialized: boolean;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
   authenticateAndAddServer: (address: string, username: string, password: string) => Promise<void>;
   removeServer: (id: string) => Promise<void>;
@@ -32,10 +33,10 @@ const STORAGE_KEY = 'nekofin_servers';
 export function MediaServerProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<MediaServerInfo[]>([]);
   const [currentServerId, setCurrentServerId] = useState<string | null>(null);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   useEffect(() => {
     loadServers();
-    // eslint-disable-next-line react-hooks/exhaustive-deps
   }, []);
 
   const currentServer = useMemo(() => {
@@ -50,11 +51,12 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
         setServers(parsedServers);
         if (parsedServers.length > 0) {
           setCurrentServerId(parsedServers[0].id);
-          refreshServerInfo(parsedServers[0].id);
         }
       }
     } catch (error) {
       console.error('Failed to load servers:', error);
+    } finally {
+      setIsInitialized(true);
     }
   };
 
@@ -127,6 +129,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const value: MediaServerContextType = {
     servers,
     currentServer,
+    isInitialized,
     addServer,
     authenticateAndAddServer,
     removeServer,

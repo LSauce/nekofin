@@ -30,13 +30,18 @@ export default function HomeScreen() {
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
 
-  const { servers, getServer, currentServer } = useMediaServers();
+  const { servers, getServer, currentServer, refreshServerInfo } = useMediaServers();
   const router = useRouter();
   const [activeServerId, setActiveServerId] = useState<string | null>(
     servers.length > 0 ? servers[0].id : null,
   );
 
-  const activeServer = activeServerId ? getServer(activeServerId) : currentServer;
+  const activeServer = useMemo(() => {
+    if (activeServerId && currentServer?.id !== activeServerId) {
+      return getServer(activeServerId);
+    }
+    return currentServer || null;
+  }, [activeServerId, currentServer, getServer]);
 
   const { data: latestItems, isLoading: isLoadingLatest } = useQuery({
     queryKey: ['latestItems', activeServerId],
@@ -121,6 +126,7 @@ export default function HomeScreen() {
   const handleServerSelect = (serverId: string) => {
     setActiveServerId(serverId);
     BottomSheetModalRef.current?.dismiss();
+    refreshServerInfo(serverId);
   };
 
   return (
