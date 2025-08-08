@@ -1,12 +1,13 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getStreamInfo } from '@/lib/utils';
-import { createApiFromServerInfo, getItemMediaSources } from '@/services/jellyfin';
+import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
+import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BlurView } from 'expo-blur';
 import { router } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import { useEffect, useMemo, useRef, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StatusBar,
@@ -35,6 +36,7 @@ const LoadingIndicator = () => {
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [videoSource, setVideoSource] = useState<string | null>(null);
+  const [itemDetail, setItemDetail] = useState<BaseItemDto | null>(null);
 
   const { currentServer } = useMediaServers();
   const api = useMemo(() => {
@@ -67,6 +69,23 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const progress = useMemo(() => {
     return duration > 0 ? currentTime / duration : 0;
   }, [currentTime, duration]);
+
+  const formattedTitle = useMemo(() => {
+    if (!itemDetail) return '';
+    const seriesName = itemDetail.SeriesName ?? '';
+    const seasonNumber =
+      (itemDetail as any).ParentIndexNumber ?? (itemDetail as any).SeasonIndexNumber;
+    const episodeNumber = itemDetail.IndexNumber;
+    const episodeName = itemDetail.Name ?? '';
+
+    if (seriesName && seasonNumber != null && episodeNumber != null) {
+      return `${seriesName} S${seasonNumber}E${episodeNumber} - ${episodeName}`;
+    }
+    if (seriesName) {
+      return episodeName ? `${seriesName} - ${episodeName}` : seriesName;
+    }
+    return episodeName;
+  }, [itemDetail]);
 
   useEffect(() => {
     progressValue.value = progress;
@@ -107,7 +126,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }, 3000);
   };
 
-  const hideControlsWithDelay = () => {
+  const hideControlsWithDelay = useCallback(() => {
     if (controlsTimeout.current) {
       clearTimeout(controlsTimeout.current);
     }
@@ -119,7 +138,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         });
       }
     }, 3000);
-  };
+  }, [fadeAnim, isDragging]);
+
+  useEffect(() => {
+    // hide controls when first loaded
+    hideControlsWithDelay();
+  }, [hideControlsWithDelay]);
 
   const handleSeek = (time: number) => {
     if (!progressInfo?.duration || !player.current) return;
@@ -221,18 +245,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     if (!api || !itemId || !currentServer) return;
 
     (async () => {
-      const mediaSourcesResponse = await getItemMediaSources(api, itemId);
-      const mediaSourceId = mediaSourcesResponse.data.MediaSources?.[0]?.Id;
-
-      if (!mediaSourceId) {
-        console.error('No media source id found');
-        return;
-      }
+      const itemDetail = await getItemDetail(api, itemId);
+      setItemDetail(itemDetail.data);
 
       const streamInfo = await getStreamInfo({
         api,
         itemId,
-        mediaSourceId,
         userId: currentServer.userId,
       });
 
@@ -252,7 +270,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   return (
     <GestureHandlerRootView style={styles.container}>
-      {videoSource ? (
+      {videoSource && (
         <VLCPlayer
           ref={player}
           style={styles.video}
@@ -276,26 +294,31 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             }, 800);
           }}
         />
-      ) : (
-        <LoadingIndicator />
       )}
-      {isBuffering && <LoadingIndicator />}
+      {(isBuffering || !videoSource) && <LoadingIndicator />}
       <Animated.View
         style={[styles.backButton, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
       >
-        <BlurView tint="systemChromeMaterialDark" intensity={100} style={styles.backButtonBlur}>
+        <BlurView tint="dark" intensity={100} style={styles.backButtonBlur}>
           <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
             <AntDesign name="arrowleft" size={24} color="white" />
           </TouchableOpacity>
         </BlurView>
       </Animated.View>
+      {!!formattedTitle && (
+        <Animated.View style={[styles.titleContainer, fadeAnimatedStyle]} pointerEvents="none">
+          <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
+            {formattedTitle}
+          </Text>
+        </Animated.View>
+      )}
       <Animated.View
         style={[styles.floatingControls, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
       >
         <BlurView
-          tint="systemChromeMaterialDark"
+          tint="dark"
           intensity={100}
           style={[StyleSheet.absoluteFill, styles.floatingControlsBlur]}
           experimentalBlurMethod="dimezisBlurView"
@@ -348,6 +371,25 @@ const styles = StyleSheet.create({
     flex: 1,
     backgroundColor: '#000',
   },
+  titleContainer: {
+    position: 'absolute',
+    top: 10,
+    left: 100,
+    right: 100,
+    alignItems: 'center',
+    zIndex: 10,
+  },
+  title: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
+    textAlign: 'center',
+    shadowColor: '#000',
+    shadowOffset: { width: 0, height: 2 },
+    shadowOpacity: 0.25,
+    shadowRadius: 3.84,
+    elevation: 5,
+  },
   video: {
     flex: 1,
     width: '100%',
@@ -357,7 +399,7 @@ const styles = StyleSheet.create({
   backButton: {
     position: 'absolute',
     top: 50,
-    left: 20,
+    left: 100,
     zIndex: 10,
   },
   backButtonBlur: {

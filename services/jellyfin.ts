@@ -7,6 +7,7 @@ import {
   getSystemApi,
   getTvShowsApi,
   getUserApi,
+  getUserLibraryApi,
 } from '@jellyfin/sdk/lib/utils/api';
 
 let jellyfin: Jellyfin | null = null;
@@ -175,9 +176,8 @@ export async function authenticateAndSaveServer(
 }
 
 export async function getItemDetail(api: Api, itemId: string) {
-  return await getItemsApi(api).getItems({
-    ids: [itemId],
-    limit: 1,
+  return await getUserLibraryApi(api).getItem({
+    itemId,
   });
 }
 

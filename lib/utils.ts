@@ -23,7 +23,7 @@ export const getStreamInfo = async ({
 }: {
   api: Api;
   itemId: string;
-  mediaSourceId: string;
+  mediaSourceId?: string;
   userId: string;
   deviceProfile?: DeviceProfile;
   subtitleStreamIndex?: number;
