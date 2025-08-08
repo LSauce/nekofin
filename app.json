@@ -9,7 +9,8 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": true,
     "ios": {
-      "supportsTablet": true
+      "supportsTablet": true,
+      "bundleIdentifier": "com.lonzzi.nekofin"
     },
     "android": {
       "adaptiveIcon": {
@@ -35,10 +36,32 @@
         }
       ],
       [
-        "expo-video",
+        "react-native-video",
         {
-          "supportsBackgroundPlayback": true,
-          "supportsPictureInPicture": true
+          "enableNotificationControls": true,
+          "androidExtensions": {
+            "useExoplayerRtsp": false,
+            "useExoplayerSmoothStreaming": false,
+            "useExoplayerHls": false,
+            "useExoplayerDash": false
+          }
+        }
+      ],
+      [
+        "react-native-vlc-media-player",
+        {
+          "ios": {
+            "includeVLCKit": false
+          },
+          "android": {
+            "legacyJetifier": false
+          }
+        }
+      ],
+      [
+        "expo-screen-orientation",
+        {
+          "initialOrientation": "DEFAULT"
         }
       ]
     ],

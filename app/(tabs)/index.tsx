@@ -3,6 +3,7 @@ import { IconSymbol } from '@/components/ui/IconSymbol';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
   createApiFromServerInfo,
+  getItemMediaSources,
   getLatestItems,
   getLatestItemsByFolder,
   getMediaFolders,
@@ -30,52 +31,42 @@ export default function HomeScreen() {
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
 
-  const { servers, getServer, currentServer, refreshServerInfo } = useMediaServers();
+  const { servers, currentServer, setCurrentServer, refreshServerInfo } = useMediaServers();
   const router = useRouter();
-  const [activeServerId, setActiveServerId] = useState<string | null>(
-    servers.length > 0 ? servers[0].id : null,
-  );
-
-  const activeServer = useMemo(() => {
-    if (activeServerId && currentServer?.id !== activeServerId) {
-      return getServer(activeServerId);
-    }
-    return currentServer || null;
-  }, [activeServerId, currentServer, getServer]);
 
   const { data: latestItems, isLoading: isLoadingLatest } = useQuery({
-    queryKey: ['latestItems', activeServerId],
+    queryKey: ['latestItems', currentServer?.id],
     queryFn: async () => {
-      if (!activeServer) return [];
-      const api = createApiFromServerInfo(activeServer);
-      const response = await getLatestItems(api, activeServer.userId);
+      if (!currentServer) return [];
+      const api = createApiFromServerInfo(currentServer);
+      const response = await getLatestItems(api, currentServer.userId);
       return response.data.Items || [];
     },
-    enabled: !!activeServer,
+    enabled: !!currentServer,
   });
 
   const { data: mediaFolders, isLoading: isLoadingFolders } = useQuery({
-    queryKey: ['mediaFolders', activeServerId],
+    queryKey: ['mediaFolders', currentServer?.id],
     queryFn: async () => {
-      if (!activeServer) return [];
-      const api = createApiFromServerInfo(activeServer);
+      if (!currentServer) return [];
+      const api = createApiFromServerInfo(currentServer);
       const response = await getMediaFolders(api);
       const items = response.data.Items || [];
       return items.filter((item) => item.CollectionType !== 'playlists');
     },
-    enabled: !!activeServer,
+    enabled: !!currentServer,
   });
 
   const { data: latestItemsByFolders, isLoading: isLoadingLatestItemsByFolders } = useQuery({
-    queryKey: ['latestItemsByFolders', activeServerId, mediaFolders],
+    queryKey: ['latestItemsByFolders', currentServer?.id, mediaFolders],
     queryFn: async () => {
-      if (!activeServer || !mediaFolders || mediaFolders.length === 0) return {};
-      const api = createApiFromServerInfo(activeServer);
+      if (!currentServer || !mediaFolders || mediaFolders.length === 0) return {};
+      const api = createApiFromServerInfo(currentServer);
       const results: Record<string, BaseItemDto[]> = {};
       for (const folder of mediaFolders) {
         if (folder.Id) {
           try {
-            const response = await getLatestItemsByFolder(api, activeServer.userId, folder.Id, 5);
+            const response = await getLatestItemsByFolder(api, currentServer.userId, folder.Id, 5);
             results[folder.Id] = response.data.Items || [];
           } catch (error) {
             console.error(`Failed to get latestItems for folder ${folder.Id}:`, error);
@@ -85,29 +76,29 @@ export default function HomeScreen() {
       }
       return results;
     },
-    enabled: !!activeServer && !!mediaFolders && mediaFolders.length > 0,
+    enabled: !!currentServer && !!mediaFolders && mediaFolders.length > 0,
   });
 
   const { data: nextUpItems, isLoading: isLoadingNextUp } = useQuery({
-    queryKey: ['nextUpItems', activeServerId],
+    queryKey: ['nextUpItems', currentServer?.id],
     queryFn: async () => {
-      if (!activeServer) return [];
-      const api = createApiFromServerInfo(activeServer);
-      const response = await getNextUpItems(api, activeServer.userId);
+      if (!currentServer) return [];
+      const api = createApiFromServerInfo(currentServer);
+      const response = await getNextUpItems(api, currentServer.userId);
       return response.data.Items || [];
     },
-    enabled: !!activeServer,
+    enabled: !!currentServer,
   });
 
   const { data: resumeItems, isLoading: isLoadingResume } = useQuery({
-    queryKey: ['resumeItems', activeServerId],
+    queryKey: ['resumeItems', currentServer?.id],
     queryFn: async () => {
-      if (!activeServer) return [];
-      const api = createApiFromServerInfo(activeServer);
-      const response = await getResumeItems(api, activeServer.userId);
+      if (!currentServer) return [];
+      const api = createApiFromServerInfo(currentServer);
+      const response = await getResumeItems(api, currentServer.userId);
       return response.data.Items || [];
     },
-    enabled: !!activeServer,
+    enabled: !!currentServer,
   });
 
   if (servers.length === 0) {
@@ -124,7 +115,7 @@ export default function HomeScreen() {
   }
 
   const handleServerSelect = (serverId: string) => {
-    setActiveServerId(serverId);
+    setCurrentServer(servers.find((server) => server.id === serverId)!);
     BottomSheetModalRef.current?.dismiss();
     refreshServerInfo(serverId);
   };
@@ -138,7 +129,7 @@ export default function HomeScreen() {
           style={styles.serverButton}
         >
           <Image
-            source={{ uri: activeServer?.userAvatar }}
+            source={{ uri: currentServer?.userAvatar }}
             style={styles.serverButtonAvatar}
             contentFit="cover"
           />
@@ -152,27 +143,27 @@ export default function HomeScreen() {
         contentContainerStyle={{ paddingBottom: bottomTabBarHeight }}
         ListHeaderComponent={() => (
           <View>
-            <FeaturedSection mediaFolders={mediaFolders || []} activeServer={activeServer} />
+            <FeaturedSection mediaFolders={mediaFolders || []} currentServer={currentServer} />
             <Section
               title="继续观看"
               onViewAll={() => {}}
               items={resumeItems || []}
               isLoading={isLoadingResume}
-              activeServer={activeServer}
+              currentServer={currentServer}
             />
             <Section
               title="接下来"
               onViewAll={() => {}}
               items={nextUpItems || []}
               isLoading={isLoadingNextUp}
-              activeServer={activeServer}
+              currentServer={currentServer}
             />
             <Section
               title="最近新增"
               onViewAll={() => {}}
               items={latestItems || []}
               isLoading={isLoadingLatest}
-              activeServer={activeServer}
+              currentServer={currentServer}
             />
             {mediaFolders?.map((folder) => {
               const folderLatestItems = latestItemsByFolders?.[folder.Id!] || [];
@@ -183,7 +174,7 @@ export default function HomeScreen() {
                   onViewAll={() => {}}
                   items={folderLatestItems}
                   isLoading={isLoadingLatestItemsByFolders}
-                  activeServer={activeServer}
+                  currentServer={currentServer}
                 />
               );
             })}
@@ -197,7 +188,10 @@ export default function HomeScreen() {
           {servers.map((server) => (
             <TouchableOpacity
               key={server.id}
-              style={[styles.serverItem, activeServerId === server.id && styles.activeServerItem]}
+              style={[
+                styles.serverItem,
+                currentServer?.id === server.id && styles.currentServerItem,
+              ]}
               onPress={() => handleServerSelect(server.id)}
             >
               <Text style={styles.serverItemText}>{server.name}</Text>
@@ -212,10 +206,10 @@ export default function HomeScreen() {
 
 function FeaturedSection({
   mediaFolders,
-  activeServer,
+  currentServer,
 }: {
   mediaFolders: BaseItemDto[];
-  activeServer?: MediaServerInfo | null;
+  currentServer?: MediaServerInfo | null;
 }) {
   const featuredItems = mediaFolders?.slice(0, 2) || [];
 
@@ -254,9 +248,11 @@ function FeaturedSection({
             progress={0}
             imageUrl={
               item.ImageTags?.Primary
-                ? `${activeServer?.address}Items/${item.Id}/Images/Primary?maxWidth=400`
+                ? `${currentServer?.address}/Items/${item.Id}/Images/Primary?maxWidth=400`
                 : null
             }
+            item={item}
+            currentServer={currentServer}
           />
         ))}
         {featuredItems.length === 1 && (
@@ -279,13 +275,19 @@ function FeaturedCard({
   duration,
   progress,
   imageUrl,
+  item,
+  currentServer,
 }: {
   title: string;
   subtitle: string;
   duration: string;
   progress: number;
   imageUrl: string | null;
+  item?: BaseItemDto;
+  currentServer?: MediaServerInfo | null;
 }) {
+  const router = useRouter();
+
   return (
     <TouchableOpacity style={styles.featuredCard}>
       {imageUrl ? (
@@ -318,13 +320,13 @@ function Section({
   onViewAll,
   items,
   isLoading,
-  activeServer,
+  currentServer,
 }: {
   title: string;
   onViewAll: () => void;
   items: BaseItemDto[];
   isLoading: boolean;
-  activeServer?: MediaServerInfo | null;
+  currentServer?: MediaServerInfo | null;
 }) {
   if (isLoading) {
     return (
@@ -373,7 +375,7 @@ function Section({
         style={styles.sectionList}
         contentContainerStyle={styles.sectionListContent}
         renderItem={({ item }) => (
-          <MediaCard item={item} onPress={() => {}} activeServer={activeServer} />
+          <MediaCard item={item} onPress={() => {}} currentServer={currentServer} />
         )}
         keyExtractor={(item) => item.Id!}
       />
@@ -384,23 +386,24 @@ function Section({
 function MediaCard({
   item,
   onPress,
-  activeServer,
+  currentServer,
 }: {
   item: BaseItemDto;
   onPress?: () => void;
-  activeServer?: MediaServerInfo | null;
+  currentServer?: MediaServerInfo | null;
 }) {
+  const router = useRouter();
   const width = Dimensions.get('window').width * 0.5;
 
   const imageUrl = useMemo(() => {
     if (item.Type === 'Episode') {
       if (item.ParentThumbItemId) {
-        return `${activeServer?.address}Items/${item.ParentThumbItemId}/Images/Thumb?maxWidth=300`;
+        return `${currentServer?.address}/Items/${item.ParentThumbItemId}/Images/Thumb?maxWidth=300`;
       }
-      return `${activeServer?.address}Items/${item.SeriesId}/Images/Backdrop?maxWidth=300`;
+      return `${currentServer?.address}/Items/${item.SeriesId}/Images/Backdrop?maxWidth=300`;
     }
-    return `${activeServer?.address}Items/${item.Id}/Images/Backdrop?maxWidth=300`;
-  }, [item, activeServer]);
+    return `${currentServer?.address}/Items/${item.Id}/Images/Backdrop?maxWidth=300`;
+  }, [item, currentServer]);
 
   const getSubtitle = () => {
     if (item.Type === 'Episode') {
@@ -412,8 +415,19 @@ function MediaCard({
     return item.Name;
   };
 
+  const handlePress = async () => {
+    if (!currentServer || !item.Id) return;
+
+    router.push({
+      pathname: '/media/player',
+      params: {
+        itemId: item.Id,
+      },
+    });
+  };
+
   return (
-    <TouchableOpacity style={[styles.card, { width }]} onPress={onPress}>
+    <TouchableOpacity style={[styles.card, { width }]} onPress={handlePress}>
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.cover} contentFit="cover" />
       ) : (
@@ -596,7 +610,7 @@ const styles = StyleSheet.create({
     backgroundColor: '#f7f7f7',
     marginBottom: 8,
   },
-  activeServerItem: {
+  currentServerItem: {
     backgroundColor: '#9C4DFF',
   },
   serverItemText: {

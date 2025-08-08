@@ -16,6 +16,7 @@ export interface MediaServerInfo {
 interface MediaServerContextType {
   servers: MediaServerInfo[];
   currentServer: MediaServerInfo | null;
+  setCurrentServer: (server: MediaServerInfo) => void;
   isInitialized: boolean;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
   authenticateAndAddServer: (address: string, username: string, password: string) => Promise<void>;
@@ -30,6 +31,10 @@ const MediaServerContext = createContext<MediaServerContextType | undefined>(und
 
 const STORAGE_KEY = 'nekofin_servers';
 
+function normalizeServerAddress(address: string): string {
+  return address.replace(/\/$/, '');
+}
+
 export function MediaServerProvider({ children }: { children: React.ReactNode }) {
   const [servers, setServers] = useState<MediaServerInfo[]>([]);
   const [currentServerId, setCurrentServerId] = useState<string | null>(null);
@@ -43,14 +48,22 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     return servers.find((server) => server.id === currentServerId) || null;
   }, [servers, currentServerId]);
 
+  const setCurrentServer = (server: MediaServerInfo) => {
+    setCurrentServerId(server.id);
+  };
+
   const loadServers = async () => {
     try {
       const stored = await AsyncStorage.getItem(STORAGE_KEY);
       if (stored) {
         const parsedServers = JSON.parse(stored) as MediaServerInfo[];
-        setServers(parsedServers);
-        if (parsedServers.length > 0) {
-          setCurrentServerId(parsedServers[0].id);
+        const normalizedServers = parsedServers.map((server) => ({
+          ...server,
+          address: normalizeServerAddress(server.address),
+        }));
+        setServers(normalizedServers);
+        if (normalizedServers.length > 0) {
+          setCurrentServerId(normalizedServers[0].id);
         }
       }
     } catch (error) {
@@ -70,9 +83,11 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   };
 
   const addServer = async (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => {
+    const normalizedAddress = normalizeServerAddress(server.address);
     const newServer: MediaServerInfo = {
       ...server,
-      id: `${server.address}_${server.userId}_${Date.now()}`,
+      address: normalizedAddress,
+      id: `${normalizedAddress}_${server.userId}_${Date.now()}`,
       createdAt: Date.now(),
     };
 
@@ -81,7 +96,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   };
 
   const authenticateAndAddServer = async (address: string, username: string, password: string) => {
-    await authenticateAndSaveServer(address, username, password, addServer);
+    const normalizedAddress = normalizeServerAddress(address);
+    await authenticateAndSaveServer(normalizedAddress, username, password, addServer);
   };
 
   const removeServer = async (id: string) => {
@@ -91,7 +107,13 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const updateServer = async (id: string, updates: Partial<MediaServerInfo>) => {
     const updatedServers = servers.map((server) =>
-      server.id === id ? { ...server, ...updates } : server,
+      server.id === id
+        ? {
+            ...server,
+            ...updates,
+            address: updates.address ? normalizeServerAddress(updates.address) : server.address,
+          }
+        : server,
     );
     await saveServers(updatedServers);
   };
@@ -101,7 +123,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   };
 
   const getServerByAddress = (address: string) => {
-    return servers.find((server) => server.address === address);
+    const normalizedAddress = normalizeServerAddress(address);
+    return servers.find((server) => server.address === normalizedAddress);
   };
 
   const refreshServerInfo = async (id: string) => {
@@ -119,7 +142,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
       await updateServer(id, {
         name: system.ServerName || user.ServerName || server.address,
         username: user.Name || server.username,
-        userAvatar: `${server.address}Users/${user.Id}/Images/Primary?quality=90`,
+        userAvatar: `${server.address}/Users/${user.Id}/Images/Primary?quality=90`,
       });
     } catch (error) {
       console.error('Failed to refresh server info:', error);
@@ -129,6 +152,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const value: MediaServerContextType = {
     servers,
     currentServer,
+    setCurrentServer,
     isInitialized,
     addServer,
     authenticateAndAddServer,

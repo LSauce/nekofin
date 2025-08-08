@@ -1,10 +1,13 @@
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
-import { getItemsApi } from '@jellyfin/sdk/lib/utils/api/items-api';
-import { getLibraryApi } from '@jellyfin/sdk/lib/utils/api/library-api';
-import { getSystemApi } from '@jellyfin/sdk/lib/utils/api/system-api';
-import { getTvShowsApi } from '@jellyfin/sdk/lib/utils/api/tv-shows-api';
-import { getUserApi } from '@jellyfin/sdk/lib/utils/api/user-api';
+import {
+  getItemsApi,
+  getLibraryApi,
+  getMediaInfoApi,
+  getSystemApi,
+  getTvShowsApi,
+  getUserApi,
+} from '@jellyfin/sdk/lib/utils/api';
 
 let jellyfin: Jellyfin | null = null;
 let apiInstance: Api | null = null;
@@ -56,6 +59,7 @@ export async function getPublicUsers(api: Api) {
 }
 
 export async function login(api: Api, username: string, password: string) {
+  console.log('login', username, password, api.basePath);
   return await api.authenticateUserByName(username, password);
 }
 
@@ -153,12 +157,13 @@ export async function authenticateAndSaveServer(
   const authResult = await login(api, username, password);
 
   if (authResult.data?.User?.Id && authResult.data?.AccessToken) {
+    const normalizedAddress = address.replace(/\/$/, '');
     const serverInfo: Omit<MediaServerInfo, 'id' | 'createdAt'> = {
-      address,
-      name: authResult.data.User.ServerName || address,
+      address: normalizedAddress,
+      name: authResult.data.User.ServerName || normalizedAddress,
       userId: authResult.data.User.Id,
       username: authResult.data.User.Name || username,
-      userAvatar: `${address}Users/${authResult.data.User.Id}/Images/Primary?quality=90`,
+      userAvatar: `${normalizedAddress}/Users/${authResult.data.User.Id}/Images/Primary?quality=90`,
       accessToken: authResult.data.AccessToken,
     };
 
@@ -167,4 +172,26 @@ export async function authenticateAndSaveServer(
   }
 
   throw new Error('Authentication failed');
+}
+
+export async function getItemDetail(api: Api, itemId: string) {
+  return await getItemsApi(api).getItems({
+    ids: [itemId],
+    limit: 1,
+  });
+}
+
+export async function getItemMediaSources(api: Api, itemId: string) {
+  return await getMediaInfoApi(api).getPlaybackInfo(
+    {
+      itemId,
+    },
+    {
+      method: 'POST',
+      data: {
+        isPlayback: true,
+        autoOpenLiveStream: true,
+      },
+    },
+  );
 }
