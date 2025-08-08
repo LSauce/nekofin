@@ -1,6 +1,8 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getStreamInfo } from '@/lib/utils';
 import { createApiFromServerInfo, getItemMediaSources } from '@/services/jellyfin';
+import Entypo from '@expo/vector-icons/Entypo';
+import { BlurView } from 'expo-blur';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect, useMemo, useRef, useState } from 'react';
@@ -187,9 +189,11 @@ export default function Player() {
         style={[styles.backButton, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
       >
-        <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
-          <Text style={styles.backButtonText}>←</Text>
-        </TouchableOpacity>
+        <BlurView tint="systemChromeMaterialDark" intensity={100} style={styles.backButtonBlur}>
+          <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
+            <Text style={styles.backButtonText}>←</Text>
+          </TouchableOpacity>
+        </BlurView>
       </Animated.View>
 
       {/* 浮动进度控制条 */}
@@ -197,27 +201,34 @@ export default function Player() {
         style={[styles.floatingControls, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
       >
-        {/* 进度条 */}
-        <TouchableOpacity
-          style={styles.progressBarContainer}
-          onPress={handleProgressBarPress}
-          activeOpacity={1}
+        <BlurView
+          tint="systemChromeMaterialDark"
+          intensity={100}
+          style={styles.floatingControlsBlur}
         >
-          <View style={styles.progressBar}>
-            <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+          <View style={styles.progressContainer}>
+            <View style={styles.controlsRow}>
+              <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
+                <Entypo
+                  name={isPlaying ? 'controller-paus' : 'controller-play'}
+                  size={24}
+                  color="white"
+                />
+              </TouchableOpacity>
+            </View>
+            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+            <TouchableOpacity
+              style={styles.progressBarContainer}
+              onPress={handleProgressBarPress}
+              activeOpacity={1}
+            >
+              <View style={styles.progressBar}>
+                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
+              </View>
+            </TouchableOpacity>
+            <Text style={styles.timeText}>{formatTime(duration)}</Text>
           </View>
-        </TouchableOpacity>
-
-        {/* 时间显示和播放控制 */}
-        <View style={styles.controlsRow}>
-          <Text style={styles.timeText}>
-            {formatTime(currentTime)} / {formatTime(duration)}
-          </Text>
-
-          <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
-            <Text style={styles.playPauseText}>{isPlaying ? '⏸' : '▶'}</Text>
-          </TouchableOpacity>
-        </View>
+        </BlurView>
       </Animated.View>
 
       {/* 点击显示控制条 */}
@@ -253,11 +264,16 @@ const styles = StyleSheet.create({
     left: 20,
     zIndex: 10,
   },
+  backButtonBlur: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
   backButtonTouchable: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -268,13 +284,25 @@ const styles = StyleSheet.create({
   },
   floatingControls: {
     position: 'absolute',
-    bottom: 50,
-    left: 20,
-    right: 20,
+    bottom: 30,
+    left: 100,
+    right: 100,
     zIndex: 10,
   },
+  floatingControlsBlur: {
+    padding: 8,
+    borderRadius: 20,
+    overflow: 'hidden',
+  },
+  progressContainer: {
+    flexDirection: 'row',
+    justifyContent: 'space-between',
+    alignItems: 'center',
+    gap: 10,
+    paddingRight: 16,
+  },
   progressBarContainer: {
-    marginBottom: 15,
+    flex: 1,
   },
   progressBar: {
     height: 4,
@@ -298,10 +326,9 @@ const styles = StyleSheet.create({
     fontWeight: '500',
   },
   playPauseButton: {
-    width: 50,
-    height: 50,
-    borderRadius: 25,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    width: 40,
+    height: 40,
+    borderRadius: 20,
     justifyContent: 'center',
     alignItems: 'center',
   },
