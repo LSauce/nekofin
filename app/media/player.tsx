@@ -9,7 +9,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect, useMemo, useRef, useState } from 'react';
 import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
-import { GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -94,6 +94,20 @@ export default function Player() {
     }, 3000);
   };
 
+  const hideControlsWithDelay = () => {
+    if (controlsTimeout.current) {
+      clearTimeout(controlsTimeout.current);
+    }
+
+    controlsTimeout.current = setTimeout(() => {
+      if (!isDragging) {
+        fadeAnim.value = withTiming(0, { duration: 300 }, () => {
+          runOnJS(setShowControls)(false);
+        });
+      }
+    }, 3000);
+  };
+
   const handleSeek = (time: number) => {
     if (!progressInfo?.duration || !player.current) return;
     const clampedTime = Math.max(0, Math.min(time, progressInfo.duration));
@@ -106,11 +120,14 @@ export default function Player() {
     const newTime = value * progressInfo.duration;
     handleSeek(newTime);
     progressValue.value = value;
+    setShowControls(true);
+    fadeAnim.value = withTiming(1, { duration: 200 });
   };
 
   const handleSliderSlidingStart = () => {
     setIsDragging(true);
-    showControlsWithTimeout();
+    setShowControls(true);
+    fadeAnim.value = withTiming(1, { duration: 200 });
   };
 
   const handleSliderSlidingComplete = (value: number) => {
@@ -119,6 +136,7 @@ export default function Player() {
     handleSeek(newTime);
     progressValue.value = value;
     setIsDragging(false);
+    hideControlsWithDelay();
   };
 
   const handleBackPress = () => {
@@ -129,6 +147,40 @@ export default function Player() {
     setIsPlaying((prev) => !prev);
     showControlsWithTimeout();
   };
+
+  const handleSingleTap = () => {
+    if (showControls) {
+      fadeAnim.value = withTiming(0, { duration: 300 }, () => {
+        runOnJS(setShowControls)(false);
+      });
+    } else {
+      runOnJS(showControlsWithTimeout)();
+    }
+  };
+
+  const handleDoubleTap = () => {
+    handlePlayPause();
+  };
+
+  const tapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .maxDuration(300)
+    .onEnd((_event, success) => {
+      if (success) {
+        runOnJS(handleSingleTap)();
+      }
+    });
+
+  const doubleTapGesture = Gesture.Tap()
+    .numberOfTaps(2)
+    .maxDuration(300)
+    .onEnd((_event, success) => {
+      if (success) {
+        runOnJS(handleDoubleTap)();
+      }
+    });
+
+  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture);
 
   useEffect(() => {
     (async () => {
@@ -263,11 +315,9 @@ export default function Player() {
           <Text style={styles.timeText}>{formatTime(duration)}</Text>
         </View>
       </Animated.View>
-      <TouchableOpacity
-        style={styles.touchOverlay}
-        onPress={showControlsWithTimeout}
-        activeOpacity={1}
-      />
+      <GestureDetector gesture={composed}>
+        <Animated.View style={styles.touchOverlay} />
+      </GestureDetector>
     </GestureHandlerRootView>
   );
 }
