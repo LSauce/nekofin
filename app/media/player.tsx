@@ -7,7 +7,8 @@ import { BlurView } from 'expo-blur';
 import { router, useLocalSearchParams } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useEffect, useMemo, useRef, useState } from 'react';
-import { Dimensions, StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { StatusBar, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Slider } from 'react-native-awesome-slider';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
@@ -16,8 +17,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 import { OnProgressEventProps, VLCPlayer } from 'react-native-vlc-media-player';
-
-const { width: screenWidth } = Dimensions.get('window');
 
 export default function Player() {
   const { itemId } = useLocalSearchParams<{
@@ -36,8 +35,12 @@ export default function Player() {
   const [progressInfo, setProgressInfo] = useState<OnProgressEventProps | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
+  const [isBuffering, setIsBuffering] = useState(false);
 
   const fadeAnim = useSharedValue(1);
+  const progressValue = useSharedValue(0);
+  const minimumValue = useSharedValue(0);
+  const maximumValue = useSharedValue(1);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const currentTime = useMemo(() => {
@@ -52,10 +55,20 @@ export default function Player() {
     return duration > 0 ? currentTime / duration : 0;
   }, [currentTime, duration]);
 
+  useEffect(() => {
+    progressValue.value = progress;
+  }, [progress, progressValue]);
+
   const formatTime = (time: number) => {
-    const minutes = Math.floor(time / 60000);
+    const hours = Math.floor(time / 3600000);
+    const minutes = Math.floor((time % 3600000) / 60000);
     const seconds = Math.floor((time % 60000) / 1000);
-    return `${minutes}:${seconds.toString().padStart(2, '0')}`;
+
+    if (hours > 0) {
+      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    } else {
+      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+    }
   };
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {
@@ -88,12 +101,24 @@ export default function Player() {
     player.current.seek(position);
   };
 
-  const handleProgressBarPress = (event: any) => {
-    const { locationX } = event.nativeEvent;
-    const progressBarWidth = screenWidth - 40;
-    const newProgress = locationX / progressBarWidth;
-    const newTime = newProgress * duration;
+  const handleSliderChange = (value: number) => {
+    if (!progressInfo?.duration) return;
+    const newTime = value * progressInfo.duration;
     handleSeek(newTime);
+    progressValue.value = value;
+  };
+
+  const handleSliderSlidingStart = () => {
+    setIsDragging(true);
+    showControlsWithTimeout();
+  };
+
+  const handleSliderSlidingComplete = (value: number) => {
+    if (!progressInfo?.duration) return;
+    const newTime = value * progressInfo.duration;
+    handleSeek(newTime);
+    progressValue.value = value;
+    setIsDragging(false);
   };
 
   const handleBackPress = () => {
@@ -178,14 +203,11 @@ export default function Player() {
         paused={!isPlaying}
         onPlaying={(e) => {
           console.log('onPlaying', e.seekable, e.duration);
+          setIsBuffering(false);
         }}
-        onProgress={(event) => {
-          console.log('event', event);
-          setProgressInfo(event);
-        }}
+        onProgress={setProgressInfo}
+        onBuffering={() => setIsBuffering(true)}
       />
-
-      {/* 左上角返回按钮 */}
       <Animated.View
         style={[styles.backButton, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
@@ -196,8 +218,6 @@ export default function Player() {
           </TouchableOpacity>
         </BlurView>
       </Animated.View>
-
-      {/* 浮动进度控制条 */}
       <Animated.View
         style={[styles.floatingControls, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
@@ -205,34 +225,44 @@ export default function Player() {
         <BlurView
           tint="systemChromeMaterialDark"
           intensity={100}
-          style={styles.floatingControlsBlur}
-        >
-          <View style={styles.progressContainer}>
-            <View style={styles.controlsRow}>
-              <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
-                <Entypo
-                  name={isPlaying ? 'controller-paus' : 'controller-play'}
-                  size={24}
-                  color="white"
-                />
-              </TouchableOpacity>
-            </View>
-            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
-            <TouchableOpacity
-              style={styles.progressBarContainer}
-              onPress={handleProgressBarPress}
-              activeOpacity={1}
-            >
-              <View style={styles.progressBar}>
-                <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-              </View>
+          style={[StyleSheet.absoluteFill, styles.floatingControlsBlur]}
+        />
+        <View style={styles.progressContainer}>
+          <View style={styles.controlsRow}>
+            <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
+              <Entypo
+                name={isPlaying ? 'controller-paus' : 'controller-play'}
+                size={24}
+                color="white"
+              />
             </TouchableOpacity>
-            <Text style={styles.timeText}>{formatTime(duration)}</Text>
           </View>
-        </BlurView>
+          <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+          <View style={styles.sliderContainer}>
+            <Slider
+              style={styles.slider}
+              containerStyle={{
+                overflow: 'hidden',
+                borderRadius: 999,
+              }}
+              progress={progressValue}
+              bubble={(percent) => formatTime(percent * duration)}
+              minimumValue={minimumValue}
+              maximumValue={maximumValue}
+              onValueChange={handleSliderChange}
+              onSlidingStart={handleSliderSlidingStart}
+              onSlidingComplete={handleSliderSlidingComplete}
+              theme={{
+                minimumTrackTintColor: '#fff',
+                maximumTrackTintColor: 'rgba(255, 255, 255, 0.3)',
+              }}
+              disableTapEvent={false}
+              disableTrackFollow
+            />
+          </View>
+          <Text style={styles.timeText}>{formatTime(duration)}</Text>
+        </View>
       </Animated.View>
-
-      {/* 点击显示控制条 */}
       <TouchableOpacity
         style={styles.touchOverlay}
         onPress={showControlsWithTimeout}
@@ -289,9 +319,9 @@ const styles = StyleSheet.create({
     left: 100,
     right: 100,
     zIndex: 10,
+    padding: 8,
   },
   floatingControlsBlur: {
-    padding: 8,
     borderRadius: 20,
     overflow: 'hidden',
   },
@@ -302,19 +332,22 @@ const styles = StyleSheet.create({
     gap: 10,
     paddingRight: 16,
   },
-  progressBarContainer: {
+  sliderContainer: {
     flex: 1,
+    height: 40,
+    justifyContent: 'center',
   },
-  progressBar: {
+  slider: {
+    width: '100%',
+    height: 40,
+  },
+  customTrack: {
     height: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.3)',
     borderRadius: 2,
     overflow: 'hidden',
   },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 2,
+  sliderContainerStyle: {
+    borderRadius: 16,
   },
   controlsRow: {
     flexDirection: 'row',
