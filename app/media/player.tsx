@@ -1,6 +1,7 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getStreamInfo } from '@/lib/utils';
 import { createApiFromServerInfo, getItemMediaSources } from '@/services/jellyfin';
+import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { BlurView } from 'expo-blur';
 import { router, useLocalSearchParams } from 'expo-router';
@@ -191,7 +192,7 @@ export default function Player() {
       >
         <BlurView tint="systemChromeMaterialDark" intensity={100} style={styles.backButtonBlur}>
           <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
-            <Text style={styles.backButtonText}>←</Text>
+            <AntDesign name="arrowleft" size={24} color="white" />
           </TouchableOpacity>
         </BlurView>
       </Animated.View>
