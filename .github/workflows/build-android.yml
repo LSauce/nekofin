@@ -1,19 +1,18 @@
-name: EAS Android Build
+name: Native Android Build
 on:
   push:
     tags:
       - 'v*'
   workflow_dispatch:
     inputs:
-      environment:
-        description: 'Build profile (development/preview/production)'
+      build_type:
+        description: 'Build type (debug/release)'
         required: true
-        default: 'production'
+        default: 'release'
         type: choice
         options:
-          - development
-          - preview
-          - production
+          - debug
+          - release
 
 jobs:
   build:
@@ -29,20 +28,50 @@ jobs:
           node-version: '20'
           cache: 'npm'
 
-      - name: Setup EAS
-        uses: expo/expo-github-action@v8
+      - name: Setup Java
+        uses: actions/setup-java@v3
         with:
-          eas-version: latest
-          token: ${{ secrets.EXPO_TOKEN }}
+          distribution: 'temurin'
+          java-version: '17'
+
+      - name: Setup Android SDK
+        uses: android-actions/setup-android@v2
 
       - name: Install dependencies
-        run: npm install && eas init
+        run: npm install
 
-      - name: Build Android
-        run: eas build --local --platform android --profile ${{ inputs.environment }} --non-interactive
+      - name: Run Expo Prebuild
+        id: prebuild_first
+        continue-on-error: true
+        run: npx expo prebuild -p android
+
+      - name: Fix build.gradle if prebuild failed
+        if: steps.prebuild_first.outcome == 'failure'
+        run: |
+          BUILD_GRADLE_PATH="android/app/build.gradle"
+          if ! grep -q "applyNativeModulesAppBuildGradle(project)" $BUILD_GRADLE_PATH; then
+            sed -i '1i applyNativeModulesAppBuildGradle(project)' $BUILD_GRADLE_PATH
+            echo "Added applyNativeModulesAppBuildGradle(project) at line 1 of build.gradle"
+          else
+            echo "applyNativeModulesAppBuildGradle(project) already exists in build.gradle"
+          fi
+          npx expo prebuild -p android
+
+      - name: Make gradlew executable
+        run: chmod +x android/gradlew
+
+      - name: Build Android APK
+        run: |
+          cd android
+          BUILD_TYPE="${{ inputs.build_type || 'release' }}"
+          if [ "$BUILD_TYPE" = "release" ]; then
+            ./gradlew assembleRelease
+          else
+            ./gradlew assembleDebug
+          fi
 
       - name: Upload APK artifact
         uses: actions/upload-artifact@v4
         with:
-          name: android-release-${{ github.ref_name }}
-          path: build-*.apk
+          name: android-${{ inputs.build_type || 'release' }}-${{ github.ref_name || github.sha }}
+          path: android/app/build/outputs/apk/**/*.apk

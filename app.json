@@ -13,11 +13,16 @@
       "bundleIdentifier": "com.lonzzi.nekofin"
     },
     "android": {
+      "package": "com.lonzzi.nekofin",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
         "backgroundColor": "#ffffff"
       },
-      "edgeToEdgeEnabled": true
+      "edgeToEdgeEnabled": true,
+      "permissions": [
+        "android.permission.FOREGROUND_SERVICE",
+        "android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK"
+      ]
     },
     "web": {
       "bundler": "metro",
@@ -67,6 +72,13 @@
     ],
     "experiments": {
       "typedRoutes": true
-    }
+    },
+    "extra": {
+      "router": {},
+      "eas": {
+        "projectId": "b00bc9a1-4286-4cdc-ba7e-fb321575a32b"
+      }
+    },
+    "owner": "lonzzi"
   }
 }
