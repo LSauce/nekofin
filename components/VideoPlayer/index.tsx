@@ -1,16 +1,20 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
 import { getStreamInfo } from '@/lib/utils';
+import { VlcPlayerView } from '@/modules';
+import type { ProgressUpdatePayload, VlcPlayerViewRef } from '@/modules/VlcPlayer.types';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BlurView } from 'expo-blur';
+import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { router } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Alert,
   StatusBar,
   StyleSheet,
   Text,
@@ -25,7 +29,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import { OnProgressEventProps, VLCPlayer } from 'react-native-vlc-media-player';
 
 const LoadingIndicator = () => {
   return (
@@ -45,13 +48,15 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     return createApiFromServerInfo(currentServer);
   }, [currentServer]);
 
-  const player = useRef<VLCPlayer>(null);
+  const player = useRef<VlcPlayerViewRef>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [progressInfo, setProgressInfo] = useState<OnProgressEventProps | null>(null);
+  const [progressInfo, setProgressInfo] = useState<ProgressUpdatePayload['nativeEvent'] | null>(
+    null,
+  );
   const [showControls, setShowControls] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
-  const [isBuffering, setIsBuffering] = useState(false);
-  const bufferingTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const [isBuffering, setIsBuffering] = useState(true);
+  const [isLoaded, setIsLoaded] = useState(false);
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -147,10 +152,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [hideControlsWithDelay]);
 
   const handleSeek = (time: number) => {
-    if (!progressInfo?.duration || !player.current) return;
-    const clampedTime = Math.max(0, Math.min(time, progressInfo.duration));
-    const position = progressInfo.duration > 0 ? clampedTime / progressInfo.duration : 0;
-    player.current.seek(position);
+    player.current?.seekTo(time);
   };
 
   const handleSliderChange = (value: number) => {
@@ -181,8 +183,13 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     router.back();
   };
 
-  const handlePlayPause = () => {
+  const handlePlayPause = async () => {
     setIsPlaying((prev) => !prev);
+    if (isPlaying) {
+      await player.current?.pause();
+    } else {
+      await player.current?.play();
+    }
     showControlsWithTimeout();
   };
 
@@ -270,34 +277,45 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     };
   }, []);
 
+  const showLoading = useMemo(() => {
+    return isBuffering || !videoSource || !isLoaded;
+  }, [isBuffering, videoSource, isLoaded]);
+
   return (
     <GestureHandlerRootView style={styles.container}>
       {videoSource && (
-        <VLCPlayer
+        <VlcPlayerView
           ref={player}
           style={styles.video}
-          resizeMode="cover"
-          source={{ uri: videoSource }}
-          paused={!isPlaying}
-          onPlaying={() => {
-            setIsBuffering(false);
+          source={{
+            uri: videoSource,
+            autoplay: true,
+            isNetwork: true,
+            externalSubtitles: [],
           }}
-          onProgress={(e) => {
-            setProgressInfo(e);
+          onVideoProgress={(e) => {
+            setProgressInfo(e.nativeEvent);
             setIsBuffering(false);
+            setIsLoaded(true);
           }}
-          onBuffering={() => {
-            if (bufferingTimeout.current) {
-              clearTimeout(bufferingTimeout.current);
+          onVideoStateChange={async (e) => {
+            const { state, isBuffering } = e.nativeEvent;
+            if (state === 'Playing') {
+              setIsPlaying(true);
+              await activateKeepAwakeAsync();
+            } else if (state === 'Paused') {
+              setIsPlaying(false);
+              await deactivateKeepAwake();
             }
-            setIsBuffering(true);
-            bufferingTimeout.current = setTimeout(() => {
-              setIsBuffering(false);
-            }, 800);
+            setIsBuffering(isBuffering);
+          }}
+          onVideoError={(e) => {
+            console.error('Video Error:', e.nativeEvent);
+            Alert.alert('Video Error', e.nativeEvent.state);
           }}
         />
       )}
-      {(isBuffering || !videoSource) && <LoadingIndicator />}
+      {showLoading && <LoadingIndicator />}
       <Animated.View
         style={[styles.backButton, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
@@ -328,14 +346,20 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         <View style={styles.progressContainer}>
           <View style={styles.controlsRow}>
             <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
-              <Entypo
-                name={isPlaying ? 'controller-paus' : 'controller-play'}
-                size={24}
-                color="white"
-              />
+              {showLoading ? (
+                <ActivityIndicator size="small" color="#fff" />
+              ) : (
+                <Entypo
+                  name={isPlaying ? 'controller-paus' : 'controller-play'}
+                  size={24}
+                  color="white"
+                />
+              )}
             </TouchableOpacity>
           </View>
-          <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeText}>{formatTime(currentTime)}</Text>
+          </View>
           <View style={styles.sliderContainer}>
             <Slider
               style={styles.slider}
@@ -358,7 +382,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
               disableTrackFollow
             />
           </View>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
+          <View style={styles.timeContainer}>
+            <Text style={styles.timeText}>{formatTime(duration)}</Text>
+          </View>
         </View>
       </Animated.View>
       <GestureDetector gesture={composed}>
@@ -461,6 +487,10 @@ const styles = StyleSheet.create({
   controlsRow: {
     flexDirection: 'row',
     justifyContent: 'space-between',
+    alignItems: 'center',
+  },
+  timeContainer: {
+    minWidth: 60,
     alignItems: 'center',
   },
   timeText: {
