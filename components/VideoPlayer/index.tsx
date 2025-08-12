@@ -1,4 +1,5 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { getDeviceProfile } from '@/lib/Device';
 import { getStreamInfo } from '@/lib/utils';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -252,6 +253,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         api,
         itemId,
         userId: currentServer.userId,
+        deviceProfile: getDeviceProfile(),
       });
 
       if (streamInfo) {
