@@ -26,6 +26,7 @@ public class VLCPlayerView: UIView {
 
 class VLCPlayerWrapper: NSObject {
     private var lastProgressCall = Date().timeIntervalSince1970
+    public var progressUpdateInterval: TimeInterval = 1.0
     public var player: VLCMediaPlayer = VLCMediaPlayer()
     private var updatePlayerState: (() -> Void)?
     private var updateVideoProgress: (() -> Void)?
@@ -119,7 +120,7 @@ extension VLCPlayerWrapper: VLCMediaPlayerDelegate {
         DispatchQueue.main.async { [weak self] in
             guard let self = self else { return }
             let timeNow = Date().timeIntervalSince1970
-            if timeNow - self.lastProgressCall >= 1 {
+            if timeNow - self.lastProgressCall >= self.progressUpdateInterval {
                 self.lastProgressCall = timeNow
                 self.updateVideoProgress?()
             }
@@ -441,6 +442,14 @@ class VlcPlayerView: ExpoView {
         logger.debug("Deinitialization")
         performStop()
         VLCManager.shared.listeners.removeAll()
+    }
+}
+
+extension VlcPlayerView {
+    @objc func setProgressUpdateInterval(_ intervalMs: Double) {
+        let clamped = max(50.0, intervalMs)
+        self.progressUpdateInterval = clamped / 1000.0
+        self.vlc.progressUpdateInterval = self.progressUpdateInterval
     }
 }
 

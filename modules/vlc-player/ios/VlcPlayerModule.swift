@@ -16,6 +16,10 @@ public class VlcPlayerModule: Module {
                 }
             }
 
+            Prop("progressUpdateInterval") { (view: VlcPlayerView, intervalMs: Double) in
+                view.setProgressUpdateInterval(intervalMs)
+            }
+
             Events(
                 "onPlaybackStateChanged",
                 "onVideoStateChange",

@@ -316,9 +316,8 @@ class VlcPlayer3View: ExpoView {
 
 extension VlcPlayer3View: VLCMediaPlayerDelegate {
     func mediaPlayerTimeChanged(_ aNotification: Notification) {
-        // self?.updateVideoProgress()
         let timeNow = Date().timeIntervalSince1970
-        if timeNow - lastProgressCall >= 1 {
+        if timeNow - lastProgressCall >= progressUpdateInterval {
             lastProgressCall = timeNow
             updateVideoProgress()
         }
@@ -368,6 +367,13 @@ extension VlcPlayer3View: VLCMediaPlayerDelegate {
             self.onVideoStateChange?(stateInfo)
         }
 
+    }
+}
+
+extension VlcPlayer3View {
+    @objc func setProgressUpdateInterval(_ intervalMs: Double) {
+        let clamped = max(50.0, intervalMs) // minimum 50ms to avoid flooding
+        self.progressUpdateInterval = clamped / 1000.0
     }
 }
 

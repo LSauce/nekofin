@@ -14,10 +14,8 @@ const VLC3ViewManager = requireNativeViewManager('VlcPlayer3');
 // Create a forwarded ref version of the native view
 const NativeView = React.forwardRef<NativeViewRef, VlcPlayerViewProps>((props, ref) => {
   if (Platform.OS === 'ios' || Platform.isTV) {
-    console.log('[Apple] Using Vlc Player 3');
     return <VLC3ViewManager {...props} ref={ref} />;
   }
-  console.log('Using default Vlc Player');
   return <VLCViewManager {...props} ref={ref} />;
 });
 NativeView.displayName = 'NativeView';
