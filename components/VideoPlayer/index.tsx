@@ -1,20 +1,27 @@
+import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
 import { getStreamInfo } from '@/lib/utils';
 import { VlcPlayerView } from '@/modules';
 import type { ProgressUpdatePayload, VlcPlayerViewRef } from '@/modules/VlcPlayer.types';
+import {
+  getCommentsByEpisodeId,
+  searchAnimesByKeyword,
+  type DandanComment,
+} from '@/services/dandanplay';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BlurView } from 'expo-blur';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import { router } from 'expo-router';
+import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -22,13 +29,17 @@ import {
   View,
 } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
-import { Gesture, GestureDetector, GestureHandlerRootView } from 'react-native-gesture-handler';
+import { Gesture, GestureDetector } from 'react-native-gesture-handler';
+import { ContextMenuButton } from 'react-native-ios-context-menu';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import * as DropdownMenu from 'zeego/dropdown-menu';
+
+import { DanmakuSettings } from './DanmakuSettings';
 
 const LoadingIndicator = () => {
   return (
@@ -39,8 +50,11 @@ const LoadingIndicator = () => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
+  const router = useRouter();
   const [videoSource, setVideoSource] = useState<string | null>(null);
   const [itemDetail, setItemDetail] = useState<BaseItemDto | null>(null);
+  const [comments, setComments] = useState<DandanComment[]>([]);
+  const { settings: danmakuSettings, setSettings: setDanmakuSettings } = useDanmakuSettings();
 
   const { currentServer } = useMediaServers();
   const api = useMemo(() => {
@@ -57,6 +71,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isDragging, setIsDragging] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
+  const [settingsVisible, setSettingsVisible] = useState(false);
+  const [menuOpen, setMenuOpen] = useState(false);
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -123,13 +139,15 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       clearTimeout(controlsTimeout.current);
     }
 
-    controlsTimeout.current = setTimeout(() => {
-      if (!isDragging) {
-        fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-          runOnJS(setShowControls)(false);
-        });
-      }
-    }, 3000);
+    if (!menuOpen) {
+      controlsTimeout.current = setTimeout(() => {
+        if (!isDragging && !menuOpen) {
+          fadeAnim.value = withTiming(0, { duration: 300 }, () => {
+            runOnJS(setShowControls)(false);
+          });
+        }
+      }, 3000);
+    }
   };
 
   const hideControlsWithDelay = useCallback(() => {
@@ -137,19 +155,35 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       clearTimeout(controlsTimeout.current);
     }
 
+    if (menuOpen) {
+      return;
+    }
+
     controlsTimeout.current = setTimeout(() => {
-      if (!isDragging) {
+      if (!isDragging && !menuOpen) {
         fadeAnim.value = withTiming(0, { duration: 300 }, () => {
           runOnJS(setShowControls)(false);
         });
       }
     }, 3000);
-  }, [fadeAnim, isDragging]);
+  }, [fadeAnim, isDragging, menuOpen]);
 
   useEffect(() => {
     // hide controls when first loaded
     hideControlsWithDelay();
   }, [hideControlsWithDelay]);
+
+  useEffect(() => {
+    if (menuOpen) {
+      if (controlsTimeout.current) {
+        clearTimeout(controlsTimeout.current);
+      }
+      setShowControls(true);
+      fadeAnim.value = withTiming(1, { duration: 200 });
+    } else {
+      hideControlsWithDelay();
+    }
+  }, [menuOpen, hideControlsWithDelay, fadeAnim]);
 
   const handleSeek = (time: number) => {
     player.current?.seekTo(time);
@@ -194,6 +228,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   };
 
   const handleSingleTap = () => {
+    if (menuOpen) {
+      return;
+    }
     if (showControls) {
       fadeAnim.value = withTiming(0, { duration: 300 }, () => {
         runOnJS(setShowControls)(false);
@@ -266,6 +303,25 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       if (streamInfo) {
         setVideoSource(streamInfo.url);
       }
+
+      try {
+        const seriesName = itemDetail.data.SeriesName;
+        const seasonNumber = itemDetail.data.ParentIndexNumber;
+        const episodeNumber = itemDetail.data.IndexNumber;
+
+        const animes = await searchAnimesByKeyword(seriesName ?? '');
+        const anime = animes[1];
+        console.log(anime);
+        if (anime && episodeNumber) {
+          console.log(anime.episodes[episodeNumber - 13].episodeId);
+          const comments = await getCommentsByEpisodeId(
+            anime.episodes[episodeNumber - 13].episodeId,
+          );
+          setComments(comments);
+        }
+      } catch (error) {
+        console.warn('Failed to load danmaku comments:', error);
+      }
     })();
   }, [api, itemId, currentServer]);
 
@@ -281,8 +337,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     return isBuffering || !videoSource || !isLoaded;
   }, [isBuffering, videoSource, isLoaded]);
 
+  const handleDanmakuSettingsPress = () => {
+    setSettingsVisible(true);
+  };
+
   return (
-    <GestureHandlerRootView style={styles.container}>
+    <View style={styles.container}>
       {videoSource && (
         <VlcPlayerView
           ref={player}
@@ -316,6 +376,23 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         />
       )}
       {showLoading && <LoadingIndicator />}
+
+      {/* {comments.length > 0 && (
+        <DanmakuLayer
+          currentTimeMs={currentTime}
+          isPlaying={isPlaying}
+          comments={comments}
+          {...danmakuSettings}
+        />
+      )} */}
+
+      <DanmakuSettings
+        visible={settingsVisible}
+        settings={danmakuSettings}
+        onSettingsChange={setDanmakuSettings}
+        onClose={() => setSettingsVisible(false)}
+      />
+
       <Animated.View
         style={[styles.backButton, fadeAnimatedStyle]}
         pointerEvents={showControls ? 'auto' : 'none'}
@@ -326,6 +403,29 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           </TouchableOpacity>
         </BlurView>
       </Animated.View>
+
+      {comments.length > 0 && (
+        <Animated.View
+          style={[styles.danmakuButton, fadeAnimatedStyle]}
+          pointerEvents={showControls ? 'auto' : 'none'}
+        >
+          <BlurView tint="dark" intensity={100} style={styles.danmakuButtonBlur}>
+            <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+              <DropdownMenu.Trigger asChild>
+                <TouchableOpacity style={styles.danmakuButtonTouchable}>
+                  <AntDesign name="setting" size={20} color="white" />
+                </TouchableOpacity>
+              </DropdownMenu.Trigger>
+              <DropdownMenu.Content>
+                <DropdownMenu.Item key="danmaku-settings" onSelect={handleDanmakuSettingsPress}>
+                  <DropdownMenu.ItemTitle>弹幕设置</DropdownMenu.ItemTitle>
+                </DropdownMenu.Item>
+              </DropdownMenu.Content>
+            </DropdownMenu.Root>
+          </BlurView>
+        </Animated.View>
+      )}
+
       {!!formattedTitle && (
         <Animated.View style={[styles.titleContainer, fadeAnimatedStyle]} pointerEvents="none">
           <Text style={styles.title} numberOfLines={1} ellipsizeMode="tail">
@@ -390,7 +490,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       <GestureDetector gesture={composed}>
         <Animated.View style={styles.touchOverlay} />
       </GestureDetector>
-    </GestureHandlerRootView>
+    </View>
   );
 };
 
@@ -437,6 +537,28 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   backButtonTouchable: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  danmakuButton: {
+    position: 'absolute',
+    top: 50,
+    right: 100,
+    zIndex: 10,
+  },
+  danmakuButtonBlur: {
+    width: 44,
+    height: 44,
+    borderRadius: 22,
+    overflow: 'hidden',
+    display: 'flex',
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  danmakuButtonTouchable: {
     width: 44,
     height: 44,
     borderRadius: 22,

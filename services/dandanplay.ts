@@ -1,5 +1,3 @@
-import axios, { AxiosInstance } from 'axios';
-
 export type DandanSearchResult = {
   hasMore: boolean;
   animes: DandanAnime[];
@@ -38,25 +36,36 @@ export type DandanComment = {
   user: string;
 };
 
-let httpClient: AxiosInstance | null = null;
+const BASE_URL = 'https://ddplay-api.930524.xyz/cors/https://api.dandanplay.net';
 
-function getHttpClient() {
-  if (!httpClient) {
-    httpClient = axios.create({
-      baseURL: 'https://ddplay-api.930524.xyz/cors/https://api.dandanplay.net',
-      timeout: 15000,
+async function makeRequest<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
+  const url = new URL(`${BASE_URL}${endpoint}`);
+  if (params) {
+    Object.entries(params).forEach(([key, value]) => {
+      url.searchParams.append(key, String(value));
     });
   }
-  return httpClient;
+
+  const response = await fetch(url.toString(), {
+    method: 'GET',
+    headers: {
+      'Content-Type': 'application/json',
+    },
+  });
+
+  if (!response.ok) {
+    throw new Error(`HTTP error! status: ${response.status}`);
+  }
+
+  return response.json();
 }
 
 export async function searchAnimesByKeyword(keyword: string): Promise<DandanAnime[]> {
-  const client = getHttpClient();
-  const res = await client.get<DandanSearchResult>('/api/v2/search/episodes', {
-    params: { anime: keyword },
+  const res = await makeRequest<DandanSearchResult>('/api/v2/search/episodes', {
+    anime: keyword,
   });
 
-  return res.data?.animes ?? [];
+  return res?.animes ?? [];
 }
 
 export async function searchEpisodesByKeyword(keyword: string): Promise<DandanEpisode[]> {
@@ -65,16 +74,13 @@ export async function searchEpisodesByKeyword(keyword: string): Promise<DandanEp
 }
 
 export async function getCommentsByEpisodeId(episodeId: number): Promise<DandanComment[]> {
-  const client = getHttpClient();
-  const res = await client.get<DandanCommentResult>(`/api/v2/comment/${episodeId}`, {
-    params: {
-      withRelated: true,
-      chConvert: 1,
-      protect: 1,
-    },
+  const res = await makeRequest<DandanCommentResult>(`/api/v2/comment/${episodeId}`, {
+    withRelated: true,
+    chConvert: 1,
+    protect: 1,
   });
 
-  const list = res.data?.comments ?? [];
+  const list = res?.comments ?? [];
 
   const normalize = (c: DandanCommentResult['comments'][number]): DandanComment | null => {
     if (!c || !c.p) return null;
