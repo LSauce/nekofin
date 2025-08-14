@@ -1,4 +1,5 @@
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
+import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
 import {
   getItemsApi,
@@ -22,7 +23,7 @@ export function getJellyfinInstance() {
       },
       deviceInfo: {
         name: 'Nekofin Device',
-        id: 'nekofin-device-id',
+        id: getDeviceId(),
       },
     });
   }

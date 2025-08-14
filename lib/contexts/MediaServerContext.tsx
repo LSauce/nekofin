@@ -1,6 +1,7 @@
 import { authenticateAndSaveServer } from '@/services/jellyfin';
-import AsyncStorage from '@react-native-async-storage/async-storage';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
+import { storage } from '../storage';
 
 export interface MediaServerInfo {
   id: string;
@@ -54,7 +55,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const loadServers = async () => {
     try {
-      const stored = await AsyncStorage.getItem(STORAGE_KEY);
+      const stored = storage.getString(STORAGE_KEY);
       if (stored) {
         const parsedServers = JSON.parse(stored) as MediaServerInfo[];
         const normalizedServers = parsedServers.map((server) => ({
@@ -75,7 +76,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const saveServers = async (newServers: MediaServerInfo[]) => {
     try {
-      await AsyncStorage.setItem(STORAGE_KEY, JSON.stringify(newServers));
+      storage.set(STORAGE_KEY, JSON.stringify(newServers));
       setServers(newServers);
     } catch (error) {
       console.error('Failed to save servers:', error);

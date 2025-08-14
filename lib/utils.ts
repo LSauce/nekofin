@@ -1,6 +1,9 @@
 import { Api } from '@jellyfin/sdk';
 import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api';
+import uuid from 'react-native-uuid';
+
+import { storage } from './storage';
 
 export const ticksToSeconds = (ticks: number) => {
   return ticks / 10000000;
@@ -80,3 +83,13 @@ export enum VideoPlayer {
   VLC_3 = 0,
   VLC_4 = 1,
 }
+
+export const getDeviceId = () => {
+  const deviceId = storage.getString('deviceId');
+  if (!deviceId) {
+    const newDeviceId = uuid.v4();
+    storage.set('deviceId', newDeviceId);
+    return newDeviceId;
+  }
+  return deviceId;
+};
