@@ -1,4 +1,4 @@
-import { DandanComment } from '@/services/dandanplay';
+import { DANDAN_COMMENT_MODE, DandanComment, DandanCommentMode } from '@/services/dandanplay';
 import React, { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
 import Animated, {
@@ -31,7 +31,7 @@ type ActiveBullet = {
   colorHex: string;
   top: number;
   durationMs: number;
-  mode: number;
+  mode: DandanCommentMode;
 };
 
 export function DanmakuLayer({
@@ -156,7 +156,10 @@ export function DanmakuLayer({
           verticalTimeBuckets[timeIndex] = 0;
         }
 
-        if (comment.mode === 5 || comment.mode === 4) {
+        if (
+          comment.mode === DANDAN_COMMENT_MODE.Top ||
+          comment.mode === DANDAN_COMMENT_MODE.Bottom
+        ) {
           if (verticalTimeBuckets[timeIndex] < verticalLimit) {
             verticalTimeBuckets[timeIndex]++;
             resultComments.push(comment);
@@ -201,19 +204,19 @@ export function DanmakuLayer({
     const newActive: ActiveBullet[] = [];
 
     for (const c of slice) {
-      if (c.mode === 5 && countTop < layout.topRows) {
+      if (c.mode === DANDAN_COMMENT_MODE.Top && countTop < layout.topRows) {
         newActive.push({
           id: idRef.current++,
           text: c.text,
           colorHex: c.colorHex,
           top: countTop * lineHeight,
           durationMs: 4000,
-          mode: 5,
+          mode: DANDAN_COMMENT_MODE.Top,
         });
         countTop += 1;
         continue;
       }
-      if (c.mode === 4 && countBottom < layout.bottomRows) {
+      if (c.mode === DANDAN_COMMENT_MODE.Bottom && countBottom < layout.bottomRows) {
         const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
         newActive.push({
           id: idRef.current++,
@@ -221,12 +224,15 @@ export function DanmakuLayer({
           colorHex: c.colorHex,
           top: bottomStart + countBottom * lineHeight,
           durationMs: 4000,
-          mode: 4,
+          mode: DANDAN_COMMENT_MODE.Bottom,
         });
         countBottom += 1;
         continue;
       }
-      if ((c.mode === 1 || c.mode === 6) && countScroll < layout.scrollRows) {
+      if (
+        (c.mode === DANDAN_COMMENT_MODE.Scroll || c.mode === DANDAN_COMMENT_MODE.ScrollBottom) &&
+        countScroll < layout.scrollRows
+      ) {
         const scrollStart = layout.topRows * lineHeight;
         const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
         newActive.push({
@@ -297,12 +303,12 @@ function Bullet({
 
   useEffect(() => {
     const endRemove = setTimeout(() => onExpire(data.id), data.durationMs + 100);
-    if (data.mode === 1) {
+    if (data.mode === DANDAN_COMMENT_MODE.Scroll) {
       translateX.value = withTiming(-width - 300, {
         duration: data.durationMs,
         easing: Easing.linear,
       });
-    } else if (data.mode === 6) {
+    } else if (data.mode === DANDAN_COMMENT_MODE.ScrollBottom) {
       translateX.value = withTiming(width + 300, {
         duration: data.durationMs,
         easing: Easing.linear,
@@ -320,9 +326,20 @@ function Bullet({
   const style = useAnimatedStyle(() => ({
     position: 'absolute',
     top: data.top,
-    left: data.mode === 1 ? width : data.mode === 6 ? -100 : 0,
-    width: data.mode === 4 || data.mode === 5 ? '100%' : undefined,
-    transform: data.mode === 1 || data.mode === 6 ? [{ translateX: translateX.value }] : [],
+    left:
+      data.mode === DANDAN_COMMENT_MODE.Scroll
+        ? width
+        : data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+          ? -100
+          : 0,
+    width:
+      data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom
+        ? '100%'
+        : undefined,
+    transform:
+      data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+        ? [{ translateX: translateX.value }]
+        : [],
     opacity: opacity.value,
   }));
 
@@ -342,7 +359,14 @@ function Bullet({
   );
 
   return (
-    <Animated.View style={[style, data.mode === 4 || data.mode === 5 ? styles.centerRow : null]}>
+    <Animated.View
+      style={[
+        style,
+        data.mode === DANDAN_COMMENT_MODE.Bottom || data.mode === DANDAN_COMMENT_MODE.Top
+          ? styles.centerRow
+          : null,
+      ]}
+    >
       <Text style={[textStyle, { color: data.colorHex }]} numberOfLines={1}>
         {data.text}
       </Text>

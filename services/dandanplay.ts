@@ -1,3 +1,5 @@
+import * as Crypto from 'expo-crypto';
+
 export type DandanSearchResult = {
   hasMore: boolean;
   animes: DandanAnime[];
@@ -28,15 +30,39 @@ export type DandanCommentResult = {
   }[];
 };
 
+export const DANDAN_COMMENT_MODE = {
+  Bottom: 4,
+  Top: 5,
+  Scroll: 1,
+  ScrollBottom: 6,
+} as const;
+
+export type DandanCommentMode = (typeof DANDAN_COMMENT_MODE)[keyof typeof DANDAN_COMMENT_MODE];
+
 export type DandanComment = {
   timeInSeconds: number;
   text: string;
   colorHex: string;
-  mode: number;
+  mode: DandanCommentMode;
   user: string;
 };
 
 const BASE_URL = 'https://ddplay-api.930524.xyz/cors/https://api.dandanplay.net';
+const APP_ID = '';
+const APP_SECRET = '';
+
+async function generateSignature(
+  appId: string,
+  timestamp: string,
+  path: string,
+  appSecret: string,
+) {
+  const data = appId + timestamp + path + appSecret;
+  const hashBase64 = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data, {
+    encoding: Crypto.CryptoEncoding.BASE64,
+  });
+  return hashBase64;
+}
 
 async function makeRequest<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
   const url = new URL(`${BASE_URL}${endpoint}`);
@@ -86,7 +112,7 @@ export async function getCommentsByEpisodeId(episodeId: number): Promise<DandanC
     if (!c || !c.p) return null;
     const parts = String(c.p).split(',');
     const timeInSeconds = parseFloat(parts[0] || '0') || 0;
-    const mode = parseInt(parts[1] || '1', 10) || 1;
+    const mode = (parseInt(parts[1] || '1', 10) || 1) as DandanCommentMode;
     const colorNumber = parseInt(parts[2] || '16777215', 10) || 0xffffff;
     const colorHex = `#${colorNumber.toString(16).padStart(6, '0')}`;
     const text = String(c.m ?? '');
