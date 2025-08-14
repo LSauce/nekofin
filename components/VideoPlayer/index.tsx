@@ -21,7 +21,6 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Alert,
-  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -30,7 +29,6 @@ import {
 } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import { ContextMenuButton } from 'react-native-ios-context-menu';
 import Animated, {
   runOnJS,
   useAnimatedStyle,
@@ -39,6 +37,7 @@ import Animated, {
 } from 'react-native-reanimated';
 import * as DropdownMenu from 'zeego/dropdown-menu';
 
+import { DanmakuLayer } from './DanmakuLayer';
 import { DanmakuSettings } from './DanmakuSettings';
 
 const LoadingIndicator = () => {
@@ -353,6 +352,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             isNetwork: true,
             externalSubtitles: [],
           }}
+          progressUpdateInterval={10}
           onVideoProgress={(e) => {
             setProgressInfo(e.nativeEvent);
             setIsBuffering(false);
@@ -377,14 +377,14 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       )}
       {showLoading && <LoadingIndicator />}
 
-      {/* {comments.length > 0 && (
+      {comments.length > 0 && (
         <DanmakuLayer
           currentTimeMs={currentTime}
           isPlaying={isPlaying}
           comments={comments}
           {...danmakuSettings}
         />
-      )} */}
+      )}
 
       <DanmakuSettings
         visible={settingsVisible}
