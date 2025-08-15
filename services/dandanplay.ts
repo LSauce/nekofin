@@ -40,6 +40,7 @@ export const DANDAN_COMMENT_MODE = {
 export type DandanCommentMode = (typeof DANDAN_COMMENT_MODE)[keyof typeof DANDAN_COMMENT_MODE];
 
 export type DandanComment = {
+  id: number;
   timeInSeconds: number;
   text: string;
   colorHex: string;
@@ -121,7 +122,7 @@ export async function getCommentsByEpisodeId(episodeId: number): Promise<DandanC
     // 提取用户信息用于过滤
     const user = parts[3] || '';
 
-    return { timeInSeconds, text, colorHex, mode, user };
+    return { id: c.cid, timeInSeconds, text, colorHex, mode, user };
   };
 
   return (Array.isArray(list) ? list : []).map(normalize).filter(Boolean) as DandanComment[];

@@ -85,6 +85,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [externalCurrentTime, setExternalCurrentTime] = useState(0);
   const [lastSyncTime, setLastSyncTime] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(PLAYBACK_RATE);
+  const [seekKey, setSeekKey] = useState(0);
   const externalTimeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentTime = useMemo(() => {
@@ -241,6 +242,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     player.current?.seekTo(time);
     setExternalCurrentTime(time);
     setLastSyncTime(time);
+    setSeekKey((prev) => prev + 1);
   };
 
   const handleRateChange = (rate: number) => {
@@ -444,6 +446,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           isPlaying={isPlaying}
           comments={comments}
           {...danmakuSettings}
+          seekKey={seekKey}
         />
       )}
 

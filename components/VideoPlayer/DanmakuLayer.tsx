@@ -9,22 +9,15 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import { DanmakuSettingsType } from './DanmakuSettings';
+
 type DanmakuLayerProps = {
   currentTimeMs: number;
   isPlaying: boolean;
   comments: DandanComment[];
+  seekKey?: number;
   density?: number;
-  opacity?: number;
-  speed?: number;
-  fontSize?: number;
-  heightRatio?: number;
-  danmakuFilter?: number;
-  danmakuModeFilter?: number;
-  danmakuDensityLimit?: number;
-  curEpOffset?: number;
-  fontFamily?: string;
-  fontOptions?: string;
-};
+} & Partial<DanmakuSettingsType>;
 
 type ActiveBullet = {
   id: number;
@@ -36,10 +29,14 @@ type ActiveBullet = {
   startOffsetMs: number;
 };
 
+const STROKE_COLOR = '#000';
+const STROKE_WIDTH = 0.5;
+
 export function DanmakuLayer({
   currentTimeMs,
   isPlaying,
   comments,
+  seekKey,
   density = 1,
   opacity = 0.7,
   speed = 200,
@@ -57,6 +54,7 @@ export function DanmakuLayer({
   const lastTimeMsRef = useRef<number>(-1);
   const idRef = useRef<number>(1);
   const scheduledTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
+  const processedCommentsRef = useRef<Set<number>>(new Set());
   const lineHeight = fontSize + 8;
   const rows = Math.max(6, Math.floor(((height * heightRatio) / lineHeight) * density));
 
@@ -375,13 +373,38 @@ export function DanmakuLayer({
   ]);
 
   useEffect(() => {
+    if (seekKey !== undefined) {
+      setActive([]);
+
+      if (scheduledTimeoutsRef.current.length > 0) {
+        for (const t of scheduledTimeoutsRef.current) clearTimeout(t);
+        scheduledTimeoutsRef.current = [];
+      }
+
+      processedCommentsRef.current.clear();
+
+      ensureLanes();
+      for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
+        scrollLaneNextAvailableRef.current[i] = 0;
+      }
+      for (let i = 0; i < topLaneNextAvailableRef.current.length; i++) {
+        topLaneNextAvailableRef.current[i] = 0;
+      }
+      for (let i = 0; i < bottomLaneNextAvailableRef.current.length; i++) {
+        bottomLaneNextAvailableRef.current[i] = 0;
+      }
+
+      lastTimeMsRef.current = -1;
+    }
+  }, [seekKey, ensureLanes]);
+
+  useEffect(() => {
     if (!isPlaying) return;
     if (currentTimeMs === lastTimeMsRef.current) return;
     const prevMs = lastTimeMsRef.current < 0 ? currentTimeMs : lastTimeMsRef.current;
     lastTimeMsRef.current = currentTimeMs;
 
     if (currentTimeMs < prevMs) {
-      // 回退：重置所有行的可用时间
       ensureLanes();
       for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
         scrollLaneNextAvailableRef.current[i] = 0;
@@ -399,7 +422,7 @@ export function DanmakuLayer({
     const slice = filteredComments
       .filter((c) => {
         const tMs = Math.round(c.timeInSeconds * 1000);
-        return tMs > fromMs && tMs <= toMs;
+        return tMs > fromMs && tMs <= toMs && !processedCommentsRef.current.has(c.id);
       })
       .sort((a, b) => a.timeInSeconds - b.timeInSeconds);
     if (slice.length === 0) return;
@@ -409,6 +432,8 @@ export function DanmakuLayer({
       const newActive: ActiveBullet[] = [];
       for (const c of slice) {
         const tMs = Math.round(c.timeInSeconds * 1000);
+        processedCommentsRef.current.add(c.id);
+
         if (c.mode === DANDAN_COMMENT_MODE.Top) {
           const picked = pickTopRow(tMs);
           if (picked) {
@@ -534,6 +559,7 @@ export function DanmakuLayer({
     } else {
       for (const c of slice) {
         const tMs = Math.round(c.timeInSeconds * 1000);
+        processedCommentsRef.current.add(c.id);
         const delay = Math.max(0, tMs - fromMs);
 
         const timeoutId = setTimeout(() => {
@@ -846,7 +872,6 @@ function Bullet({
 
   const textStyle = useMemo(
     () => [
-      styles.text,
       {
         fontSize,
         fontFamily: fontFamily.replace(/"/g, ''),
@@ -859,31 +884,68 @@ function Bullet({
     [fontSize, fontFamily, fontOptions],
   );
 
+  const isTopOrBottom =
+    data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom;
+
   return (
-    <Animated.View
-      style={[
-        style,
-        data.mode === DANDAN_COMMENT_MODE.Bottom || data.mode === DANDAN_COMMENT_MODE.Top
-          ? styles.centerRow
-          : null,
-      ]}
-    >
-      <Text style={[textStyle, { color: data.colorHex }]} numberOfLines={1}>
-        {data.text}
-      </Text>
+    <Animated.View style={[style, isTopOrBottom ? styles.centerRow : null]}>
+      <View style={styles.textContainer}>
+        <Text
+          style={[
+            textStyle,
+            { color: STROKE_COLOR },
+            { position: 'absolute', top: STROKE_WIDTH, left: STROKE_WIDTH },
+          ]}
+          numberOfLines={1}
+        >
+          {data.text}
+        </Text>
+        <Text
+          style={[
+            textStyle,
+            { color: STROKE_COLOR },
+            { position: 'absolute', top: STROKE_WIDTH, left: -STROKE_WIDTH },
+          ]}
+          numberOfLines={1}
+        >
+          {data.text}
+        </Text>
+        <Text
+          style={[
+            textStyle,
+            { color: STROKE_COLOR },
+            { position: 'absolute', top: -STROKE_WIDTH, left: STROKE_WIDTH },
+          ]}
+          numberOfLines={1}
+        >
+          {data.text}
+        </Text>
+        <Text
+          style={[
+            textStyle,
+            { color: STROKE_COLOR },
+            { position: 'absolute', top: -STROKE_WIDTH, left: -STROKE_WIDTH },
+          ]}
+          numberOfLines={1}
+        >
+          {data.text}
+        </Text>
+
+        <Text style={[textStyle, { color: data.colorHex }]} numberOfLines={1}>
+          {data.text}
+        </Text>
+      </View>
     </Animated.View>
   );
 }
 
 const styles = StyleSheet.create({
-  text: {
-    textShadowColor: 'rgba(0,0,0,0.8)',
-    textShadowOffset: { width: 1, height: 1 },
-    textShadowRadius: 3,
-  },
   centerRow: {
     left: 0,
     width: '100%',
+    alignItems: 'center',
+  },
+  textContainer: {
     alignItems: 'center',
   },
 });
