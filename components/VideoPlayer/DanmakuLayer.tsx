@@ -38,7 +38,7 @@ export function DanmakuLayer({
   comments,
   seekKey,
   density = 1,
-  opacity = 0.7,
+  opacity = 0.8,
   speed = 200,
   fontSize = 18,
   heightRatio = 0.9,
