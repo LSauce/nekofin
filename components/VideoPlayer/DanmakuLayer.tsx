@@ -67,6 +67,7 @@ export function DanmakuLayer({
   }, [rows]);
 
   const rowMinGapPx = 50;
+  const MAX_DELAY_MS = 200;
   const scrollLaneNextAvailableRef = useRef<number[]>([]);
   const topLaneNextAvailableRef = useRef<number[]>([]);
   const bottomLaneNextAvailableRef = useRef<number[]>([]);
@@ -106,8 +107,53 @@ export function DanmakuLayer({
     [fontSize, width],
   );
 
+  const getEarliestScrollRow = useCallback((): { rowIndex: number; availMs: number } | null => {
+    ensureLanes();
+    let idx = -1;
+    let val = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < layout.scrollRows; i++) {
+      const a = scrollLaneNextAvailableRef.current[i] ?? 0;
+      if (a < val) {
+        val = a;
+        idx = i;
+      }
+    }
+    return idx === -1 ? null : { rowIndex: idx, availMs: val };
+  }, [ensureLanes, layout.scrollRows]);
+
+  const getEarliestTopRow = useCallback((): { rowIndex: number; availMs: number } | null => {
+    ensureLanes();
+    let idx = -1;
+    let val = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < layout.topRows; i++) {
+      const a = topLaneNextAvailableRef.current[i] ?? 0;
+      if (a < val) {
+        val = a;
+        idx = i;
+      }
+    }
+    return idx === -1 ? null : { rowIndex: idx, availMs: val };
+  }, [ensureLanes, layout.topRows]);
+
+  const getEarliestBottomRow = useCallback((): { rowIndex: number; availMs: number } | null => {
+    ensureLanes();
+    let idx = -1;
+    let val = Number.MAX_SAFE_INTEGER;
+    for (let i = 0; i < layout.bottomRows; i++) {
+      const a = bottomLaneNextAvailableRef.current[i] ?? 0;
+      if (a < val) {
+        val = a;
+        idx = i;
+      }
+    }
+    return idx === -1 ? null : { rowIndex: idx, availMs: val };
+  }, [ensureLanes, layout.bottomRows]);
+
   const pickScrollRow = useCallback(
-    (tMs: number, text: string): { rowIndex: number; nextAvailableMs: number } | null => {
+    (
+      tMs: number,
+      text: string,
+    ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const v = Math.max(50, speed);
       const textWidth = estimateTextWidth(text);
@@ -122,14 +168,26 @@ export function DanmakuLayer({
           chosen = i;
         }
       }
-      if (chosen === -1) return null;
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs };
+      if (chosen === -1) {
+        const earliest = getEarliestScrollRow();
+        if (!earliest) return null;
+        const waitMs = earliest.availMs - tMs;
+        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
+          return {
+            rowIndex: earliest.rowIndex,
+            nextAvailableMs: earliest.availMs + deltaMs,
+            scheduledMs: earliest.availMs,
+          };
+        }
+        return null;
+      }
+      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
     },
-    [ensureLanes, layout.scrollRows, estimateTextWidth, speed],
+    [ensureLanes, layout.scrollRows, estimateTextWidth, speed, getEarliestScrollRow],
   );
 
   const pickTopRow = useCallback(
-    (tMs: number): { rowIndex: number; nextAvailableMs: number } | null => {
+    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
       let chosen = -1;
@@ -141,14 +199,26 @@ export function DanmakuLayer({
           chosen = i;
         }
       }
-      if (chosen === -1) return null;
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs };
+      if (chosen === -1) {
+        const earliest = getEarliestTopRow();
+        if (!earliest) return null;
+        const waitMs = earliest.availMs - tMs;
+        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
+          return {
+            rowIndex: earliest.rowIndex,
+            nextAvailableMs: earliest.availMs + deltaMs,
+            scheduledMs: earliest.availMs,
+          };
+        }
+        return null;
+      }
+      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
     },
-    [ensureLanes, layout.topRows],
+    [ensureLanes, layout.topRows, getEarliestTopRow],
   );
 
   const pickBottomRow = useCallback(
-    (tMs: number): { rowIndex: number; nextAvailableMs: number } | null => {
+    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
       let chosen = -1;
@@ -160,10 +230,22 @@ export function DanmakuLayer({
           chosen = i;
         }
       }
-      if (chosen === -1) return null;
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs };
+      if (chosen === -1) {
+        const earliest = getEarliestBottomRow();
+        if (!earliest) return null;
+        const waitMs = earliest.availMs - tMs;
+        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
+          return {
+            rowIndex: earliest.rowIndex,
+            nextAvailableMs: earliest.availMs + deltaMs,
+            scheduledMs: earliest.availMs,
+          };
+        }
+        return null;
+      }
+      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
     },
-    [ensureLanes, layout.bottomRows],
+    [ensureLanes, layout.bottomRows, getEarliestBottomRow],
   );
 
   // 弹幕过滤和密度控制
@@ -321,10 +403,6 @@ export function DanmakuLayer({
       .sort((a, b) => a.timeInSeconds - b.timeInSeconds);
     if (slice.length === 0) return;
 
-    let countScroll = 0;
-    let countTop = 0;
-    let countBottom = 0;
-
     const windowMs = toMs - fromMs;
     if (windowMs > 300) {
       const newActive: ActiveBullet[] = [];
@@ -333,51 +411,105 @@ export function DanmakuLayer({
         if (c.mode === DANDAN_COMMENT_MODE.Top) {
           const picked = pickTopRow(tMs);
           if (picked) {
-            const { rowIndex, nextAvailableMs } = picked;
+            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
             topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-            newActive.push({
-              id: idRef.current++,
-              text: c.text,
-              colorHex: c.colorHex,
-              top: rowIndex * lineHeight,
-              durationMs: 4000,
-              mode: DANDAN_COMMENT_MODE.Top,
-            });
+            if (scheduledMs === tMs) {
+              newActive.push({
+                id: idRef.current++,
+                text: c.text,
+                colorHex: c.colorHex,
+                top: rowIndex * lineHeight,
+                durationMs: 4000,
+                mode: DANDAN_COMMENT_MODE.Top,
+              });
+            } else {
+              const fireDelay = Math.max(0, scheduledMs - fromMs);
+              const tid = setTimeout(() => {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: rowIndex * lineHeight,
+                    durationMs: 4000,
+                    mode: DANDAN_COMMENT_MODE.Top,
+                  },
+                ]);
+              }, fireDelay);
+              scheduledTimeoutsRef.current.push(tid);
+            }
           }
           continue;
         }
         if (c.mode === DANDAN_COMMENT_MODE.Bottom) {
           const picked = pickBottomRow(tMs);
           if (picked) {
-            const { rowIndex, nextAvailableMs } = picked;
+            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
             bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
             const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
-            newActive.push({
-              id: idRef.current++,
-              text: c.text,
-              colorHex: c.colorHex,
-              top: bottomStart + rowIndex * lineHeight,
-              durationMs: 4000,
-              mode: DANDAN_COMMENT_MODE.Bottom,
-            });
+            if (scheduledMs === tMs) {
+              newActive.push({
+                id: idRef.current++,
+                text: c.text,
+                colorHex: c.colorHex,
+                top: bottomStart + rowIndex * lineHeight,
+                durationMs: 4000,
+                mode: DANDAN_COMMENT_MODE.Bottom,
+              });
+            } else {
+              const fireDelay = Math.max(0, scheduledMs - fromMs);
+              const tid = setTimeout(() => {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: bottomStart + rowIndex * lineHeight,
+                    durationMs: 4000,
+                    mode: DANDAN_COMMENT_MODE.Bottom,
+                  },
+                ]);
+              }, fireDelay);
+              scheduledTimeoutsRef.current.push(tid);
+            }
           }
           continue;
         }
         if (c.mode === DANDAN_COMMENT_MODE.Scroll || c.mode === DANDAN_COMMENT_MODE.ScrollBottom) {
           const picked = pickScrollRow(tMs, c.text);
           if (picked) {
-            const { rowIndex, nextAvailableMs } = picked;
+            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
             scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
             const scrollStart = layout.topRows * lineHeight;
             const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
-            newActive.push({
-              id: idRef.current++,
-              text: c.text,
-              colorHex: c.colorHex,
-              top: scrollStart + rowIndex * lineHeight,
-              durationMs,
-              mode: c.mode,
-            });
+            if (scheduledMs === tMs) {
+              newActive.push({
+                id: idRef.current++,
+                text: c.text,
+                colorHex: c.colorHex,
+                top: scrollStart + rowIndex * lineHeight,
+                durationMs,
+                mode: c.mode,
+              });
+            } else {
+              const fireDelay = Math.max(0, scheduledMs - fromMs);
+              const tid = setTimeout(() => {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: scrollStart + rowIndex * lineHeight,
+                    durationMs,
+                    mode: c.mode,
+                  },
+                ]);
+              }, fireDelay);
+              scheduledTimeoutsRef.current.push(tid);
+            }
           }
         }
         if (newActive.length >= rows) break;
@@ -394,19 +526,37 @@ export function DanmakuLayer({
           if (c.mode === DANDAN_COMMENT_MODE.Top) {
             const picked = pickTopRow(tMs);
             if (picked) {
-              const { rowIndex, nextAvailableMs } = picked;
+              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
               topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-              setActive((prev) => [
-                ...prev,
-                {
-                  id: idRef.current++,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Top,
-                },
-              ]);
+              const extraDelay = Math.max(0, scheduledMs - tMs);
+              if (extraDelay === 0) {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: rowIndex * lineHeight,
+                    durationMs: 4000,
+                    mode: DANDAN_COMMENT_MODE.Top,
+                  },
+                ]);
+              } else {
+                const tid2 = setTimeout(() => {
+                  setActive((prev) => [
+                    ...prev,
+                    {
+                      id: idRef.current++,
+                      text: c.text,
+                      colorHex: c.colorHex,
+                      top: rowIndex * lineHeight,
+                      durationMs: 4000,
+                      mode: DANDAN_COMMENT_MODE.Top,
+                    },
+                  ]);
+                }, extraDelay);
+                scheduledTimeoutsRef.current.push(tid2);
+              }
             }
             return;
           }
@@ -414,20 +564,38 @@ export function DanmakuLayer({
           if (c.mode === DANDAN_COMMENT_MODE.Bottom) {
             const picked = pickBottomRow(tMs);
             if (picked) {
-              const { rowIndex, nextAvailableMs } = picked;
+              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
               bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
               const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
-              setActive((prev) => [
-                ...prev,
-                {
-                  id: idRef.current++,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: bottomStart + rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Bottom,
-                },
-              ]);
+              const extraDelay = Math.max(0, scheduledMs - tMs);
+              if (extraDelay === 0) {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: bottomStart + rowIndex * lineHeight,
+                    durationMs: 4000,
+                    mode: DANDAN_COMMENT_MODE.Bottom,
+                  },
+                ]);
+              } else {
+                const tid2 = setTimeout(() => {
+                  setActive((prev) => [
+                    ...prev,
+                    {
+                      id: idRef.current++,
+                      text: c.text,
+                      colorHex: c.colorHex,
+                      top: bottomStart + rowIndex * lineHeight,
+                      durationMs: 4000,
+                      mode: DANDAN_COMMENT_MODE.Bottom,
+                    },
+                  ]);
+                }, extraDelay);
+                scheduledTimeoutsRef.current.push(tid2);
+              }
             }
             return;
           }
@@ -438,21 +606,39 @@ export function DanmakuLayer({
           ) {
             const picked = pickScrollRow(tMs, c.text);
             if (picked) {
-              const { rowIndex, nextAvailableMs } = picked;
+              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
               scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
               const scrollStart = layout.topRows * lineHeight;
               const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
-              setActive((prev) => [
-                ...prev,
-                {
-                  id: idRef.current++,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: scrollStart + rowIndex * lineHeight,
-                  durationMs,
-                  mode: c.mode,
-                },
-              ]);
+              const extraDelay = Math.max(0, scheduledMs - tMs);
+              if (extraDelay === 0) {
+                setActive((prev) => [
+                  ...prev,
+                  {
+                    id: idRef.current++,
+                    text: c.text,
+                    colorHex: c.colorHex,
+                    top: scrollStart + rowIndex * lineHeight,
+                    durationMs,
+                    mode: c.mode,
+                  },
+                ]);
+              } else {
+                const tid2 = setTimeout(() => {
+                  setActive((prev) => [
+                    ...prev,
+                    {
+                      id: idRef.current++,
+                      text: c.text,
+                      colorHex: c.colorHex,
+                      top: scrollStart + rowIndex * lineHeight,
+                      durationMs,
+                      mode: c.mode,
+                    },
+                  ]);
+                }, extraDelay);
+                scheduledTimeoutsRef.current.push(tid2);
+              }
             }
           }
         }, delay);

@@ -352,7 +352,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             isNetwork: true,
             externalSubtitles: [],
           }}
-          progressUpdateInterval={10}
+          progressUpdateInterval={500}
           onVideoProgress={(e) => {
             setProgressInfo(e.nativeEvent);
             setIsBuffering(false);
