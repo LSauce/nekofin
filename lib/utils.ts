@@ -1,4 +1,6 @@
+import { getCommentsByEpisodeId, searchAnimesByKeyword } from '@/services/dandanplay';
 import { Api } from '@jellyfin/sdk';
+import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api';
 import uuid from 'react-native-uuid';
@@ -92,4 +94,20 @@ export const getDeviceId = () => {
     return newDeviceId;
   }
   return deviceId;
+};
+
+export const getCommentsByItem = async (item: BaseItemDto) => {
+  const seriesName = item.SeriesName;
+  const seasonNumber = item.ParentIndexNumber ?? 1;
+  const episodeNumber = item.IndexNumber;
+
+  const animes = await searchAnimesByKeyword(seriesName ?? '');
+  console.log(animes);
+  const anime = animes[seasonNumber - 1];
+  console.log(anime);
+  if (anime && episodeNumber) {
+    const comments = await getCommentsByEpisodeId(anime.episodes[episodeNumber - 1].episodeId);
+    console.log(comments);
+    return comments;
+  }
 };

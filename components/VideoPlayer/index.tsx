@@ -1,7 +1,7 @@
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
-import { getStreamInfo } from '@/lib/utils';
+import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
 import { VlcPlayerView } from '@/modules';
 import type { ProgressUpdatePayload, VlcPlayerViewRef } from '@/modules/VlcPlayer.types';
 import {
@@ -366,20 +366,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       }
 
       try {
-        const seriesName = itemDetail.data.SeriesName;
-        const seasonNumber = itemDetail.data.ParentIndexNumber;
-        const episodeNumber = itemDetail.data.IndexNumber;
-
-        const animes = await searchAnimesByKeyword(seriesName ?? '');
-        const anime = animes[1];
-        console.log(anime);
-        if (anime && episodeNumber) {
-          console.log(anime.episodes[episodeNumber - 13].episodeId);
-          const comments = await getCommentsByEpisodeId(
-            anime.episodes[episodeNumber - 13].episodeId,
-          );
-          setComments(comments);
-        }
+        const comments = await getCommentsByItem(itemDetail.data);
+        setComments(comments ?? []);
       } catch (error) {
         console.warn('Failed to load danmaku comments:', error);
       }
@@ -468,27 +456,25 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         </BlurView>
       </Animated.View>
 
-      {comments.length > 0 && (
-        <Animated.View
-          style={[styles.danmakuButton, fadeAnimatedStyle]}
-          pointerEvents={showControls ? 'auto' : 'none'}
-        >
-          <BlurView tint="dark" intensity={100} style={styles.danmakuButtonBlur}>
-            <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
-              <DropdownMenu.Trigger asChild>
-                <TouchableOpacity style={styles.danmakuButtonTouchable}>
-                  <AntDesign name="setting" size={20} color="white" />
-                </TouchableOpacity>
-              </DropdownMenu.Trigger>
-              <DropdownMenu.Content>
-                <DropdownMenu.Item key="danmaku-settings" onSelect={handleDanmakuSettingsPress}>
-                  <DropdownMenu.ItemTitle>弹幕设置</DropdownMenu.ItemTitle>
-                </DropdownMenu.Item>
-              </DropdownMenu.Content>
-            </DropdownMenu.Root>
-          </BlurView>
-        </Animated.View>
-      )}
+      <Animated.View
+        style={[styles.danmakuButton, fadeAnimatedStyle]}
+        pointerEvents={showControls ? 'auto' : 'none'}
+      >
+        <BlurView tint="dark" intensity={100} style={styles.danmakuButtonBlur}>
+          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
+            <DropdownMenu.Trigger asChild>
+              <TouchableOpacity style={styles.danmakuButtonTouchable}>
+                <AntDesign name="setting" size={20} color="white" />
+              </TouchableOpacity>
+            </DropdownMenu.Trigger>
+            <DropdownMenu.Content>
+              <DropdownMenu.Item key="danmaku-settings" onSelect={handleDanmakuSettingsPress}>
+                <DropdownMenu.ItemTitle>弹幕设置</DropdownMenu.ItemTitle>
+              </DropdownMenu.Item>
+            </DropdownMenu.Content>
+          </DropdownMenu.Root>
+        </BlurView>
+      </Animated.View>
 
       {!!formattedTitle && (
         <Animated.View style={[styles.titleContainer, fadeAnimatedStyle]} pointerEvents="none">

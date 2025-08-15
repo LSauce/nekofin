@@ -1,9 +1,9 @@
 import { BottomSheetBackdropModal } from '@/components/BottomSheetBackdropModal';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
   createApiFromServerInfo,
-  getItemMediaSources,
   getLatestItems,
   getLatestItemsByFolder,
   getMediaFolders,
@@ -16,7 +16,7 @@ import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useMemo, useRef } from 'react';
 import {
   Dimensions,
   FlatList,
@@ -28,6 +28,7 @@ import {
 } from 'react-native';
 
 export default function HomeScreen() {
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
 
@@ -121,7 +122,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor: '#fff' }}>
+    <SafeAreaView style={{ flex: 1, backgroundColor }}>
       <View style={styles.header}>
         <Text style={styles.title}>首页</Text>
         <TouchableOpacity
@@ -182,8 +183,8 @@ export default function HomeScreen() {
         )}
       />
 
-      <BottomSheetBackdropModal ref={BottomSheetModalRef}>
-        <BottomSheetView style={styles.serverListContainer}>
+      <BottomSheetBackdropModal ref={BottomSheetModalRef} backgroundStyle={{ backgroundColor }}>
+        <BottomSheetView style={[styles.serverListContainer, { backgroundColor }]}>
           <Text style={styles.serverListTitle}>选择服务器</Text>
           {servers.map((server) => (
             <TouchableOpacity
@@ -211,85 +212,47 @@ function FeaturedSection({
   mediaFolders: BaseItemDto[];
   currentServer?: MediaServerInfo | null;
 }) {
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const featuredItems = mediaFolders?.slice(0, 2) || [];
 
   if (featuredItems.length === 0) {
     return (
       <View style={styles.featuredSection}>
         <View style={styles.featuredContainer}>
-          <FeaturedCard
-            title="暂无内容"
-            subtitle="请选择服务器"
-            duration="0分钟"
-            progress={0}
-            imageUrl={null}
-          />
-          <FeaturedCard
-            title="暂无内容"
-            subtitle="请选择服务器"
-            duration="0分钟"
-            progress={0}
-            imageUrl={null}
-          />
+          <FeaturedCard title="暂无内容" imageUrl={null} />
+          <FeaturedCard title="暂无内容" imageUrl={null} />
         </View>
       </View>
     );
   }
 
   return (
-    <View style={styles.featuredSection}>
+    <View style={[styles.featuredSection, { backgroundColor }]}>
       <View style={styles.featuredContainer}>
         {featuredItems.map((item, index) => (
           <FeaturedCard
             key={item.Id || index}
             title={item.Name || '未知标题'}
-            subtitle={item.CollectionType || '未知类型'}
-            duration={`${Math.floor((item.RunTimeTicks || 0) / 600000000)}分钟`}
-            progress={0}
             imageUrl={
               item.ImageTags?.Primary
                 ? `${currentServer?.address}/Items/${item.Id}/Images/Primary?maxWidth=400`
                 : null
             }
-            item={item}
-            currentServer={currentServer}
           />
         ))}
-        {featuredItems.length === 1 && (
-          <FeaturedCard
-            title="暂无内容"
-            subtitle="请选择服务器"
-            duration="0分钟"
-            progress={0}
-            imageUrl={null}
-          />
-        )}
+        {featuredItems.length === 1 && <FeaturedCard title="暂无内容" imageUrl={null} />}
       </View>
     </View>
   );
 }
 
-function FeaturedCard({
-  title,
-  subtitle,
-  duration,
-  progress,
-  imageUrl,
-  item,
-  currentServer,
-}: {
-  title: string;
-  subtitle: string;
-  duration: string;
-  progress: number;
-  imageUrl: string | null;
-  item?: BaseItemDto;
-  currentServer?: MediaServerInfo | null;
-}) {
+function FeaturedCard({ title, imageUrl }: { title: string; imageUrl: string | null }) {
   const router = useRouter();
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   return (
-    <TouchableOpacity style={styles.featuredCard}>
+    <TouchableOpacity style={[styles.featuredCard, { backgroundColor }]}>
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.featuredImage} contentFit="cover" />
       ) : (
@@ -297,18 +260,9 @@ function FeaturedCard({
           <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
         </View>
       )}
-      <View style={styles.featuredOverlay}>
-        <View style={styles.progressBar}>
-          <View style={[styles.progressFill, { width: `${progress * 100}%` }]} />
-        </View>
-        <Text style={styles.featuredDuration}>{duration}</Text>
-      </View>
       <View style={styles.featuredInfo}>
-        <Text style={styles.featuredTitle} numberOfLines={1}>
+        <Text style={[styles.featuredTitle, { color: textColor }]} numberOfLines={1}>
           {title}
-        </Text>
-        <Text style={styles.featuredSubtitle} numberOfLines={1}>
-          {subtitle}
         </Text>
       </View>
     </TouchableOpacity>
@@ -328,11 +282,14 @@ function Section({
   isLoading: boolean;
   currentServer?: MediaServerInfo | null;
 }) {
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+
   if (isLoading) {
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
           <TouchableOpacity onPress={onViewAll}>
             <Text style={styles.viewAllText}>查看所有 {'>'}</Text>
           </TouchableOpacity>
@@ -348,7 +305,7 @@ function Section({
     return (
       <View style={styles.section}>
         <View style={styles.sectionHeader}>
-          <Text style={styles.sectionTitle}>{title}</Text>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
           <TouchableOpacity onPress={onViewAll}>
             <Text style={styles.viewAllText}>查看所有 {'>'}</Text>
           </TouchableOpacity>
@@ -361,9 +318,9 @@ function Section({
   }
 
   return (
-    <View style={styles.section}>
+    <View style={[styles.section, { backgroundColor }]}>
       <View style={styles.sectionHeader}>
-        <Text style={styles.sectionTitle}>{title}</Text>
+        <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
         <TouchableOpacity onPress={onViewAll}>
           <Text style={styles.viewAllText}>查看所有 {'>'}</Text>
         </TouchableOpacity>
@@ -392,8 +349,10 @@ function MediaCard({
   onPress?: () => void;
   currentServer?: MediaServerInfo | null;
 }) {
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
   const width = Dimensions.get('window').width * 0.5;
+  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   const imageUrl = useMemo(() => {
     if (item.Type === 'Episode') {
@@ -427,7 +386,7 @@ function MediaCard({
   };
 
   return (
-    <TouchableOpacity style={[styles.card, { width }]} onPress={handlePress}>
+    <TouchableOpacity style={[styles.card, { width, backgroundColor }]} onPress={handlePress}>
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.cover} contentFit="cover" />
       ) : (
@@ -435,10 +394,10 @@ function MediaCard({
           <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
         </View>
       )}
-      <Text style={styles.cardTitle} numberOfLines={1}>
+      <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
         {item.SeriesName || item.Name || '未知标题'}
       </Text>
-      <Text style={styles.subtitle} numberOfLines={1}>
+      <Text style={[styles.subtitle, { color: textColor }]} numberOfLines={1}>
         {getSubtitle()}
       </Text>
     </TouchableOpacity>
@@ -518,6 +477,7 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: 'bold',
     marginBottom: 2,
+    textAlign: 'center',
   },
   featuredSubtitle: {
     fontSize: 12,
