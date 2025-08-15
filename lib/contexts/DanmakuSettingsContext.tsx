@@ -1,4 +1,6 @@
-import React, { createContext, useContext, useMemo, useState } from 'react';
+import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
+
+import { storage } from '../storage';
 
 export type DanmakuSettingsType = {
   opacity: number;
@@ -19,7 +21,7 @@ type DanmakuSettingsContextValue = {
 };
 
 const defaultSettings: DanmakuSettingsType = {
-  opacity: 0.7,
+  opacity: 0.8,
   speed: 200,
   fontSize: 18,
   heightRatio: 0.9,
@@ -34,9 +36,16 @@ const defaultSettings: DanmakuSettingsType = {
 const DanmakuSettingsContext = createContext<DanmakuSettingsContextValue | null>(null);
 
 export function DanmakuSettingsProvider({ children }: { children: React.ReactNode }) {
-  const [settings, setSettings] = useState<DanmakuSettingsType>(defaultSettings);
+  const [settings, setSettings] = useState<DanmakuSettingsType>(() => {
+    const savedSettings = storage.getString('danmakuSettings');
+    return savedSettings ? JSON.parse(savedSettings) : defaultSettings;
+  });
 
   const value = useMemo(() => ({ settings, setSettings }), [settings]);
+
+  useEffect(() => {
+    storage.set('danmakuSettings', JSON.stringify(settings));
+  }, [settings]);
 
   return (
     <DanmakuSettingsContext.Provider value={value}>{children}</DanmakuSettingsContext.Provider>
