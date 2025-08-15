@@ -55,8 +55,54 @@ export function DanmakuLayer({
   const idRef = useRef<number>(1);
   const scheduledTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const processedCommentsRef = useRef<Set<number>>(new Set());
+  const widthCacheRef = useRef<Map<string, number>>(new Map());
+  const pendingActiveRef = useRef<ActiveBullet[]>([]);
+  const flushScheduledRef = useRef<boolean>(false);
+  const scheduledTasksRef = useRef<{ fireAt: number; fn: () => void }[]>([]);
+  const schedulerIntervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
   const lineHeight = fontSize + 8;
   const rows = Math.max(6, Math.floor(((height * heightRatio) / lineHeight) * density));
+
+  const enqueueActive = useCallback((bullet: ActiveBullet) => {
+    pendingActiveRef.current.push(bullet);
+    if (!flushScheduledRef.current) {
+      flushScheduledRef.current = true;
+      setTimeout(() => {
+        if (pendingActiveRef.current.length > 0) {
+          setActive((prev) => [...prev, ...pendingActiveRef.current]);
+          pendingActiveRef.current = [];
+        }
+        flushScheduledRef.current = false;
+      }, 0);
+    }
+  }, []);
+
+  const ensureScheduler = useCallback(() => {
+    if (schedulerIntervalRef.current) return;
+    schedulerIntervalRef.current = setInterval(() => {
+      const now = Date.now();
+      if (scheduledTasksRef.current.length === 0) {
+        if (schedulerIntervalRef.current) {
+          clearInterval(schedulerIntervalRef.current);
+          schedulerIntervalRef.current = null;
+        }
+        return;
+      }
+      const due = scheduledTasksRef.current.filter((t) => t.fireAt <= now);
+      if (due.length > 0) {
+        scheduledTasksRef.current = scheduledTasksRef.current.filter((t) => t.fireAt > now);
+        for (const t of due) t.fn();
+      }
+    }, 50);
+  }, []);
+
+  const scheduleTask = useCallback(
+    (delayMs: number, fn: () => void) => {
+      scheduledTasksRef.current.push({ fireAt: Date.now() + Math.max(0, delayMs), fn });
+      ensureScheduler();
+    },
+    [ensureScheduler],
+  );
 
   const layout = useMemo(() => {
     const topRows = Math.max(1, Math.floor(rows * 0.2));
@@ -85,6 +131,9 @@ export function DanmakuLayer({
 
   const estimateTextWidth = useCallback(
     (text: string): number => {
+      const key = `${fontSize}|${text}`;
+      const cached = (widthCacheRef.current as Map<string, number>).get(key);
+      if (cached != null) return cached;
       let cjkCount = 0;
       let otherCount = 0;
       for (let i = 0; i < text.length; i++) {
@@ -101,7 +150,10 @@ export function DanmakuLayer({
       }
       const cjkWidth = cjkCount * fontSize;
       const otherWidth = otherCount * fontSize * 0.6;
-      return Math.min(width * 2, cjkWidth + otherWidth + 16);
+      const val = Math.min(width * 2, cjkWidth + otherWidth + 16);
+      if (widthCacheRef.current.size > 10000) widthCacheRef.current.clear();
+      widthCacheRef.current.set(key, val);
+      return val;
     },
     [fontSize, width],
   );
@@ -380,6 +432,11 @@ export function DanmakuLayer({
         for (const t of scheduledTimeoutsRef.current) clearTimeout(t);
         scheduledTimeoutsRef.current = [];
       }
+      if (schedulerIntervalRef.current) {
+        clearInterval(schedulerIntervalRef.current);
+        schedulerIntervalRef.current = null;
+      }
+      scheduledTasksRef.current = [];
 
       processedCommentsRef.current.clear();
 
@@ -454,21 +511,17 @@ export function DanmakuLayer({
               }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
-              const tid = setTimeout(() => {
-                setActive((prev) => [
-                  ...prev,
-                  {
-                    id: idRef.current++,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: rowIndex * lineHeight,
-                    durationMs: 4000,
-                    mode: DANDAN_COMMENT_MODE.Top,
-                    startOffsetMs: 0,
-                  },
-                ]);
-              }, fireDelay);
-              scheduledTimeoutsRef.current.push(tid);
+              scheduleTask(fireDelay, () => {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Top,
+                  startOffsetMs: 0,
+                });
+              });
             }
           }
           continue;
@@ -494,21 +547,17 @@ export function DanmakuLayer({
               }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
-              const tid = setTimeout(() => {
-                setActive((prev) => [
-                  ...prev,
-                  {
-                    id: idRef.current++,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: bottomStart + rowIndex * lineHeight,
-                    durationMs: 4000,
-                    mode: DANDAN_COMMENT_MODE.Bottom,
-                    startOffsetMs: 0,
-                  },
-                ]);
-              }, fireDelay);
-              scheduledTimeoutsRef.current.push(tid);
+              scheduleTask(fireDelay, () => {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: bottomStart + rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Bottom,
+                  startOffsetMs: 0,
+                });
+              });
             }
           }
           continue;
@@ -535,34 +584,32 @@ export function DanmakuLayer({
               }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
-              const tid = setTimeout(() => {
-                setActive((prev) => [
-                  ...prev,
-                  {
-                    id: idRef.current++,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: scrollStart + rowIndex * lineHeight,
-                    durationMs,
-                    mode: c.mode,
-                    startOffsetMs: 0,
-                  },
-                ]);
-              }, fireDelay);
-              scheduledTimeoutsRef.current.push(tid);
+              scheduleTask(fireDelay, () => {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: scrollStart + rowIndex * lineHeight,
+                  durationMs,
+                  mode: c.mode,
+                  startOffsetMs: 0,
+                });
+              });
             }
           }
         }
         if (newActive.length >= rows) break;
       }
-      if (newActive.length > 0) setActive((prev) => [...prev, ...newActive]);
+      if (newActive.length > 0) {
+        for (const b of newActive) enqueueActive(b);
+      }
     } else {
       for (const c of slice) {
         const tMs = Math.round(c.timeInSeconds * 1000);
         processedCommentsRef.current.add(c.id);
         const delay = Math.max(0, tMs - fromMs);
 
-        const timeoutId = setTimeout(() => {
+        scheduleTask(delay, () => {
           if (!isPlaying) return;
 
           if (c.mode === DANDAN_COMMENT_MODE.Top) {
@@ -572,9 +619,18 @@ export function DanmakuLayer({
               topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
-                setActive((prev) => [
-                  ...prev,
-                  {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Top,
+                  startOffsetMs: 0,
+                });
+              } else {
+                scheduleTask(extraDelay, () => {
+                  enqueueActive({
                     id: idRef.current++,
                     text: c.text,
                     colorHex: c.colorHex,
@@ -582,24 +638,8 @@ export function DanmakuLayer({
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Top,
                     startOffsetMs: 0,
-                  },
-                ]);
-              } else {
-                const tid2 = setTimeout(() => {
-                  setActive((prev) => [
-                    ...prev,
-                    {
-                      id: idRef.current++,
-                      text: c.text,
-                      colorHex: c.colorHex,
-                      top: rowIndex * lineHeight,
-                      durationMs: 4000,
-                      mode: DANDAN_COMMENT_MODE.Top,
-                      startOffsetMs: 0,
-                    },
-                  ]);
-                }, extraDelay);
-                scheduledTimeoutsRef.current.push(tid2);
+                  });
+                });
               }
             }
             return;
@@ -613,9 +653,18 @@ export function DanmakuLayer({
               const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
-                setActive((prev) => [
-                  ...prev,
-                  {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: bottomStart + rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Bottom,
+                  startOffsetMs: 0,
+                });
+              } else {
+                scheduleTask(extraDelay, () => {
+                  enqueueActive({
                     id: idRef.current++,
                     text: c.text,
                     colorHex: c.colorHex,
@@ -623,24 +672,8 @@ export function DanmakuLayer({
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Bottom,
                     startOffsetMs: 0,
-                  },
-                ]);
-              } else {
-                const tid2 = setTimeout(() => {
-                  setActive((prev) => [
-                    ...prev,
-                    {
-                      id: idRef.current++,
-                      text: c.text,
-                      colorHex: c.colorHex,
-                      top: bottomStart + rowIndex * lineHeight,
-                      durationMs: 4000,
-                      mode: DANDAN_COMMENT_MODE.Bottom,
-                      startOffsetMs: 0,
-                    },
-                  ]);
-                }, extraDelay);
-                scheduledTimeoutsRef.current.push(tid2);
+                  });
+                });
               }
             }
             return;
@@ -658,9 +691,18 @@ export function DanmakuLayer({
               const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
-                setActive((prev) => [
-                  ...prev,
-                  {
+                enqueueActive({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: scrollStart + rowIndex * lineHeight,
+                  durationMs,
+                  mode: c.mode,
+                  startOffsetMs: 0,
+                });
+              } else {
+                scheduleTask(extraDelay, () => {
+                  enqueueActive({
                     id: idRef.current++,
                     text: c.text,
                     colorHex: c.colorHex,
@@ -668,30 +710,12 @@ export function DanmakuLayer({
                     durationMs,
                     mode: c.mode,
                     startOffsetMs: 0,
-                  },
-                ]);
-              } else {
-                const tid2 = setTimeout(() => {
-                  setActive((prev) => [
-                    ...prev,
-                    {
-                      id: idRef.current++,
-                      text: c.text,
-                      colorHex: c.colorHex,
-                      top: scrollStart + rowIndex * lineHeight,
-                      durationMs,
-                      mode: c.mode,
-                      startOffsetMs: 0,
-                    },
-                  ]);
-                }, extraDelay);
-                scheduledTimeoutsRef.current.push(tid2);
+                  });
+                });
               }
             }
           }
-        }, delay);
-
-        scheduledTimeoutsRef.current.push(timeoutId);
+        });
       }
     }
 
@@ -700,6 +724,11 @@ export function DanmakuLayer({
         for (const t of scheduledTimeoutsRef.current) clearTimeout(t);
         scheduledTimeoutsRef.current = [];
       }
+      if (schedulerIntervalRef.current) {
+        clearInterval(schedulerIntervalRef.current);
+        schedulerIntervalRef.current = null;
+      }
+      scheduledTasksRef.current = [];
     };
   }, [
     currentTimeMs,
@@ -716,6 +745,8 @@ export function DanmakuLayer({
     pickTopRow,
     pickBottomRow,
     pickScrollRow,
+    enqueueActive,
+    scheduleTask,
   ]);
 
   const handleExpire = useCallback((id: number) => {
@@ -723,9 +754,9 @@ export function DanmakuLayer({
   }, []);
 
   return (
-    <View style={[StyleSheet.absoluteFill, { opacity }]} pointerEvents="none">
+    <View style={[StyleSheet.absoluteFill, { opacity, overflow: 'hidden' }]} pointerEvents="none">
       {active.map((b) => (
-        <Bullet
+        <MemoBullet
           key={b.id}
           width={width}
           data={b}
@@ -888,7 +919,10 @@ function Bullet({
     data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom;
 
   return (
-    <Animated.View style={[style, isTopOrBottom ? styles.centerRow : null]}>
+    <Animated.View
+      style={[style, isTopOrBottom ? styles.centerRow : null]}
+      renderToHardwareTextureAndroid
+    >
       <View style={styles.textContainer}>
         <Text
           style={[
@@ -951,3 +985,4 @@ const styles = StyleSheet.create({
 });
 
 export default DanmakuLayer;
+const MemoBullet = React.memo(Bullet);
