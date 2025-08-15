@@ -40,6 +40,9 @@ import * as DropdownMenu from 'zeego/dropdown-menu';
 import { DanmakuLayer } from './DanmakuLayer';
 import { DanmakuSettings } from './DanmakuSettings';
 
+const UPDATE_INTERVAL = 100;
+const PLAYBACK_RATE = 1;
+
 const LoadingIndicator = () => {
   return (
     <View style={[StyleSheet.absoluteFill, styles.bufferingOverlay]} pointerEvents="none">
@@ -79,9 +82,14 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const maximumValue = useSharedValue(1);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
+  const [externalCurrentTime, setExternalCurrentTime] = useState(0);
+  const [lastSyncTime, setLastSyncTime] = useState(0);
+  const [playbackRate, setPlaybackRate] = useState(PLAYBACK_RATE);
+  const externalTimeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
+
   const currentTime = useMemo(() => {
-    return progressInfo?.currentTime ?? 0;
-  }, [progressInfo]);
+    return externalCurrentTime;
+  }, [externalCurrentTime]);
 
   const duration = useMemo(() => {
     return progressInfo?.duration ?? 0;
@@ -90,6 +98,33 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const progress = useMemo(() => {
     return duration > 0 ? currentTime / duration : 0;
   }, [currentTime, duration]);
+
+  const startExternalTimeUpdate = useCallback(() => {
+    if (externalTimeInterval.current) {
+      clearInterval(externalTimeInterval.current);
+    }
+
+    externalTimeInterval.current = setInterval(() => {
+      setExternalCurrentTime((prevTime) => {
+        if (isPlaying && !isBuffering) {
+          return prevTime + UPDATE_INTERVAL * playbackRate;
+        }
+        return prevTime;
+      });
+    }, UPDATE_INTERVAL);
+  }, [isPlaying, isBuffering, playbackRate]);
+
+  const stopExternalTimeUpdate = useCallback(() => {
+    if (externalTimeInterval.current) {
+      clearInterval(externalTimeInterval.current);
+      externalTimeInterval.current = null;
+    }
+  }, []);
+
+  const syncWithVideoProgress = useCallback((videoTime: number) => {
+    setExternalCurrentTime(videoTime);
+    setLastSyncTime(videoTime);
+  }, []);
 
   const formattedTitle = useMemo(() => {
     if (!itemDetail) return '';
@@ -111,6 +146,24 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   useEffect(() => {
     progressValue.value = progress;
   }, [progress, progressValue]);
+
+  useEffect(() => {
+    if (isPlaying && !isBuffering && isLoaded) {
+      startExternalTimeUpdate();
+    } else {
+      stopExternalTimeUpdate();
+    }
+
+    return () => {
+      stopExternalTimeUpdate();
+    };
+  }, [isPlaying, isBuffering, isLoaded, startExternalTimeUpdate, stopExternalTimeUpdate]);
+
+  useEffect(() => {
+    return () => {
+      stopExternalTimeUpdate();
+    };
+  }, [stopExternalTimeUpdate]);
 
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600000);
@@ -186,6 +239,13 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const handleSeek = (time: number) => {
     player.current?.seekTo(time);
+    setExternalCurrentTime(time);
+    setLastSyncTime(time);
+  };
+
+  const handleRateChange = (rate: number) => {
+    setPlaybackRate(rate);
+    player.current?.setRate(rate);
   };
 
   const handleSliderChange = (value: number) => {
@@ -357,6 +417,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             setProgressInfo(e.nativeEvent);
             setIsBuffering(false);
             setIsLoaded(true);
+            syncWithVideoProgress(e.nativeEvent.currentTime);
           }}
           onVideoStateChange={async (e) => {
             const { state, isBuffering } = e.nativeEvent;
