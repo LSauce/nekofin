@@ -33,6 +33,7 @@ type ActiveBullet = {
   top: number;
   durationMs: number;
   mode: DandanCommentMode;
+  startOffsetMs: number;
 };
 
 export function DanmakuLayer({
@@ -414,14 +415,18 @@ export function DanmakuLayer({
             const { rowIndex, nextAvailableMs, scheduledMs } = picked;
             topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
             if (scheduledMs === tMs) {
-              newActive.push({
-                id: idRef.current++,
-                text: c.text,
-                colorHex: c.colorHex,
-                top: rowIndex * lineHeight,
-                durationMs: 4000,
-                mode: DANDAN_COMMENT_MODE.Top,
-              });
+              const startOffsetMs = Math.max(0, toMs - scheduledMs);
+              if (startOffsetMs < 4000) {
+                newActive.push({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Top,
+                  startOffsetMs,
+                });
+              }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               const tid = setTimeout(() => {
@@ -434,6 +439,7 @@ export function DanmakuLayer({
                     top: rowIndex * lineHeight,
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Top,
+                    startOffsetMs: 0,
                   },
                 ]);
               }, fireDelay);
@@ -449,14 +455,18 @@ export function DanmakuLayer({
             bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
             const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
             if (scheduledMs === tMs) {
-              newActive.push({
-                id: idRef.current++,
-                text: c.text,
-                colorHex: c.colorHex,
-                top: bottomStart + rowIndex * lineHeight,
-                durationMs: 4000,
-                mode: DANDAN_COMMENT_MODE.Bottom,
-              });
+              const startOffsetMs = Math.max(0, toMs - scheduledMs);
+              if (startOffsetMs < 4000) {
+                newActive.push({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: bottomStart + rowIndex * lineHeight,
+                  durationMs: 4000,
+                  mode: DANDAN_COMMENT_MODE.Bottom,
+                  startOffsetMs,
+                });
+              }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               const tid = setTimeout(() => {
@@ -469,6 +479,7 @@ export function DanmakuLayer({
                     top: bottomStart + rowIndex * lineHeight,
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Bottom,
+                    startOffsetMs: 0,
                   },
                 ]);
               }, fireDelay);
@@ -485,14 +496,18 @@ export function DanmakuLayer({
             const scrollStart = layout.topRows * lineHeight;
             const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
             if (scheduledMs === tMs) {
-              newActive.push({
-                id: idRef.current++,
-                text: c.text,
-                colorHex: c.colorHex,
-                top: scrollStart + rowIndex * lineHeight,
-                durationMs,
-                mode: c.mode,
-              });
+              const startOffsetMs = Math.max(0, toMs - scheduledMs);
+              if (startOffsetMs < durationMs) {
+                newActive.push({
+                  id: idRef.current++,
+                  text: c.text,
+                  colorHex: c.colorHex,
+                  top: scrollStart + rowIndex * lineHeight,
+                  durationMs,
+                  mode: c.mode,
+                  startOffsetMs,
+                });
+              }
             } else {
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               const tid = setTimeout(() => {
@@ -505,6 +520,7 @@ export function DanmakuLayer({
                     top: scrollStart + rowIndex * lineHeight,
                     durationMs,
                     mode: c.mode,
+                    startOffsetMs: 0,
                   },
                 ]);
               }, fireDelay);
@@ -539,6 +555,7 @@ export function DanmakuLayer({
                     top: rowIndex * lineHeight,
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Top,
+                    startOffsetMs: 0,
                   },
                 ]);
               } else {
@@ -552,6 +569,7 @@ export function DanmakuLayer({
                       top: rowIndex * lineHeight,
                       durationMs: 4000,
                       mode: DANDAN_COMMENT_MODE.Top,
+                      startOffsetMs: 0,
                     },
                   ]);
                 }, extraDelay);
@@ -578,6 +596,7 @@ export function DanmakuLayer({
                     top: bottomStart + rowIndex * lineHeight,
                     durationMs: 4000,
                     mode: DANDAN_COMMENT_MODE.Bottom,
+                    startOffsetMs: 0,
                   },
                 ]);
               } else {
@@ -591,6 +610,7 @@ export function DanmakuLayer({
                       top: bottomStart + rowIndex * lineHeight,
                       durationMs: 4000,
                       mode: DANDAN_COMMENT_MODE.Bottom,
+                      startOffsetMs: 0,
                     },
                   ]);
                 }, extraDelay);
@@ -621,6 +641,7 @@ export function DanmakuLayer({
                     top: scrollStart + rowIndex * lineHeight,
                     durationMs,
                     mode: c.mode,
+                    startOffsetMs: 0,
                   },
                 ]);
               } else {
@@ -634,6 +655,7 @@ export function DanmakuLayer({
                       top: scrollStart + rowIndex * lineHeight,
                       durationMs,
                       mode: c.mode,
+                      startOffsetMs: 0,
                     },
                   ]);
                 }, extraDelay);
@@ -718,6 +740,22 @@ function Bullet({
   const runStartedAtRef = useRef<number | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+
+  useEffect(() => {
+    originalDurationRef.current = data.durationMs;
+    const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
+    remainingDurationRef.current = Math.max(0, data.durationMs - clampedOffset);
+    remainingToFadeRef.current = Math.max(0, data.durationMs - 300 - clampedOffset);
+    if (
+      data.mode === DANDAN_COMMENT_MODE.Scroll ||
+      data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+    ) {
+      const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
+      const totalDistance = isLeftScroll ? -width - 300 : width + 300;
+      const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
+      translateX.value = totalDistance * progressed;
+    }
+  }, [data.durationMs, data.startOffsetMs, data.mode, width, translateX]);
 
   const scheduleFadeAndRemoval = useCallback(() => {
     if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
