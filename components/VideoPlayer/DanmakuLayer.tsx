@@ -107,19 +107,23 @@ export function DanmakuLayer({
   const layout = useMemo(() => {
     const topRows = Math.max(1, Math.floor(rows * 0.2));
     const bottomRows = Math.max(1, Math.floor(rows * 0.2));
-    const scrollRows = Math.max(1, rows - topRows - bottomRows);
+    const scrollRows = Math.max(1, rows);
     return { topRows, bottomRows, scrollRows };
   }, [rows]);
 
   const rowMinGapPx = 50;
   const MAX_DELAY_MS = 200;
   const scrollLaneNextAvailableRef = useRef<number[]>([]);
+  const scrollLaneLastWidthRef = useRef<number[]>([]);
   const topLaneNextAvailableRef = useRef<number[]>([]);
   const bottomLaneNextAvailableRef = useRef<number[]>([]);
 
   const ensureLanes = useCallback(() => {
     if (scrollLaneNextAvailableRef.current.length !== layout.scrollRows) {
       scrollLaneNextAvailableRef.current = new Array(layout.scrollRows).fill(0);
+    }
+    if (scrollLaneLastWidthRef.current.length !== layout.scrollRows) {
+      scrollLaneLastWidthRef.current = new Array(layout.scrollRows).fill(0);
     }
     if (topLaneNextAvailableRef.current.length !== layout.topRows) {
       topLaneNextAvailableRef.current = new Array(layout.topRows).fill(0);
@@ -207,16 +211,15 @@ export function DanmakuLayer({
     ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const v = Math.max(50, speed);
-      const textWidth = estimateTextWidth(text);
-      const deltaMs = Math.ceil(((textWidth + rowMinGapPx) / v) * 1000);
+      const newTextWidth = estimateTextWidth(text);
+      const deltaCurrMs = Math.ceil(((newTextWidth + rowMinGapPx) / v) * 1000);
 
       let chosen = -1;
-      let bestAvail = Number.MAX_SAFE_INTEGER;
       for (let i = 0; i < layout.scrollRows; i++) {
         const avail = scrollLaneNextAvailableRef.current[i] ?? 0;
-        if (avail <= tMs && avail < bestAvail) {
-          bestAvail = avail;
+        if (avail <= tMs) {
           chosen = i;
+          break;
         }
       }
       if (chosen === -1) {
@@ -226,13 +229,13 @@ export function DanmakuLayer({
         if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
           return {
             rowIndex: earliest.rowIndex,
-            nextAvailableMs: earliest.availMs + deltaMs,
+            nextAvailableMs: earliest.availMs + deltaCurrMs,
             scheduledMs: earliest.availMs,
           };
         }
         return null;
       }
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
+      return { rowIndex: chosen, nextAvailableMs: tMs + deltaCurrMs, scheduledMs: tMs };
     },
     [ensureLanes, layout.scrollRows, estimateTextWidth, speed, getEarliestScrollRow],
   );
@@ -444,6 +447,9 @@ export function DanmakuLayer({
       for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
         scrollLaneNextAvailableRef.current[i] = 0;
       }
+      for (let i = 0; i < scrollLaneLastWidthRef.current.length; i++) {
+        scrollLaneLastWidthRef.current[i] = 0;
+      }
       for (let i = 0; i < topLaneNextAvailableRef.current.length; i++) {
         topLaneNextAvailableRef.current[i] = 0;
       }
@@ -465,6 +471,9 @@ export function DanmakuLayer({
       ensureLanes();
       for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
         scrollLaneNextAvailableRef.current[i] = 0;
+      }
+      for (let i = 0; i < scrollLaneLastWidthRef.current.length; i++) {
+        scrollLaneLastWidthRef.current[i] = 0;
       }
       for (let i = 0; i < topLaneNextAvailableRef.current.length; i++) {
         topLaneNextAvailableRef.current[i] = 0;
@@ -567,7 +576,8 @@ export function DanmakuLayer({
           if (picked) {
             const { rowIndex, nextAvailableMs, scheduledMs } = picked;
             scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-            const scrollStart = layout.topRows * lineHeight;
+            scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+            const scrollStart = 0;
             const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
             if (scheduledMs === tMs) {
               const startOffsetMs = Math.max(0, toMs - scheduledMs);
@@ -687,7 +697,8 @@ export function DanmakuLayer({
             if (picked) {
               const { rowIndex, nextAvailableMs, scheduledMs } = picked;
               scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-              const scrollStart = layout.topRows * lineHeight;
+              scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+              const scrollStart = 0;
               const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
@@ -747,6 +758,7 @@ export function DanmakuLayer({
     pickScrollRow,
     enqueueActive,
     scheduleTask,
+    estimateTextWidth,
   ]);
 
   const handleExpire = useCallback((id: number) => {
