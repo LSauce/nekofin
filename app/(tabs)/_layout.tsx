@@ -37,7 +37,7 @@ export default function TabLayout() {
         name="media"
         options={{
           title: 'Media',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="photo.fill" color={color} />,
+          tabBarIcon: ({ color }) => <IconSymbol size={28} name="video.fill" color={color} />,
         }}
       />
       <Tabs.Screen

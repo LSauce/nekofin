@@ -88,14 +88,12 @@ export async function getLatestItemsByFolder(
   folderId: string,
   limit: number = 10,
 ) {
-  return await getItemsApi(api).getItems({
+  return await getUserLibraryApi(api).getLatestMedia({
     userId,
     limit,
-    sortBy: ['DateCreated'],
-    sortOrder: ['Descending'],
-    includeItemTypes: ['Movie', 'Series', 'Episode'],
-    recursive: true,
-    filters: ['IsNotFolder'],
+    fields: ['PrimaryImageAspectRatio', 'Path'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
     parentId: folderId,
   });
 }
