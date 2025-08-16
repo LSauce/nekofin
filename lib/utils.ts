@@ -96,18 +96,24 @@ export const getDeviceId = () => {
   return deviceId;
 };
 
-export const getCommentsByItem = async (item: BaseItemDto) => {
+export const getCommentsByItem = async (item: BaseItemDto, originalTitle?: string | null) => {
   const seriesName = item.SeriesName;
   const seasonNumber = item.ParentIndexNumber ?? 1;
   const episodeNumber = item.IndexNumber;
+  const seriesId = item.SeriesId;
 
-  const animes = await searchAnimesByKeyword(seriesName ?? '');
-  console.log(animes);
+  let animes = await searchAnimesByKeyword(seriesName ?? '');
+  if (animes.length === 0) {
+    animes = await searchAnimesByKeyword(originalTitle ?? '');
+  }
+  if (animes.length === 0) {
+    return [];
+  }
+  console.log(item.OriginalTitle, seriesName, animes);
   const anime = animes[seasonNumber - 1];
   console.log(anime);
   if (anime && episodeNumber) {
     const comments = await getCommentsByEpisodeId(anime.episodes[episodeNumber - 1].episodeId);
-    console.log(comments);
     return comments;
   }
 };

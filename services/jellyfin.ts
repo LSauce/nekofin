@@ -9,6 +9,7 @@ import {
   getTvShowsApi,
   getUserApi,
   getUserLibraryApi,
+  getUserViewsApi,
 } from '@jellyfin/sdk/lib/utils/api';
 
 let jellyfin: Jellyfin | null = null;
@@ -176,9 +177,10 @@ export async function authenticateAndSaveServer(
   throw new Error('Authentication failed');
 }
 
-export async function getItemDetail(api: Api, itemId: string) {
+export async function getItemDetail(api: Api, itemId: string, userId: string) {
   return await getUserLibraryApi(api).getItem({
     itemId,
+    userId,
   });
 }
 
@@ -195,4 +197,10 @@ export async function getItemMediaSources(api: Api, itemId: string) {
       },
     },
   );
+}
+
+export async function getUserView(api: Api, userId: string) {
+  return await getUserViewsApi(api).getUserViews({
+    userId,
+  });
 }

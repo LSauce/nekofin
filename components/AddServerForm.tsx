@@ -2,7 +2,15 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import { Alert, ScrollView, StyleSheet, TextInput, TouchableOpacity, View } from 'react-native';
+import {
+  Alert,
+  KeyboardAvoidingView,
+  Platform,
+  StyleSheet,
+  TextInput,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { z } from 'zod';
 
 import { ThemedText } from './ThemedText';
@@ -19,7 +27,7 @@ const serverTypes = [
 
 const addServerSchema = z.object({
   serverType: z.enum(['jellyfin', 'emby', 'plex']),
-  address: z.string().min(1, '请输入服务器地址').url('请输入有效的URL'),
+  address: z.url('请输入有效的URL').min(1, '请输入服务器地址'),
   username: z.string().min(1, '请输入用户名'),
   password: z.string().min(1, '请输入密码'),
 });
@@ -61,7 +69,10 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
   };
 
   return (
-    <ScrollView style={styles.container}>
+    <KeyboardAvoidingView
+      style={styles.container}
+      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+    >
       <ThemedText type="title" style={styles.title}>
         添加媒体服务器
       </ThemedText>
@@ -186,7 +197,7 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           </ThemedText>
         </TouchableOpacity>
       </View>
-    </ScrollView>
+    </KeyboardAvoidingView>
   );
 };
 

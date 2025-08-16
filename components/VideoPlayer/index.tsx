@@ -4,11 +4,7 @@ import { getDeviceProfile } from '@/lib/Device';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
 import { VlcPlayerView } from '@/modules';
 import type { ProgressUpdatePayload, VlcPlayerViewRef } from '@/modules/VlcPlayer.types';
-import {
-  getCommentsByEpisodeId,
-  searchAnimesByKeyword,
-  type DandanComment,
-} from '@/services/dandanplay';
+import { type DandanComment } from '@/services/dandanplay';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
@@ -351,7 +347,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     if (!api || !itemId || !currentServer) return;
 
     (async () => {
-      const itemDetail = await getItemDetail(api, itemId);
+      const itemDetail = await getItemDetail(api, itemId, currentServer.userId);
+      const seriesInfo = await getItemDetail(
+        api,
+        itemDetail.data.SeriesId ?? '',
+        currentServer.userId,
+      );
       setItemDetail(itemDetail.data);
 
       const streamInfo = await getStreamInfo({
@@ -366,7 +367,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       }
 
       try {
-        const comments = await getCommentsByItem(itemDetail.data);
+        const comments = await getCommentsByItem(itemDetail.data, seriesInfo.data.OriginalTitle);
         setComments(comments ?? []);
       } catch (error) {
         console.warn('Failed to load danmaku comments:', error);
