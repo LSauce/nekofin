@@ -1,5 +1,6 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
+import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -35,7 +36,7 @@ export function MediaCard({
   const { width } = useWindowDimensions();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const progressColor = useThemeColor({ light: '#007AFF', dark: '#0A84FF' }, 'tint');
+  const { accentColor } = useAccentColor();
 
   const imageUrl = useMemo(() => {
     if (item.Type === 'Episode') {
@@ -79,7 +80,7 @@ export function MediaCard({
                     styles.progressFill,
                     {
                       width: `${playedPercentage}%`,
-                      backgroundColor: progressColor,
+                      backgroundColor: accentColor,
                     },
                   ]}
                 />

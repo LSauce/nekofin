@@ -1,18 +1,20 @@
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { Colors } from '@/constants/Colors';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
+  const { accentColor } = useAccentColor();
 
   return (
     <Tabs
       screenOptions={{
-        tabBarActiveTintColor: Colors[colorScheme ?? 'light'].tint,
+        tabBarActiveTintColor: accentColor,
         headerShown: true,
         tabBarButton: HapticTab,
         tabBarBackground: TabBarBackground,
@@ -30,7 +32,7 @@ export default function TabLayout() {
         options={{
           title: 'Home',
           headerShown: false,
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="house.fill" color={color} />,
+          tabBarIcon: ({ color }) => <FontAwesome name="film" size={24} color={color} />,
         }}
       />
       <Tabs.Screen
