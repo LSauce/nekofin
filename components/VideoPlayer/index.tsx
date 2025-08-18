@@ -60,7 +60,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [currentServer]);
 
   const player = useRef<LibVlcPlayerViewRef>(null);
-  const [isPlaying, setIsPlaying] = useState(true);
+  const [isPlaying, setIsPlaying] = useState(false);
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
@@ -86,8 +86,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const externalTimeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
 
   const currentTime = useMemo(() => {
-    return externalCurrentTime;
-  }, [externalCurrentTime]);
+    return position === 0 ? position * (mediaInfo?.duration ?? 0) : externalCurrentTime;
+  }, [position, mediaInfo?.duration, externalCurrentTime]);
 
   const duration = useMemo(() => {
     return mediaInfo?.duration ?? 0;
@@ -396,8 +396,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [isPlaying]);
 
   const showLoading = useMemo(() => {
-    return isBuffering || !videoSource || !isLoaded;
-  }, [isBuffering, videoSource, isLoaded]);
+    return isBuffering || !videoSource || !isLoaded || (isPlaying && position === 0);
+  }, [isBuffering, videoSource, isLoaded, isPlaying, position]);
 
   const handleDanmakuSettingsPress = () => {
     setSettingsVisible(true);
@@ -453,6 +453,13 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         />
       )}
       {showLoading && <LoadingIndicator />}
+
+      <View style={styles.debugContainer}>
+        <Text style={styles.debugText}>position: {position}</Text>
+        <Text style={styles.debugText}>isPlaying: {isPlaying ? 'true' : 'false'}</Text>
+        <Text style={styles.debugText}>isBuffering: {isBuffering ? 'true' : 'false'}</Text>
+        <Text style={styles.debugText}>isStopped: {isStopped ? 'true' : 'false'}</Text>
+      </View>
 
       {comments.length > 0 && (
         <DanmakuLayer
@@ -720,5 +727,17 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 20,
+  },
+  debugContainer: {
+    position: 'absolute',
+    top: 100,
+    left: 100,
+    right: 0,
+    bottom: 0,
+  },
+  debugText: {
+    color: '#fff',
+    fontSize: 14,
+    fontWeight: '500',
   },
 });
