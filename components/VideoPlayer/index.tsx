@@ -9,13 +9,7 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BlurView } from 'expo-blur';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import {
-  LibVlcPlayerView,
-  LibVlcPlayerViewRef,
-  type Error,
-  type MediaInfo,
-  type Position,
-} from 'expo-libvlc-player';
+import { LibVlcPlayerView, LibVlcPlayerViewRef, type MediaInfo } from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -133,8 +127,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const formattedTitle = useMemo(() => {
     if (!itemDetail) return '';
     const seriesName = itemDetail.SeriesName ?? '';
-    const seasonNumber =
-      (itemDetail as any).ParentIndexNumber ?? (itemDetail as any).SeasonIndexNumber;
+    const seasonNumber = itemDetail.ParentIndexNumber;
     const episodeNumber = itemDetail.IndexNumber;
     const episodeName = itemDetail.Name ?? '';
 
@@ -392,6 +385,16 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     };
   }, []);
 
+  useEffect(() => {
+    (async () => {
+      if (isPlaying) {
+        await activateKeepAwakeAsync();
+      } else {
+        await deactivateKeepAwake();
+      }
+    })();
+  }, [isPlaying]);
+
   const showLoading = useMemo(() => {
     return isBuffering || !videoSource || !isLoaded;
   }, [isBuffering, videoSource, isLoaded]);
@@ -407,6 +410,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           ref={player}
           style={styles.video}
           source={videoSource}
+          options={['network-caching=1000']}
+          autoplay={true}
+          rate={playbackRate}
           onBuffering={() => {
             setIsBuffering(true);
 
@@ -441,6 +447,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             setIsLoaded(true);
             setMediaInfo(mediaInfo);
           }}
+          onEncounteredError={(error) => {
+            console.warn('Encountered error', error);
+          }}
         />
       )}
       {showLoading && <LoadingIndicator />}
@@ -448,7 +457,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       {comments.length > 0 && (
         <DanmakuLayer
           currentTimeMs={currentTime}
-          isPlaying={!showLoading && isPlaying}
+          isPlaying={!showLoading && !isStopped && isPlaying}
           comments={comments}
           {...danmakuSettings}
           seekKey={seekKey}

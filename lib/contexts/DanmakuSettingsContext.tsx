@@ -20,10 +20,10 @@ type DanmakuSettingsContextValue = {
   setSettings: (next: DanmakuSettingsType) => void;
 };
 
-const defaultSettings: DanmakuSettingsType = {
+export const defaultSettings: DanmakuSettingsType = {
   opacity: 0.8,
   speed: 200,
-  fontSize: 18,
+  fontSize: 20,
   heightRatio: 0.9,
   danmakuFilter: 0,
   danmakuModeFilter: 0,

@@ -1,3 +1,4 @@
+import { defaultSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { DANDAN_COMMENT_MODE, DandanComment, DandanCommentMode } from '@/services/dandanplay';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, useWindowDimensions, View } from 'react-native';
@@ -30,7 +31,7 @@ type ActiveBullet = {
 };
 
 const STROKE_COLOR = '#000';
-const STROKE_WIDTH = 0.5;
+const STROKE_WIDTH = 0.7;
 
 export function DanmakuLayer({
   currentTimeMs,
@@ -38,21 +39,20 @@ export function DanmakuLayer({
   comments,
   seekKey,
   density = 1,
-  opacity = 0.8,
-  speed = 200,
-  fontSize = 18,
-  heightRatio = 0.9,
-  danmakuFilter = 0,
-  danmakuModeFilter = 0,
-  danmakuDensityLimit = 0,
-  curEpOffset = 0,
-  fontFamily = '"Microsoft YaHei", "PingFang SC", "Noto Sans CJK SC", sans-serif',
-  fontOptions = '',
+  opacity = defaultSettings.opacity,
+  speed = defaultSettings.speed,
+  fontSize = defaultSettings.fontSize,
+  heightRatio = defaultSettings.heightRatio,
+  danmakuFilter = defaultSettings.danmakuFilter,
+  danmakuModeFilter = defaultSettings.danmakuModeFilter,
+  danmakuDensityLimit = defaultSettings.danmakuDensityLimit,
+  curEpOffset = defaultSettings.curEpOffset,
+  fontFamily = defaultSettings.fontFamily,
+  fontOptions = defaultSettings.fontOptions,
 }: DanmakuLayerProps) {
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState<ActiveBullet[]>([]);
   const lastTimeMsRef = useRef<number>(-1);
-  const idRef = useRef<number>(1);
   const scheduledTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const processedCommentsRef = useRef<Set<number>>(new Set());
   const widthCacheRef = useRef<Map<string, number>>(new Map());
@@ -93,7 +93,7 @@ export function DanmakuLayer({
         scheduledTasksRef.current = scheduledTasksRef.current.filter((t) => t.fireAt > now);
         for (const t of due) t.fn();
       }
-    }, 50);
+    }, 10);
   }, []);
 
   const scheduleTask = useCallback(
@@ -105,14 +105,14 @@ export function DanmakuLayer({
   );
 
   const layout = useMemo(() => {
-    const topRows = Math.max(1, Math.floor(rows * 0.2));
-    const bottomRows = Math.max(1, Math.floor(rows * 0.2));
+    // 顶部和底部弹幕行数
+    const topRows = Math.max(1, Math.floor(rows * 1));
+    const bottomRows = Math.max(1, Math.floor(rows * 1));
     const scrollRows = Math.max(1, rows);
     return { topRows, bottomRows, scrollRows };
   }, [rows]);
 
   const rowMinGapPx = 50;
-  const MAX_DELAY_MS = 200;
   const scrollLaneNextAvailableRef = useRef<number[]>([]);
   const scrollLaneLastWidthRef = useRef<number[]>([]);
   const topLaneNextAvailableRef = useRef<number[]>([]);
@@ -194,7 +194,7 @@ export function DanmakuLayer({
     ensureLanes();
     let idx = -1;
     let val = Number.MAX_SAFE_INTEGER;
-    for (let i = 0; i < layout.bottomRows; i++) {
+    for (let i = layout.bottomRows - 1; i >= 0; i--) {
       const a = bottomLaneNextAvailableRef.current[i] ?? 0;
       if (a < val) {
         val = a;
@@ -225,15 +225,11 @@ export function DanmakuLayer({
       if (chosen === -1) {
         const earliest = getEarliestScrollRow();
         if (!earliest) return null;
-        const waitMs = earliest.availMs - tMs;
-        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
-          return {
-            rowIndex: earliest.rowIndex,
-            nextAvailableMs: earliest.availMs + deltaCurrMs,
-            scheduledMs: earliest.availMs,
-          };
-        }
-        return null;
+        return {
+          rowIndex: earliest.rowIndex,
+          nextAvailableMs: earliest.availMs + deltaCurrMs,
+          scheduledMs: earliest.availMs,
+        };
       }
       return { rowIndex: chosen, nextAvailableMs: tMs + deltaCurrMs, scheduledMs: tMs };
     },
@@ -256,15 +252,11 @@ export function DanmakuLayer({
       if (chosen === -1) {
         const earliest = getEarliestTopRow();
         if (!earliest) return null;
-        const waitMs = earliest.availMs - tMs;
-        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
-          return {
-            rowIndex: earliest.rowIndex,
-            nextAvailableMs: earliest.availMs + deltaMs,
-            scheduledMs: earliest.availMs,
-          };
-        }
-        return null;
+        return {
+          rowIndex: earliest.rowIndex,
+          nextAvailableMs: earliest.availMs + deltaMs,
+          scheduledMs: earliest.availMs,
+        };
       }
       return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
     },
@@ -277,7 +269,7 @@ export function DanmakuLayer({
       const deltaMs = 4000;
       let chosen = -1;
       let bestAvail = Number.MAX_SAFE_INTEGER;
-      for (let i = 0; i < layout.bottomRows; i++) {
+      for (let i = layout.bottomRows - 1; i >= 0; i--) {
         const avail = bottomLaneNextAvailableRef.current[i] ?? 0;
         if (avail <= tMs && avail < bestAvail) {
           bestAvail = avail;
@@ -287,15 +279,11 @@ export function DanmakuLayer({
       if (chosen === -1) {
         const earliest = getEarliestBottomRow();
         if (!earliest) return null;
-        const waitMs = earliest.availMs - tMs;
-        if (waitMs > 0 && waitMs <= MAX_DELAY_MS) {
-          return {
-            rowIndex: earliest.rowIndex,
-            nextAvailableMs: earliest.availMs + deltaMs,
-            scheduledMs: earliest.availMs,
-          };
-        }
-        return null;
+        return {
+          rowIndex: earliest.rowIndex,
+          nextAvailableMs: earliest.availMs + deltaMs,
+          scheduledMs: earliest.availMs,
+        };
       }
       return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
     },
@@ -509,7 +497,7 @@ export function DanmakuLayer({
               const startOffsetMs = Math.max(0, toMs - scheduledMs);
               if (startOffsetMs < 4000) {
                 newActive.push({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: rowIndex * lineHeight,
@@ -522,7 +510,7 @@ export function DanmakuLayer({
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               scheduleTask(fireDelay, () => {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: rowIndex * lineHeight,
@@ -545,7 +533,7 @@ export function DanmakuLayer({
               const startOffsetMs = Math.max(0, toMs - scheduledMs);
               if (startOffsetMs < 4000) {
                 newActive.push({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: bottomStart + rowIndex * lineHeight,
@@ -558,7 +546,7 @@ export function DanmakuLayer({
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               scheduleTask(fireDelay, () => {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: bottomStart + rowIndex * lineHeight,
@@ -583,7 +571,7 @@ export function DanmakuLayer({
               const startOffsetMs = Math.max(0, toMs - scheduledMs);
               if (startOffsetMs < durationMs) {
                 newActive.push({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: scrollStart + rowIndex * lineHeight,
@@ -596,7 +584,7 @@ export function DanmakuLayer({
               const fireDelay = Math.max(0, scheduledMs - fromMs);
               scheduleTask(fireDelay, () => {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: scrollStart + rowIndex * lineHeight,
@@ -608,7 +596,9 @@ export function DanmakuLayer({
             }
           }
         }
-        if (newActive.length >= rows) break;
+        if (newActive.length >= rows) {
+          continue;
+        }
       }
       if (newActive.length > 0) {
         for (const b of newActive) enqueueActive(b);
@@ -630,7 +620,7 @@ export function DanmakuLayer({
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: rowIndex * lineHeight,
@@ -641,7 +631,7 @@ export function DanmakuLayer({
               } else {
                 scheduleTask(extraDelay, () => {
                   enqueueActive({
-                    id: idRef.current++,
+                    id: c.id,
                     text: c.text,
                     colorHex: c.colorHex,
                     top: rowIndex * lineHeight,
@@ -664,7 +654,7 @@ export function DanmakuLayer({
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: bottomStart + rowIndex * lineHeight,
@@ -675,7 +665,7 @@ export function DanmakuLayer({
               } else {
                 scheduleTask(extraDelay, () => {
                   enqueueActive({
-                    id: idRef.current++,
+                    id: c.id,
                     text: c.text,
                     colorHex: c.colorHex,
                     top: bottomStart + rowIndex * lineHeight,
@@ -703,7 +693,7 @@ export function DanmakuLayer({
               const extraDelay = Math.max(0, scheduledMs - tMs);
               if (extraDelay === 0) {
                 enqueueActive({
-                  id: idRef.current++,
+                  id: c.id,
                   text: c.text,
                   colorHex: c.colorHex,
                   top: scrollStart + rowIndex * lineHeight,
@@ -714,7 +704,7 @@ export function DanmakuLayer({
               } else {
                 scheduleTask(extraDelay, () => {
                   enqueueActive({
-                    id: idRef.current++,
+                    id: c.id,
                     text: c.text,
                     colorHex: c.colorHex,
                     top: scrollStart + rowIndex * lineHeight,
