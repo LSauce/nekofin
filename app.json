@@ -58,6 +58,13 @@
         }
       ],
       [
+        "expo-libvlc-player",
+        {
+          "localNetworkPermission": "Allow nekofin to access your local network",
+          "supportsBackgroundPlayback": true
+        }
+      ],
+      [
         "expo-screen-orientation",
         {
           "initialOrientation": "DEFAULT"

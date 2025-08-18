@@ -2,8 +2,6 @@ import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
-import { VlcPlayerView } from '@/modules';
-import type { ProgressUpdatePayload, VlcPlayerViewRef } from '@/modules/VlcPlayer.types';
 import { type DandanComment } from '@/services/dandanplay';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
 import AntDesign from '@expo/vector-icons/AntDesign';
@@ -11,6 +9,13 @@ import Entypo from '@expo/vector-icons/Entypo';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { BlurView } from 'expo-blur';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
+import {
+  LibVlcPlayerView,
+  LibVlcPlayerViewRef,
+  type Error,
+  type MediaInfo,
+  type Position,
+} from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -60,17 +65,19 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     return createApiFromServerInfo(currentServer);
   }, [currentServer]);
 
-  const player = useRef<VlcPlayerViewRef>(null);
+  const player = useRef<LibVlcPlayerViewRef>(null);
   const [isPlaying, setIsPlaying] = useState(true);
-  const [progressInfo, setProgressInfo] = useState<ProgressUpdatePayload['nativeEvent'] | null>(
-    null,
-  );
+  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [showControls, setShowControls] = useState(true);
   const [isDragging, setIsDragging] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [settingsVisible, setSettingsVisible] = useState(false);
   const [menuOpen, setMenuOpen] = useState(false);
+  const [isStopped, setIsStopped] = useState(false);
+  const [position, setPosition] = useState(0);
+
+  const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -89,8 +96,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [externalCurrentTime]);
 
   const duration = useMemo(() => {
-    return progressInfo?.duration ?? 0;
-  }, [progressInfo]);
+    return mediaInfo?.duration ?? 0;
+  }, [mediaInfo]);
 
   const progress = useMemo(() => {
     return duration > 0 ? currentTime / duration : 0;
@@ -235,7 +242,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [menuOpen, hideControlsWithDelay, fadeAnim]);
 
   const handleSeek = (time: number) => {
-    player.current?.seekTo(time);
+    if (!mediaInfo?.duration || !player.current) return;
+    const clampedTime = Math.max(0, Math.min(time, mediaInfo.duration));
+    const position = mediaInfo.duration > 0 ? clampedTime / mediaInfo.duration : 0;
+    player.current.seek(position);
     setExternalCurrentTime(time);
     setLastSyncTime(time);
     setSeekKey((prev) => prev + 1);
@@ -243,12 +253,11 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const handleRateChange = (rate: number) => {
     setPlaybackRate(rate);
-    player.current?.setRate(rate);
   };
 
   const handleSliderChange = (value: number) => {
-    if (!progressInfo?.duration) return;
-    const newTime = value * progressInfo.duration;
+    if (!mediaInfo?.duration) return;
+    const newTime = value * mediaInfo.duration;
     handleSeek(newTime);
     progressValue.value = value;
     setShowControls(true);
@@ -262,8 +271,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   };
 
   const handleSliderSlidingComplete = (value: number) => {
-    if (!progressInfo?.duration) return;
-    const newTime = value * progressInfo.duration;
+    if (!mediaInfo?.duration) return;
+    const newTime = value * mediaInfo.duration;
     handleSeek(newTime);
     progressValue.value = value;
     setIsDragging(false);
@@ -394,36 +403,43 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   return (
     <View style={styles.container}>
       {videoSource && (
-        <VlcPlayerView
+        <LibVlcPlayerView
           ref={player}
           style={styles.video}
-          source={{
-            uri: videoSource,
-            autoplay: true,
-            isNetwork: true,
-            externalSubtitles: [],
-          }}
-          progressUpdateInterval={500}
-          onVideoProgress={(e) => {
-            setProgressInfo(e.nativeEvent);
-            setIsBuffering(false);
-            setIsLoaded(true);
-            syncWithVideoProgress(e.nativeEvent.currentTime);
-          }}
-          onVideoStateChange={async (e) => {
-            const { state, isBuffering } = e.nativeEvent;
-            if (state === 'Playing') {
-              setIsPlaying(true);
-              await activateKeepAwakeAsync();
-            } else if (state === 'Paused') {
-              setIsPlaying(false);
-              await deactivateKeepAwake();
+          source={videoSource}
+          onBuffering={() => {
+            setIsBuffering(true);
+
+            if (bufferingTimeoutRef.current) {
+              clearTimeout(bufferingTimeoutRef.current);
             }
-            setIsBuffering(isBuffering);
+
+            bufferingTimeoutRef.current = setTimeout(() => setIsBuffering(false), 1000);
           }}
-          onVideoError={(e) => {
-            console.error('Video Error:', e.nativeEvent);
-            Alert.alert('Video Error', e.nativeEvent.state);
+          onPlaying={() => {
+            setIsBuffering(false);
+            setIsPlaying(true);
+            setIsStopped(false);
+          }}
+          onPaused={() => {
+            setIsBuffering(false);
+            setIsPlaying(false);
+            setIsStopped(false);
+          }}
+          onStopped={() => {
+            setPosition(0);
+            setIsBuffering(false);
+            setIsPlaying(false);
+            setIsStopped(true);
+          }}
+          onPositionChanged={({ position }) => {
+            setPosition(position);
+            setIsBuffering(false);
+            syncWithVideoProgress(position * (mediaInfo?.duration ?? 0));
+          }}
+          onFirstPlay={(mediaInfo) => {
+            setIsLoaded(true);
+            setMediaInfo(mediaInfo);
           }}
         />
       )}
@@ -432,7 +448,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       {comments.length > 0 && (
         <DanmakuLayer
           currentTimeMs={currentTime}
-          isPlaying={isPlaying}
+          isPlaying={!showLoading && isPlaying}
           comments={comments}
           {...danmakuSettings}
           seekKey={seekKey}
