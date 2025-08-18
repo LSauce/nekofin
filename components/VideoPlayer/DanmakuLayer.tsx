@@ -55,6 +55,11 @@ export function DanmakuLayer({
   const lastTimeMsRef = useRef<number>(-1);
   const scheduledTimeoutsRef = useRef<ReturnType<typeof setTimeout>[]>([]);
   const processedCommentsRef = useRef<Set<number>>(new Set());
+  const scheduledCommentsRef = useRef<Set<number>>(new Set());
+
+  const scrollQueueRef = useRef<{ comment: DandanComment; timeMs: number }[]>([]);
+  const topQueueRef = useRef<{ comment: DandanComment; timeMs: number }[]>([]);
+  const bottomQueueRef = useRef<{ comment: DandanComment; timeMs: number }[]>([]);
   const widthCacheRef = useRef<Map<string, number>>(new Map());
   const pendingActiveRef = useRef<ActiveBullet[]>([]);
   const flushScheduledRef = useRef<boolean>(false);
@@ -162,6 +167,53 @@ export function DanmakuLayer({
     [fontSize, width],
   );
 
+  const createDanmakuBullet = useCallback(
+    (comment: DandanComment, rowIndex: number, startOffsetMs: number = 0): ActiveBullet => {
+      const baseParams = {
+        id: comment.id,
+        text: comment.text,
+        colorHex: comment.colorHex,
+        mode: comment.mode,
+        startOffsetMs,
+      };
+
+      switch (comment.mode) {
+        case DANDAN_COMMENT_MODE.Top:
+          return {
+            ...baseParams,
+            top: rowIndex * lineHeight,
+            durationMs: 4000,
+          };
+
+        case DANDAN_COMMENT_MODE.Bottom:
+          const bottomStart = height * heightRatio - lineHeight;
+          return {
+            ...baseParams,
+            top: bottomStart - (layout.bottomRows - 1 - rowIndex) * lineHeight,
+            durationMs: 4000,
+          };
+
+        case DANDAN_COMMENT_MODE.Scroll:
+        case DANDAN_COMMENT_MODE.ScrollBottom:
+          const scrollStart = 0;
+          const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
+          return {
+            ...baseParams,
+            top: scrollStart + rowIndex * lineHeight,
+            durationMs,
+          };
+
+        default:
+          return {
+            ...baseParams,
+            top: 0,
+            durationMs: 4000,
+          };
+      }
+    },
+    [lineHeight, height, heightRatio, layout.bottomRows, width, speed],
+  );
+
   const getEarliestScrollRow = useCallback((): { rowIndex: number; availMs: number } | null => {
     ensureLanes();
     let idx = -1;
@@ -208,6 +260,7 @@ export function DanmakuLayer({
     (
       tMs: number,
       text: string,
+      forceSchedule: boolean = false,
     ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const v = Math.max(50, speed);
@@ -222,70 +275,102 @@ export function DanmakuLayer({
           break;
         }
       }
-      if (chosen === -1) {
+
+      if (chosen !== -1) {
+        scrollLaneNextAvailableRef.current[chosen] = tMs + deltaCurrMs;
+        return { rowIndex: chosen, nextAvailableMs: tMs + deltaCurrMs, scheduledMs: tMs };
+      }
+
+      if (forceSchedule) {
         const earliest = getEarliestScrollRow();
         if (!earliest) return null;
+        scrollLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaCurrMs;
         return {
           rowIndex: earliest.rowIndex,
           nextAvailableMs: earliest.availMs + deltaCurrMs,
           scheduledMs: earliest.availMs,
         };
       }
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaCurrMs, scheduledMs: tMs };
+
+      return null;
     },
     [ensureLanes, layout.scrollRows, estimateTextWidth, speed, getEarliestScrollRow],
   );
 
   const pickTopRow = useCallback(
-    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
+    (
+      tMs: number,
+      text: string = '',
+      forceSchedule: boolean = false,
+    ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
+
       let chosen = -1;
-      let bestAvail = Number.MAX_SAFE_INTEGER;
       for (let i = 0; i < layout.topRows; i++) {
         const avail = topLaneNextAvailableRef.current[i] ?? 0;
-        if (avail <= tMs && avail < bestAvail) {
-          bestAvail = avail;
+        if (avail <= tMs) {
           chosen = i;
+          break;
         }
       }
-      if (chosen === -1) {
+
+      if (chosen !== -1) {
+        topLaneNextAvailableRef.current[chosen] = tMs + deltaMs;
+        return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
+      }
+
+      if (forceSchedule) {
         const earliest = getEarliestTopRow();
         if (!earliest) return null;
+        topLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaMs;
         return {
           rowIndex: earliest.rowIndex,
           nextAvailableMs: earliest.availMs + deltaMs,
           scheduledMs: earliest.availMs,
         };
       }
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
+
+      return null;
     },
     [ensureLanes, layout.topRows, getEarliestTopRow],
   );
 
   const pickBottomRow = useCallback(
-    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
+    (
+      tMs: number,
+      text: string = '',
+      forceSchedule: boolean = false,
+    ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
+
       let chosen = -1;
-      let bestAvail = Number.MAX_SAFE_INTEGER;
       for (let i = layout.bottomRows - 1; i >= 0; i--) {
         const avail = bottomLaneNextAvailableRef.current[i] ?? 0;
-        if (avail <= tMs && avail < bestAvail) {
-          bestAvail = avail;
+        if (avail <= tMs) {
           chosen = i;
+          break;
         }
       }
-      if (chosen === -1) {
+
+      if (chosen !== -1) {
+        bottomLaneNextAvailableRef.current[chosen] = tMs + deltaMs;
+        return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
+      }
+
+      if (forceSchedule) {
         const earliest = getEarliestBottomRow();
         if (!earliest) return null;
+        bottomLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaMs;
         return {
           rowIndex: earliest.rowIndex,
           nextAvailableMs: earliest.availMs + deltaMs,
           scheduledMs: earliest.availMs,
         };
       }
-      return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
+
+      return null;
     },
     [ensureLanes, layout.bottomRows, getEarliestBottomRow],
   );
@@ -360,6 +445,7 @@ export function DanmakuLayer({
 
     // 应用密度限制
     if (danmakuDensityLimit > 0) {
+      const earlyDensityGraceSeconds = 8;
       const containerWidth = width;
       const containerHeight = height * heightRatio - 18;
       const duration = Math.ceil(containerWidth / speed);
@@ -373,6 +459,10 @@ export function DanmakuLayer({
       const resultComments: typeof filteredByMode = [];
 
       filteredByMode.forEach((comment) => {
+        if (comment.timeInSeconds <= earlyDensityGraceSeconds) {
+          resultComments.push(comment);
+          return;
+        }
         const timeIndex = Math.ceil(comment.timeInSeconds / duration);
 
         if (!timeBuckets[timeIndex]) {
@@ -430,6 +520,10 @@ export function DanmakuLayer({
       scheduledTasksRef.current = [];
 
       processedCommentsRef.current.clear();
+      scheduledCommentsRef.current.clear();
+      scrollQueueRef.current = [];
+      topQueueRef.current = [];
+      bottomQueueRef.current = [];
 
       ensureLanes();
       for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
@@ -453,6 +547,7 @@ export function DanmakuLayer({
     if (!isPlaying) return;
     if (currentTimeMs === lastTimeMsRef.current) return;
     const prevMs = lastTimeMsRef.current < 0 ? currentTimeMs : lastTimeMsRef.current;
+    const isInitialTick = prevMs === currentTimeMs;
     lastTimeMsRef.current = currentTimeMs;
 
     if (currentTimeMs < prevMs) {
@@ -473,12 +568,99 @@ export function DanmakuLayer({
 
     const fromMs = Math.min(prevMs, currentTimeMs);
     const toMs = Math.max(prevMs, currentTimeMs);
+
     const slice = filteredComments
       .filter((c) => {
         const tMs = Math.round(c.timeInSeconds * 1000);
         return tMs > fromMs && tMs <= toMs && !processedCommentsRef.current.has(c.id);
       })
       .sort((a, b) => a.timeInSeconds - b.timeInSeconds);
+    // 初始播放时做一次回补，避免开场几秒内的弹幕被漏掉
+    if (slice.length === 0 && isInitialTick) {
+      const nowMs = currentTimeMs;
+      const catchupWindowMs = 12000;
+      const startMs = Math.max(0, nowMs - catchupWindowMs);
+      const missed = filteredComments
+        .filter((c) => {
+          const tMs = Math.round(c.timeInSeconds * 1000);
+          return (
+            tMs >= startMs &&
+            tMs <= nowMs &&
+            !processedCommentsRef.current.has(c.id) &&
+            !scheduledCommentsRef.current.has(c.id)
+          );
+        })
+        .sort((a, b) => a.timeInSeconds - b.timeInSeconds);
+
+      if (missed.length > 0) {
+        const newActive: ActiveBullet[] = [];
+        for (const c of missed) {
+          const tMs = Math.round(c.timeInSeconds * 1000);
+          scheduledCommentsRef.current.add(c.id);
+
+          let pickRowFn: (
+            tMs: number,
+            text: string,
+          ) => { rowIndex: number; scheduledMs: number } | null;
+
+          switch (c.mode) {
+            case DANDAN_COMMENT_MODE.Top:
+              pickRowFn = pickTopRow;
+              break;
+            case DANDAN_COMMENT_MODE.Bottom:
+              pickRowFn = pickBottomRow;
+              break;
+            case DANDAN_COMMENT_MODE.Scroll:
+            case DANDAN_COMMENT_MODE.ScrollBottom:
+              pickRowFn = pickScrollRow;
+              break;
+            default:
+              continue;
+          }
+
+          const picked = pickRowFn(tMs, c.text);
+          if (picked) {
+            const { rowIndex, scheduledMs } = picked;
+
+            if (scheduledMs <= nowMs) {
+              const lateOffset = Math.max(0, nowMs - scheduledMs);
+              const maxOffset =
+                c.mode === DANDAN_COMMENT_MODE.Top || c.mode === DANDAN_COMMENT_MODE.Bottom
+                  ? 3700
+                  : Math.max(0, Math.max(4000, Math.round(((width + 300) / speed) * 1000)) - 300);
+              const startOffsetMs = Math.min(lateOffset, maxOffset);
+
+              const bullet = createDanmakuBullet(c, rowIndex, startOffsetMs);
+              if (
+                c.mode === DANDAN_COMMENT_MODE.Scroll ||
+                c.mode === DANDAN_COMMENT_MODE.ScrollBottom
+              ) {
+                scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+              }
+              newActive.push(bullet);
+            } else {
+              const fireDelay = Math.max(0, scheduledMs - nowMs);
+              scheduleTask(fireDelay, () => {
+                const bullet = createDanmakuBullet(c, rowIndex, 0);
+                if (
+                  c.mode === DANDAN_COMMENT_MODE.Scroll ||
+                  c.mode === DANDAN_COMMENT_MODE.ScrollBottom
+                ) {
+                  scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+                }
+                enqueueActive(bullet);
+                processedCommentsRef.current.add(c.id);
+              });
+            }
+          }
+        }
+        if (newActive.length > 0) {
+          for (const b of newActive) enqueueActive(b);
+          for (const b of newActive) processedCommentsRef.current.add(b.id);
+        }
+      }
+      return;
+    }
     if (slice.length === 0) return;
 
     const windowMs = toMs - fromMs;
@@ -486,251 +668,134 @@ export function DanmakuLayer({
       const newActive: ActiveBullet[] = [];
       for (const c of slice) {
         const tMs = Math.round(c.timeInSeconds * 1000);
-        processedCommentsRef.current.add(c.id);
+        if (processedCommentsRef.current.has(c.id) || scheduledCommentsRef.current.has(c.id)) {
+          continue;
+        }
 
-        if (c.mode === DANDAN_COMMENT_MODE.Top) {
-          const picked = pickTopRow(tMs);
-          if (picked) {
-            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-            topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-            if (scheduledMs === tMs) {
-              const startOffsetMs = Math.max(0, toMs - scheduledMs);
-              if (startOffsetMs < 4000) {
-                newActive.push({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Top,
-                  startOffsetMs,
-                });
-              }
-            } else {
-              const fireDelay = Math.max(0, scheduledMs - fromMs);
-              scheduleTask(fireDelay, () => {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Top,
-                  startOffsetMs: 0,
-                });
-              });
-            }
-          }
-          continue;
+        let pickRowFn: (
+          tMs: number,
+          text: string,
+        ) => { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null;
+        let updateLaneFn: (rowIndex: number, nextAvailableMs: number) => void;
+
+        switch (c.mode) {
+          case DANDAN_COMMENT_MODE.Top:
+            pickRowFn = pickTopRow;
+            updateLaneFn = (rowIndex, nextAvailableMs) => {
+              topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
+            };
+            break;
+          case DANDAN_COMMENT_MODE.Bottom:
+            pickRowFn = pickBottomRow;
+            updateLaneFn = (rowIndex, nextAvailableMs) => {
+              bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
+            };
+            break;
+          case DANDAN_COMMENT_MODE.Scroll:
+          case DANDAN_COMMENT_MODE.ScrollBottom:
+            pickRowFn = pickScrollRow;
+            updateLaneFn = (rowIndex, nextAvailableMs) => {
+              scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
+              scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+            };
+            break;
+          default:
+            continue;
         }
-        if (c.mode === DANDAN_COMMENT_MODE.Bottom) {
-          const picked = pickBottomRow(tMs);
-          if (picked) {
-            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-            bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-            const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
-            if (scheduledMs === tMs) {
-              const startOffsetMs = Math.max(0, toMs - scheduledMs);
-              if (startOffsetMs < 4000) {
-                newActive.push({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: bottomStart + rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Bottom,
-                  startOffsetMs,
-                });
-              }
-            } else {
-              const fireDelay = Math.max(0, scheduledMs - fromMs);
-              scheduleTask(fireDelay, () => {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: bottomStart + rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Bottom,
-                  startOffsetMs: 0,
-                });
-              });
-            }
+
+        const picked = pickRowFn(tMs, c.text);
+        if (picked) {
+          const { rowIndex, nextAvailableMs, scheduledMs } = picked;
+          updateLaneFn(rowIndex, nextAvailableMs);
+
+          if (scheduledMs === tMs) {
+            const lateOffset = Math.max(0, toMs - scheduledMs);
+            const maxOffset =
+              c.mode === DANDAN_COMMENT_MODE.Top || c.mode === DANDAN_COMMENT_MODE.Bottom
+                ? 3700
+                : Math.max(0, Math.max(4000, Math.round(((width + 300) / speed) * 1000)) - 300);
+            const startOffsetMs = Math.min(lateOffset, maxOffset);
+
+            const bullet = createDanmakuBullet(c, rowIndex, startOffsetMs);
+            newActive.push(bullet);
+          } else {
+            const fireDelay = Math.max(0, scheduledMs - fromMs);
+            scheduleTask(fireDelay, () => {
+              const bullet = createDanmakuBullet(c, rowIndex, 0);
+              enqueueActive(bullet);
+            });
+            scheduledCommentsRef.current.add(c.id);
           }
-          continue;
-        }
-        if (c.mode === DANDAN_COMMENT_MODE.Scroll || c.mode === DANDAN_COMMENT_MODE.ScrollBottom) {
-          const picked = pickScrollRow(tMs, c.text);
-          if (picked) {
-            const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-            scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-            scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
-            const scrollStart = 0;
-            const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
-            if (scheduledMs === tMs) {
-              const startOffsetMs = Math.max(0, toMs - scheduledMs);
-              if (startOffsetMs < durationMs) {
-                newActive.push({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: scrollStart + rowIndex * lineHeight,
-                  durationMs,
-                  mode: c.mode,
-                  startOffsetMs,
-                });
-              }
-            } else {
-              const fireDelay = Math.max(0, scheduledMs - fromMs);
-              scheduleTask(fireDelay, () => {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: scrollStart + rowIndex * lineHeight,
-                  durationMs,
-                  mode: c.mode,
-                  startOffsetMs: 0,
-                });
-              });
-            }
-          }
-        }
-        if (newActive.length >= rows) {
-          continue;
         }
       }
       if (newActive.length > 0) {
         for (const b of newActive) enqueueActive(b);
+        for (const b of newActive) processedCommentsRef.current.add(b.id);
       }
     } else {
       for (const c of slice) {
         const tMs = Math.round(c.timeInSeconds * 1000);
-        processedCommentsRef.current.add(c.id);
+        if (processedCommentsRef.current.has(c.id) || scheduledCommentsRef.current.has(c.id)) {
+          continue;
+        }
         const delay = Math.max(0, tMs - fromMs);
 
         scheduleTask(delay, () => {
           if (!isPlaying) return;
 
-          if (c.mode === DANDAN_COMMENT_MODE.Top) {
-            const picked = pickTopRow(tMs);
-            if (picked) {
-              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-              topLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-              const extraDelay = Math.max(0, scheduledMs - tMs);
-              if (extraDelay === 0) {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Top,
-                  startOffsetMs: 0,
-                });
-              } else {
-                scheduleTask(extraDelay, () => {
-                  enqueueActive({
-                    id: c.id,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: rowIndex * lineHeight,
-                    durationMs: 4000,
-                    mode: DANDAN_COMMENT_MODE.Top,
-                    startOffsetMs: 0,
-                  });
-                });
-              }
-            }
-            return;
+          let pickRowFn: (
+            tMs: number,
+            text: string,
+          ) => { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null;
+
+          switch (c.mode) {
+            case DANDAN_COMMENT_MODE.Top:
+              pickRowFn = pickTopRow;
+              break;
+            case DANDAN_COMMENT_MODE.Bottom:
+              pickRowFn = pickBottomRow;
+              break;
+            case DANDAN_COMMENT_MODE.Scroll:
+            case DANDAN_COMMENT_MODE.ScrollBottom:
+              pickRowFn = pickScrollRow;
+              break;
+            default:
+              return;
           }
 
-          if (c.mode === DANDAN_COMMENT_MODE.Bottom) {
-            const picked = pickBottomRow(tMs);
-            if (picked) {
-              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-              bottomLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-              const bottomStart = height * heightRatio - layout.bottomRows * lineHeight - 18;
-              const extraDelay = Math.max(0, scheduledMs - tMs);
-              if (extraDelay === 0) {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: bottomStart + rowIndex * lineHeight,
-                  durationMs: 4000,
-                  mode: DANDAN_COMMENT_MODE.Bottom,
-                  startOffsetMs: 0,
-                });
-              } else {
-                scheduleTask(extraDelay, () => {
-                  enqueueActive({
-                    id: c.id,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: bottomStart + rowIndex * lineHeight,
-                    durationMs: 4000,
-                    mode: DANDAN_COMMENT_MODE.Bottom,
-                    startOffsetMs: 0,
-                  });
-                });
-              }
-            }
-            return;
-          }
+          const picked = pickRowFn(tMs, c.text);
+          if (picked) {
+            const { rowIndex, scheduledMs } = picked;
+            const extraDelay = Math.max(0, scheduledMs - tMs);
 
-          if (
-            c.mode === DANDAN_COMMENT_MODE.Scroll ||
-            c.mode === DANDAN_COMMENT_MODE.ScrollBottom
-          ) {
-            const picked = pickScrollRow(tMs, c.text);
-            if (picked) {
-              const { rowIndex, nextAvailableMs, scheduledMs } = picked;
-              scrollLaneNextAvailableRef.current[rowIndex] = nextAvailableMs;
-              scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
-              const scrollStart = 0;
-              const durationMs = Math.max(4000, Math.round(((width + 300) / speed) * 1000));
-              const extraDelay = Math.max(0, scheduledMs - tMs);
-              if (extraDelay === 0) {
-                enqueueActive({
-                  id: c.id,
-                  text: c.text,
-                  colorHex: c.colorHex,
-                  top: scrollStart + rowIndex * lineHeight,
-                  durationMs,
-                  mode: c.mode,
-                  startOffsetMs: 0,
-                });
-              } else {
-                scheduleTask(extraDelay, () => {
-                  enqueueActive({
-                    id: c.id,
-                    text: c.text,
-                    colorHex: c.colorHex,
-                    top: scrollStart + rowIndex * lineHeight,
-                    durationMs,
-                    mode: c.mode,
-                    startOffsetMs: 0,
-                  });
-                });
+            if (extraDelay === 0) {
+              const bullet = createDanmakuBullet(c, rowIndex, 0);
+              if (
+                c.mode === DANDAN_COMMENT_MODE.Scroll ||
+                c.mode === DANDAN_COMMENT_MODE.ScrollBottom
+              ) {
+                scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
               }
+              enqueueActive(bullet);
+              processedCommentsRef.current.add(c.id);
+            } else {
+              scheduleTask(extraDelay, () => {
+                const bullet = createDanmakuBullet(c, rowIndex, 0);
+                if (
+                  c.mode === DANDAN_COMMENT_MODE.Scroll ||
+                  c.mode === DANDAN_COMMENT_MODE.ScrollBottom
+                ) {
+                  scrollLaneLastWidthRef.current[rowIndex] = estimateTextWidth(c.text);
+                }
+                enqueueActive(bullet);
+                processedCommentsRef.current.add(c.id);
+              });
             }
           }
         });
+        scheduledCommentsRef.current.add(c.id);
       }
     }
-
-    return () => {
-      if (scheduledTimeoutsRef.current.length > 0) {
-        for (const t of scheduledTimeoutsRef.current) clearTimeout(t);
-        scheduledTimeoutsRef.current = [];
-      }
-      if (schedulerIntervalRef.current) {
-        clearInterval(schedulerIntervalRef.current);
-        schedulerIntervalRef.current = null;
-      }
-      scheduledTasksRef.current = [];
-    };
   }, [
     currentTimeMs,
     isPlaying,
@@ -749,7 +814,29 @@ export function DanmakuLayer({
     enqueueActive,
     scheduleTask,
     estimateTextWidth,
+    createDanmakuBullet,
   ]);
+
+  useEffect(() => {
+    const processedComments = processedCommentsRef.current;
+    const scheduledComments = scheduledCommentsRef.current;
+    return () => {
+      if (schedulerIntervalRef.current) {
+        clearInterval(schedulerIntervalRef.current);
+        schedulerIntervalRef.current = null;
+      }
+      scheduledTasksRef.current = [];
+      if (scheduledTimeoutsRef.current.length > 0) {
+        for (const t of scheduledTimeoutsRef.current) clearTimeout(t);
+        scheduledTimeoutsRef.current = [];
+      }
+      processedComments.clear();
+      scheduledComments.clear();
+      scrollQueueRef.current = [];
+      topQueueRef.current = [];
+      bottomQueueRef.current = [];
+    };
+  }, []);
 
   const handleExpire = useCallback((id: number) => {
     setActive((prev) => prev.filter((b) => b.id !== id));
