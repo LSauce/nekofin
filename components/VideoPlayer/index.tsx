@@ -15,7 +15,6 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Alert,
   StatusBar,
   StyleSheet,
   Text,
@@ -324,20 +323,20 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const composed = Gesture.Exclusive(doubleTapGesture, tapGesture);
 
   useEffect(() => {
+    StatusBar.setHidden(true, 'none');
     (async () => {
       try {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        StatusBar.setHidden(true);
       } catch (e) {
         console.warn('Failed to lock orientation', e);
       }
     })();
 
     return () => {
+      StatusBar.setHidden(false);
       (async () => {
         try {
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-          StatusBar.setHidden(false);
         } catch (e) {
           console.warn('Failed to unlock orientation', e);
         }
@@ -454,12 +453,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       )}
       {showLoading && <LoadingIndicator />}
 
-      <View style={styles.debugContainer}>
+      {/* <View style={styles.debugContainer}>
         <Text style={styles.debugText}>position: {position}</Text>
         <Text style={styles.debugText}>isPlaying: {isPlaying ? 'true' : 'false'}</Text>
         <Text style={styles.debugText}>isBuffering: {isBuffering ? 'true' : 'false'}</Text>
         <Text style={styles.debugText}>isStopped: {isStopped ? 'true' : 'false'}</Text>
-      </View>
+      </View> */}
 
       {comments.length > 0 && (
         <DanmakuLayer
@@ -524,7 +523,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           tint="dark"
           intensity={100}
           style={[StyleSheet.absoluteFill, styles.floatingControlsBlur]}
-          experimentalBlurMethod="dimezisBlurView"
         />
         <View style={styles.progressContainer}>
           <View style={styles.controlsRow}>
