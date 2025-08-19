@@ -148,14 +148,14 @@ export default function HomeScreen() {
           <UserViewSection userView={userView || []} currentServer={currentServer} />
           <Section
             title="继续观看"
-            onViewAll={() => {}}
+            onViewAll={() => router.push('/viewall/resume')}
             items={resumeItems || []}
             isLoading={isLoadingResume}
             currentServer={currentServer}
           />
           <Section
             title="接下来"
-            onViewAll={() => {}}
+            onViewAll={() => router.push('/viewall/nextup')}
             items={nextUpItems || []}
             isLoading={isLoadingNextUp}
             currentServer={currentServer}
@@ -166,7 +166,16 @@ export default function HomeScreen() {
               <Section
                 key={folder.Id}
                 title={`最近添加的 ${folder.Name}`}
-                onViewAll={() => {}}
+                onViewAll={() =>
+                  router.push({
+                    pathname: '/viewall/[type]',
+                    params: {
+                      folderId: folder.Id,
+                      folderName: folder.Name,
+                      type: 'latest',
+                    },
+                  })
+                }
                 items={folderLatestItems}
                 isLoading={isLoadingLatestItemsByFolders}
                 currentServer={currentServer}
@@ -225,6 +234,7 @@ function UserViewSection({
       <View style={styles.userViewContainer}>
         {featuredItems.map((item, index) => (
           <UserViewCard
+            item={item}
             key={item.Id || index}
             title={item.Name || '未知标题'}
             imageUrl={
@@ -240,14 +250,36 @@ function UserViewSection({
   );
 }
 
-function UserViewCard({ title, imageUrl }: { title: string; imageUrl: string | null }) {
+function UserViewCard({
+  item,
+  title,
+  imageUrl,
+}: {
+  item?: BaseItemDto;
+  title: string;
+  imageUrl: string | null;
+  id?: string;
+}) {
   const router = useRouter();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { width } = useWindowDimensions();
 
   return (
-    <TouchableOpacity style={[styles.userViewCard, { backgroundColor }]}>
+    <TouchableOpacity
+      style={[styles.userViewCard, { backgroundColor }]}
+      onPress={() => {
+        if (!item) return;
+        router.push({
+          pathname: '/folder/[id]',
+          params: {
+            id: item.Id!,
+            name: title,
+            itemTypes: item.CollectionType === 'movies' ? ['Movie'] : ['Series'],
+          },
+        });
+      }}
+    >
       {imageUrl ? (
         <Image
           source={{ uri: imageUrl }}

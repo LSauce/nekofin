@@ -1,6 +1,7 @@
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
+import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
 import {
   getItemsApi,
   getLibraryApi,
@@ -70,7 +71,7 @@ export async function getMediaFolders(api: Api) {
   return await getLibraryApi(api).getMediaFolders();
 }
 
-export async function getLatestItems(api: Api, userId: string, limit: number = 20) {
+export async function getLatestItems(api: Api, userId: string, limit: number = 100) {
   return await getItemsApi(api).getItems({
     userId,
     limit,
@@ -86,7 +87,7 @@ export async function getLatestItemsByFolder(
   api: Api,
   userId: string,
   folderId: string,
-  limit: number = 10,
+  limit: number = 100,
 ) {
   return await getUserLibraryApi(api).getLatestMedia({
     userId,
@@ -98,7 +99,7 @@ export async function getLatestItemsByFolder(
   });
 }
 
-export async function getNextUpItems(api: Api, userId: string, limit: number = 20) {
+export async function getNextUpItems(api: Api, userId: string, limit: number = 100) {
   return await getTvShowsApi(api).getNextUp({
     userId,
     limit,
@@ -112,7 +113,7 @@ export async function getNextUpItemsByFolder(
   api: Api,
   userId: string,
   folderId: string,
-  limit: number = 10,
+  limit: number = 100,
 ) {
   return await getTvShowsApi(api).getNextUp({
     userId,
@@ -121,7 +122,7 @@ export async function getNextUpItemsByFolder(
   });
 }
 
-export async function getResumeItems(api: Api, userId: string, limit: number = 10) {
+export async function getResumeItems(api: Api, userId: string, limit: number = 100) {
   return await getItemsApi(api).getResumeItems({
     userId,
     limit,
@@ -200,5 +201,26 @@ export async function getItemMediaSources(api: Api, itemId: string) {
 export async function getUserView(api: Api, userId: string) {
   return await getUserViewsApi(api).getUserViews({
     userId,
+  });
+}
+
+export async function getAllItemsByFolder(
+  api: Api,
+  userId: string,
+  folderId: string,
+  limit: number = 200,
+  itemTypes: BaseItemKind[] = ['Movie', 'Series', 'Episode'],
+) {
+  return await getItemsApi(api).getItems({
+    userId,
+    parentId: folderId,
+    recursive: true,
+    limit,
+    sortBy: ['DateCreated'],
+    sortOrder: ['Descending'],
+    fields: ['PrimaryImageAspectRatio', 'Path'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+    includeItemTypes: itemTypes,
   });
 }

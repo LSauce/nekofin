@@ -47,9 +47,9 @@ export function Section({
           contentContainerStyle={styles.sectionListContent}
           renderItem={({ item }) =>
             type === 'episode' ? (
-              <MediaCard item={item} onPress={() => {}} currentServer={currentServer} />
+              <MediaCard item={item} currentServer={currentServer} />
             ) : (
-              <SeriesCard item={item} onPress={() => {}} currentServer={currentServer} />
+              <SeriesCard item={item} currentServer={currentServer} />
             )
           }
           keyExtractor={(item) => item.Id!}

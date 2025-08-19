@@ -5,7 +5,15 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo } from 'react';
-import { StyleSheet, Text, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import {
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  useWindowDimensions,
+  View,
+  ViewStyle,
+} from 'react-native';
 
 import { IconSymbol } from '../ui/IconSymbol';
 
@@ -24,12 +32,12 @@ const getSubtitle = (item: BaseItemDto) => {
 
 export function MediaCard({
   item,
-  onPress,
   currentServer,
+  style,
 }: {
   item: BaseItemDto;
-  onPress?: () => void;
   currentServer?: MediaServerInfo | null;
+  style?: StyleProp<ViewStyle>;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
@@ -66,7 +74,7 @@ export function MediaCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: width * 0.5, backgroundColor }]}
+      style={[styles.card, { width: width * 0.5, backgroundColor }, style]}
       onPress={handlePress}
     >
       {imageUrl ? (
@@ -105,12 +113,12 @@ export function MediaCard({
 
 export function SeriesCard({
   item,
-  onPress,
   currentServer,
+  style,
 }: {
   item: BaseItemDto;
-  onPress: () => void;
   currentServer?: MediaServerInfo | null;
+  style?: StyleProp<ViewStyle>;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -126,7 +134,7 @@ export function SeriesCard({
   }, [item, currentServer]);
 
   return (
-    <TouchableOpacity style={[styles.card, { width: width * 0.4, backgroundColor }]}>
+    <TouchableOpacity style={[styles.card, { width: width * 0.3, backgroundColor }, style]}>
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.posterCover} contentFit="cover" />
       ) : (

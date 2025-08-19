@@ -43,6 +43,12 @@ export default function RootLayout() {
                         autoHideHomeIndicator: true,
                       }}
                     />
+                    <Stack.Screen
+                      name="viewall/[type]"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
                     <Stack.Screen name="+not-found" />
                   </Stack>
                   <StatusBar style="auto" />
