@@ -563,8 +563,7 @@ export function DanmakuLayer({
   useEffect(() => {
     if (!isPlaying) return;
     if (currentTimeMs === lastTimeMsRef.current) return;
-    const isFirstProcess = lastTimeMsRef.current < 0;
-    const prevMs = isFirstProcess ? -1 : lastTimeMsRef.current;
+    const prevMs = lastTimeMsRef.current;
     lastTimeMsRef.current = currentTimeMs;
 
     if (currentTimeMs < prevMs) {
@@ -612,15 +611,13 @@ export function DanmakuLayer({
       }
     }
 
-    const baseFrom = Math.min(prevMs, currentTimeMs);
-    const baseTo = Math.max(prevMs, currentTimeMs);
-    const fromMs = isFirstProcess ? 0 : baseFrom;
-    const toMs = isFirstProcess ? currentTimeMs : baseTo;
+    const fromMs = Math.min(prevMs, currentTimeMs);
+    const toMs = Math.max(prevMs, currentTimeMs);
 
     const slice = filteredComments
       .filter((c) => {
         const tMs = Math.round(c.timeInSeconds * 1000);
-        const lowerOk = isFirstProcess ? tMs >= 0 : tMs > fromMs;
+        const lowerOk = tMs > fromMs;
         return lowerOk && tMs <= toMs && !processedCommentsRef.current.has(c.id);
       })
       .sort((a, b) => a.timeInSeconds - b.timeInSeconds);
@@ -682,7 +679,7 @@ export function DanmakuLayer({
             const bullet = createDanmakuBullet(c, rowIndex, startOffsetMs, scheduledMs);
             newActive.push(bullet);
           } else {
-            const fireDelay = Math.max(0, scheduledMs - (isFirstProcess ? toMs : fromMs));
+            const fireDelay = Math.max(0, scheduledMs - fromMs);
             scheduleTask(fireDelay, () => {
               const bullet = createDanmakuBullet(c, rowIndex, 0, scheduledMs);
               enqueueActive(bullet);
