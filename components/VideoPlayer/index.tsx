@@ -140,8 +140,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [itemDetail]);
 
   useEffect(() => {
-    progressValue.value = progress;
-  }, [progress, progressValue]);
+    if (!isDragging) {
+      progressValue.value = progress;
+    }
+  }, [progress, progressValue, isDragging]);
 
   useEffect(() => {
     if (isPlaying && !isBuffering && isLoaded) {
@@ -249,8 +251,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const handleSliderChange = (value: number) => {
     if (!mediaInfo?.duration) return;
-    const newTime = value * mediaInfo.duration;
-    handleSeek(newTime);
     progressValue.value = value;
     setShowControls(true);
     fadeAnim.value = withTiming(1, { duration: 200 });
