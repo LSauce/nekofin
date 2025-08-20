@@ -214,53 +214,10 @@ export function DanmakuLayer({
     [lineHeight, height, heightRatio, layout.bottomRows, width, speed],
   );
 
-  const getEarliestScrollRow = useCallback((): { rowIndex: number; availMs: number } | null => {
-    ensureLanes();
-    let idx = -1;
-    let val = Number.MAX_SAFE_INTEGER;
-    for (let i = 0; i < layout.scrollRows; i++) {
-      const a = scrollLaneNextAvailableRef.current[i] ?? 0;
-      if (a < val) {
-        val = a;
-        idx = i;
-      }
-    }
-    return idx === -1 ? null : { rowIndex: idx, availMs: val };
-  }, [ensureLanes, layout.scrollRows]);
-
-  const getEarliestTopRow = useCallback((): { rowIndex: number; availMs: number } | null => {
-    ensureLanes();
-    let idx = -1;
-    let val = Number.MAX_SAFE_INTEGER;
-    for (let i = 0; i < layout.topRows; i++) {
-      const a = topLaneNextAvailableRef.current[i] ?? 0;
-      if (a < val) {
-        val = a;
-        idx = i;
-      }
-    }
-    return idx === -1 ? null : { rowIndex: idx, availMs: val };
-  }, [ensureLanes, layout.topRows]);
-
-  const getEarliestBottomRow = useCallback((): { rowIndex: number; availMs: number } | null => {
-    ensureLanes();
-    let idx = -1;
-    let val = Number.MAX_SAFE_INTEGER;
-    for (let i = layout.bottomRows - 1; i >= 0; i--) {
-      const a = bottomLaneNextAvailableRef.current[i] ?? 0;
-      if (a < val) {
-        val = a;
-        idx = i;
-      }
-    }
-    return idx === -1 ? null : { rowIndex: idx, availMs: val };
-  }, [ensureLanes, layout.bottomRows]);
-
   const pickScrollRow = useCallback(
     (
       tMs: number,
       text: string,
-      forceSchedule: boolean = false,
     ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const v = Math.max(50, speed);
@@ -281,98 +238,79 @@ export function DanmakuLayer({
         return { rowIndex: chosen, nextAvailableMs: tMs + deltaCurrMs, scheduledMs: tMs };
       }
 
-      if (forceSchedule) {
-        const earliest = getEarliestScrollRow();
-        if (!earliest) return null;
-        scrollLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaCurrMs;
-        return {
-          rowIndex: earliest.rowIndex,
-          nextAvailableMs: earliest.availMs + deltaCurrMs,
-          scheduledMs: earliest.availMs,
-        };
-      }
-
       return null;
     },
-    [ensureLanes, layout.scrollRows, estimateTextWidth, speed, getEarliestScrollRow],
+    [ensureLanes, layout.scrollRows, estimateTextWidth, speed],
   );
 
   const pickTopRow = useCallback(
-    (
-      tMs: number,
-      text: string = '',
-      forceSchedule: boolean = false,
-    ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
+    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
+
+      const activeBulletsInTopRows = active.filter(
+        (b) =>
+          b.mode === DANDAN_COMMENT_MODE.Top && b.top >= 0 && b.top < layout.topRows * lineHeight,
+      );
 
       let chosen = -1;
       for (let i = 0; i < layout.topRows; i++) {
         const avail = topLaneNextAvailableRef.current[i] ?? 0;
-        if (avail <= tMs) {
+        const rowTop = i * lineHeight;
+
+        const hasActiveBulletInRow = activeBulletsInTopRows.some(
+          (b) => Math.abs(b.top - rowTop) < lineHeight / 2,
+        );
+
+        if (avail <= tMs && !hasActiveBulletInRow) {
           chosen = i;
           break;
         }
       }
 
       if (chosen !== -1) {
-        topLaneNextAvailableRef.current[chosen] = tMs + deltaMs;
-        return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
-      }
-
-      if (forceSchedule) {
-        const earliest = getEarliestTopRow();
-        if (!earliest) return null;
-        topLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaMs;
-        return {
-          rowIndex: earliest.rowIndex,
-          nextAvailableMs: earliest.availMs + deltaMs,
-          scheduledMs: earliest.availMs,
-        };
+        const nextAvailableMs = tMs + deltaMs;
+        topLaneNextAvailableRef.current[chosen] = nextAvailableMs;
+        return { rowIndex: chosen, nextAvailableMs, scheduledMs: tMs };
       }
 
       return null;
     },
-    [ensureLanes, layout.topRows, getEarliestTopRow],
+    [ensureLanes, layout.topRows, active, lineHeight],
   );
 
   const pickBottomRow = useCallback(
-    (
-      tMs: number,
-      text: string = '',
-      forceSchedule: boolean = false,
-    ): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
+    (tMs: number): { rowIndex: number; nextAvailableMs: number; scheduledMs: number } | null => {
       ensureLanes();
       const deltaMs = 4000;
+
+      const activeBulletsInBottomRows = active.filter((b) => b.mode === DANDAN_COMMENT_MODE.Bottom);
 
       let chosen = -1;
       for (let i = layout.bottomRows - 1; i >= 0; i--) {
         const avail = bottomLaneNextAvailableRef.current[i] ?? 0;
-        if (avail <= tMs) {
+        const bottomStart = height * heightRatio - lineHeight;
+        const rowTop = bottomStart - (layout.bottomRows - 1 - i) * lineHeight;
+
+        const hasActiveBulletInRow = activeBulletsInBottomRows.some(
+          (b) => Math.abs(b.top - rowTop) < lineHeight / 2,
+        );
+
+        if (avail <= tMs && !hasActiveBulletInRow) {
           chosen = i;
           break;
         }
       }
 
       if (chosen !== -1) {
-        bottomLaneNextAvailableRef.current[chosen] = tMs + deltaMs;
-        return { rowIndex: chosen, nextAvailableMs: tMs + deltaMs, scheduledMs: tMs };
-      }
-
-      if (forceSchedule) {
-        const earliest = getEarliestBottomRow();
-        if (!earliest) return null;
-        bottomLaneNextAvailableRef.current[earliest.rowIndex] = earliest.availMs + deltaMs;
-        return {
-          rowIndex: earliest.rowIndex,
-          nextAvailableMs: earliest.availMs + deltaMs,
-          scheduledMs: earliest.availMs,
-        };
+        const nextAvailableMs = tMs + deltaMs;
+        bottomLaneNextAvailableRef.current[chosen] = nextAvailableMs;
+        return { rowIndex: chosen, nextAvailableMs, scheduledMs: tMs };
       }
 
       return null;
     },
-    [ensureLanes, layout.bottomRows, getEarliestBottomRow],
+    [ensureLanes, layout.bottomRows, active, height, heightRatio, lineHeight],
   );
 
   // 弹幕过滤和密度控制
@@ -552,17 +490,43 @@ export function DanmakuLayer({
 
     if (currentTimeMs < prevMs) {
       ensureLanes();
+
       for (let i = 0; i < scrollLaneNextAvailableRef.current.length; i++) {
-        scrollLaneNextAvailableRef.current[i] = 0;
+        scrollLaneNextAvailableRef.current[i] = Math.max(0, currentTimeMs);
       }
       for (let i = 0; i < scrollLaneLastWidthRef.current.length; i++) {
         scrollLaneLastWidthRef.current[i] = 0;
       }
+
       for (let i = 0; i < topLaneNextAvailableRef.current.length; i++) {
-        topLaneNextAvailableRef.current[i] = 0;
+        const rowTop = i * lineHeight;
+        const activeBulletInRow = active.find(
+          (b) => b.mode === DANDAN_COMMENT_MODE.Top && Math.abs(b.top - rowTop) < lineHeight / 2,
+        );
+
+        if (activeBulletInRow) {
+          const estimatedEndTime =
+            currentTimeMs + (activeBulletInRow.durationMs - (activeBulletInRow.startOffsetMs || 0));
+          topLaneNextAvailableRef.current[i] = Math.max(currentTimeMs, estimatedEndTime);
+        } else {
+          topLaneNextAvailableRef.current[i] = Math.max(0, currentTimeMs);
+        }
       }
+
       for (let i = 0; i < bottomLaneNextAvailableRef.current.length; i++) {
-        bottomLaneNextAvailableRef.current[i] = 0;
+        const bottomStart = height * heightRatio - lineHeight;
+        const rowTop = bottomStart - (layout.bottomRows - 1 - i) * lineHeight;
+        const activeBulletInRow = active.find(
+          (b) => b.mode === DANDAN_COMMENT_MODE.Bottom && Math.abs(b.top - rowTop) < lineHeight / 2,
+        );
+
+        if (activeBulletInRow) {
+          const estimatedEndTime =
+            currentTimeMs + (activeBulletInRow.durationMs - (activeBulletInRow.startOffsetMs || 0));
+          bottomLaneNextAvailableRef.current[i] = Math.max(currentTimeMs, estimatedEndTime);
+        } else {
+          bottomLaneNextAvailableRef.current[i] = Math.max(0, currentTimeMs);
+        }
       }
     }
 
@@ -807,6 +771,7 @@ export function DanmakuLayer({
     speed,
     lineHeight,
     heightRatio,
+    active,
     ensureLanes,
     pickTopRow,
     pickBottomRow,
