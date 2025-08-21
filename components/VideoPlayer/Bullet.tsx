@@ -9,6 +9,7 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
+import StrokeText from '../StokeText';
 import { ActiveBullet } from './DanmakuTypes';
 
 const STROKE_COLOR = '#000';
@@ -166,52 +167,12 @@ export function Bullet({
       style={[style, isTopOrBottom ? styles.centerRow : null]}
       renderToHardwareTextureAndroid
     >
-      <View style={styles.textContainer}>
-        <Text
-          style={[
-            textStyle,
-            { color: STROKE_COLOR },
-            { position: 'absolute', top: STROKE_WIDTH, left: STROKE_WIDTH },
-          ]}
-          numberOfLines={1}
-        >
-          {data.text}
-        </Text>
-        <Text
-          style={[
-            textStyle,
-            { color: STROKE_COLOR },
-            { position: 'absolute', top: STROKE_WIDTH, left: -STROKE_WIDTH },
-          ]}
-          numberOfLines={1}
-        >
-          {data.text}
-        </Text>
-        <Text
-          style={[
-            textStyle,
-            { color: STROKE_COLOR },
-            { position: 'absolute', top: -STROKE_WIDTH, left: STROKE_WIDTH },
-          ]}
-          numberOfLines={1}
-        >
-          {data.text}
-        </Text>
-        <Text
-          style={[
-            textStyle,
-            { color: STROKE_COLOR },
-            { position: 'absolute', top: -STROKE_WIDTH, left: -STROKE_WIDTH },
-          ]}
-          numberOfLines={1}
-        >
-          {data.text}
-        </Text>
-
-        <Text style={[textStyle, { color: data.colorHex }]} numberOfLines={1}>
-          {data.text}
-        </Text>
-      </View>
+      <StrokeText
+        text={data.text}
+        style={[textStyle, { color: data.colorHex }]}
+        strokeColor={STROKE_COLOR}
+        strokeWidth={STROKE_WIDTH}
+      />
     </Animated.View>
   );
 }
