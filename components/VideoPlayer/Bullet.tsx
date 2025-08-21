@@ -70,7 +70,7 @@ export function Bullet({
 
     if (remainingToFadeRef.current > 0) {
       fadeTimeoutRef.current = setTimeout(() => {
-        opacity.value = withTiming(0, { duration: 300 });
+        opacity.value = 0;
       }, remainingToFadeRef.current);
     }
   }, [data.id, onExpire, opacity]);
@@ -166,6 +166,7 @@ export function Bullet({
     <Animated.View
       style={[style, isTopOrBottom ? styles.centerRow : null]}
       renderToHardwareTextureAndroid
+      needsOffscreenAlphaCompositing={false}
     >
       <StrokeText
         text={data.text}

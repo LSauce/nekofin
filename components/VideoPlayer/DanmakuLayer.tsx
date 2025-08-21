@@ -1,5 +1,5 @@
 import { defaultSettings } from '@/lib/contexts/DanmakuSettingsContext';
-import { DANDAN_COMMENT_MODE, DandanComment, DandanCommentMode } from '@/services/dandanplay';
+import { DANDAN_COMMENT_MODE, DandanComment } from '@/services/dandanplay';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
 
@@ -100,7 +100,7 @@ export function DanmakuLayer({
     (textWidth: number): number => {
       const base = Math.max(50, speed);
       const ratio = Math.min(2, Math.max(0, textWidth / Math.max(1, width)));
-      const factor = 1 + 0.4 * ratio;
+      const factor = 1 + 0.2 * ratio;
       return Math.min(base * factor, 900);
     },
     [speed, width],
