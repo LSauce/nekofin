@@ -16,6 +16,7 @@ import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
+  Platform,
   StatusBar,
   StyleSheet,
   Text,
@@ -396,10 +397,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [isPlaying]);
 
   useEffect(() => {
-    NavigationBar.setVisibilityAsync('hidden');
-    return () => {
-      NavigationBar.setVisibilityAsync('visible');
-    };
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+      return () => {
+        NavigationBar.setVisibilityAsync('visible');
+      };
+    }
   }, []);
 
   const showLoading = useMemo(() => {
