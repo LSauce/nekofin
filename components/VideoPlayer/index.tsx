@@ -10,6 +10,7 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item
 import { BlurView } from 'expo-blur';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { LibVlcPlayerView, LibVlcPlayerViewRef, type MediaInfo } from 'expo-libvlc-player';
+import * as NavigationBar from 'expo-navigation-bar';
 import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -393,6 +394,13 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       }
     })();
   }, [isPlaying]);
+
+  useEffect(() => {
+    NavigationBar.setVisibilityAsync('hidden');
+    return () => {
+      NavigationBar.setVisibilityAsync('visible');
+    };
+  }, []);
 
   const showLoading = useMemo(() => {
     return isBuffering || !videoSource || !isLoaded || (isPlaying && position === 0);

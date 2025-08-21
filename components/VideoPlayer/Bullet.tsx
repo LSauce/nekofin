@@ -1,6 +1,6 @@
 import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,

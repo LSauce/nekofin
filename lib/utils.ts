@@ -114,6 +114,7 @@ export const getCommentsByItem = async (item: BaseItemDto, originalTitle?: strin
   console.log(anime);
   if (anime && episodeNumber) {
     const comments = await getCommentsByEpisodeId(anime.episodes[episodeNumber - 1].episodeId);
+    console.log(comments.slice(0, 5));
     return comments;
   }
 };

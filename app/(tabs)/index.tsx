@@ -19,6 +19,7 @@ import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { useMemo, useRef } from 'react';
 import {
+  Platform,
   ScrollView,
   StyleSheet,
   Text,
@@ -26,12 +27,13 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { SafeAreaView } from 'react-native-safe-area-context';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export default function HomeScreen() {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
+  const insets = useSafeAreaInsets();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { servers, currentServer, setCurrentServer, refreshServerInfo } = useMediaServers();
 
@@ -110,14 +112,20 @@ export default function HomeScreen() {
 
   if (servers.length === 0) {
     return (
-      <SafeAreaView
-        style={{ flex: 1, backgroundColor: '#fff', justifyContent: 'center', alignItems: 'center' }}
+      <View
+        style={{
+          flex: 1,
+          paddingTop: insets.top,
+          backgroundColor: '#fff',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         <Text>No servers found</Text>
         <TouchableOpacity onPress={() => router.push('/media')}>
           <Text>Add server</Text>
         </TouchableOpacity>
-      </SafeAreaView>
+      </View>
     );
   }
 
@@ -128,7 +136,7 @@ export default function HomeScreen() {
   };
 
   return (
-    <SafeAreaView style={{ flex: 1, backgroundColor }}>
+    <View style={{ flex: 1, paddingTop: insets.top, backgroundColor }}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: textColor }]}>首页</Text>
         <TouchableOpacity
@@ -144,7 +152,7 @@ export default function HomeScreen() {
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
-        <View style={{ paddingBottom: bottomTabBarHeight }}>
+        <View style={{ paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0 }}>
           <UserViewSection userView={userView || []} currentServer={currentServer} />
           <Section
             title="继续观看"
@@ -204,7 +212,7 @@ export default function HomeScreen() {
           ))}
         </BottomSheetView>
       </BottomSheetBackdropModal>
-    </SafeAreaView>
+    </View>
   );
 }
 
