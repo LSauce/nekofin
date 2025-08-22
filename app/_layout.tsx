@@ -55,6 +55,12 @@ export default function RootLayout() {
                         headerShown: false,
                       }}
                     />
+                    <Stack.Screen
+                      name="danmaku-test"
+                      options={{
+                        headerShown: false,
+                      }}
+                    />
                     <Stack.Screen name="+not-found" />
                   </Stack>
                   <StatusBar style="auto" />

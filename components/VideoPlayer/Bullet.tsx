@@ -4,6 +4,7 @@ import { StyleSheet } from 'react-native';
 import Animated, {
   cancelAnimation,
   Easing,
+  runOnJS,
   useAnimatedStyle,
   useSharedValue,
   withTiming,
@@ -33,11 +34,9 @@ export function Bullet({
   isPlaying: boolean;
 }) {
   const translateX = useSharedValue(0);
-  const opacity = useSharedValue(1);
 
   const originalDurationRef = useRef<number>(data.durationMs);
   const remainingDurationRef = useRef<number>(data.durationMs);
-  const remainingToFadeRef = useRef<number>(Math.max(0, data.durationMs - 300));
   const runStartedAtRef = useRef<number | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -46,7 +45,6 @@ export function Bullet({
     originalDurationRef.current = data.durationMs;
     const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
     remainingDurationRef.current = Math.max(0, data.durationMs - clampedOffset);
-    remainingToFadeRef.current = Math.max(0, data.durationMs - 300 - clampedOffset);
     if (
       data.mode === DANDAN_COMMENT_MODE.Scroll ||
       data.mode === DANDAN_COMMENT_MODE.ScrollBottom
@@ -58,22 +56,20 @@ export function Bullet({
     }
   }, [data.durationMs, data.startOffsetMs, data.mode, width, translateX]);
 
+  const handleExpire = useCallback(() => {
+    onExpire(data.id);
+  }, [data.id, onExpire]);
+
   const scheduleFadeAndRemoval = useCallback(() => {
     if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
     if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
     if (remainingDurationRef.current > 0) {
       removeTimeoutRef.current = setTimeout(() => {
-        onExpire(data.id);
+        runOnJS(handleExpire)();
       }, remainingDurationRef.current + 100);
     }
-
-    if (remainingToFadeRef.current > 0) {
-      fadeTimeoutRef.current = setTimeout(() => {
-        opacity.value = 0;
-      }, remainingToFadeRef.current);
-    }
-  }, [data.id, onExpire, opacity]);
+  }, [handleExpire]);
 
   const startOrResume = useCallback(() => {
     if (runStartedAtRef.current != null) return;
@@ -107,11 +103,9 @@ export function Bullet({
     if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
     remainingDurationRef.current = Math.max(0, remainingDurationRef.current - elapsed);
-    remainingToFadeRef.current = Math.max(0, remainingToFadeRef.current - elapsed);
 
     cancelAnimation(translateX);
-    cancelAnimation(opacity);
-  }, [translateX, opacity]);
+  }, [translateX]);
 
   useEffect(() => {
     if (isPlaying) {
@@ -121,7 +115,6 @@ export function Bullet({
     }
     return () => {
       if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
-      if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
     };
   }, [isPlaying, startOrResume, pauseRun]);
 
@@ -142,7 +135,6 @@ export function Bullet({
       data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
         ? [{ translateX: translateX.value }]
         : [],
-    opacity: opacity.value,
   }));
 
   const textStyle = useMemo(

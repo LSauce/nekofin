@@ -139,16 +139,21 @@ export default function HomeScreen() {
     <View style={{ flex: 1, paddingTop: insets.top, backgroundColor }}>
       <View style={styles.header}>
         <Text style={[styles.title, { color: textColor }]}>首页</Text>
-        <TouchableOpacity
-          onPress={() => BottomSheetModalRef.current?.present()}
-          style={styles.serverButton}
-        >
-          <Image
-            source={{ uri: currentServer?.userAvatar }}
-            style={styles.serverButtonAvatar}
-            contentFit="cover"
-          />
-        </TouchableOpacity>
+        <View style={styles.headerButtons}>
+          <TouchableOpacity style={styles.testButton} onPress={() => router.push('/danmaku-test')}>
+            <Text style={styles.testButtonText}>弹幕测试</Text>
+          </TouchableOpacity>
+          <TouchableOpacity
+            onPress={() => BottomSheetModalRef.current?.present()}
+            style={styles.serverButton}
+          >
+            <Image
+              source={{ uri: currentServer?.userAvatar }}
+              style={styles.serverButtonAvatar}
+              contentFit="cover"
+            />
+          </TouchableOpacity>
+        </View>
       </View>
 
       <ScrollView showsVerticalScrollIndicator={false}>
@@ -320,6 +325,22 @@ const styles = StyleSheet.create({
     fontSize: 36,
     fontWeight: 'bold',
     flex: 1,
+  },
+  headerButtons: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 12,
+  },
+  testButton: {
+    backgroundColor: '#007AFF',
+    paddingHorizontal: 12,
+    paddingVertical: 6,
+    borderRadius: 8,
+  },
+  testButtonText: {
+    color: '#fff',
+    fontSize: 12,
+    fontWeight: '600',
   },
   serverButton: {
     padding: 4,
