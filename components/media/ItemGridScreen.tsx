@@ -1,11 +1,10 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
+import { Header } from '@/components/ui/Header';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
-import { Stack, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { Stack } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
@@ -23,7 +22,6 @@ export type ItemGridScreenProps = {
 };
 
 export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) {
-  const router = useRouter();
   const insets = useSafeAreaInsets();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -53,20 +51,11 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
     );
   };
 
-  const renderHeader = () => (
-    <View style={styles.header}>
-      <TouchableOpacity onPress={() => router.back()} style={styles.backButton}>
-        <MaterialIcons name="arrow-back" size={24} color={textColor} />
-      </TouchableOpacity>
-      <Text style={[styles.title, { color: textColor }]}>{title}</Text>
-    </View>
-  );
-
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        {renderHeader()}
+        <Header title={title} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#9C4DFF" />
         </View>
@@ -78,7 +67,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
     return (
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
         <Stack.Screen options={{ headerShown: false }} />
-        {renderHeader()}
+        <Header title={title} />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: textColor }]}>加载失败，请重试</Text>
           <TouchableOpacity
@@ -97,7 +86,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   return (
     <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
       <Stack.Screen options={{ headerShown: false }} />
-      {renderHeader()}
+      <Header title={title} />
       {items.length > 0 ? (
         <FlatList
           data={items}
@@ -121,21 +110,6 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
 const styles = StyleSheet.create({
   container: {
     flex: 1,
-  },
-  header: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    paddingHorizontal: 20,
-    paddingVertical: 16,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
-  },
-  backButton: {
-    marginRight: 16,
-  },
-  title: {
-    fontSize: 20,
-    fontWeight: 'bold',
   },
   listContainer: {
     padding: 20,

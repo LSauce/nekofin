@@ -48,22 +48,7 @@ export type DandanComment = {
   user: string;
 };
 
-const BASE_URL = 'https://ddplay-api.930524.xyz/cors/https://api.dandanplay.net';
-const APP_ID = '';
-const APP_SECRET = '';
-
-async function generateSignature(
-  appId: string,
-  timestamp: string,
-  path: string,
-  appSecret: string,
-) {
-  const data = appId + timestamp + path + appSecret;
-  const hashBase64 = await Crypto.digestStringAsync(Crypto.CryptoDigestAlgorithm.SHA256, data, {
-    encoding: Crypto.CryptoEncoding.BASE64,
-  });
-  return hashBase64;
-}
+const BASE_URL = process.env.EXPO_PUBLIC_DANDANPLAY_API_URL;
 
 async function makeRequest<T>(endpoint: string, params?: Record<string, any>): Promise<T> {
   const url = new URL(`${BASE_URL}${endpoint}`);
