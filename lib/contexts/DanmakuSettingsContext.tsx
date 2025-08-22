@@ -22,7 +22,7 @@ type DanmakuSettingsContextValue = {
 
 export const defaultSettings: DanmakuSettingsType = {
   opacity: 0.8,
-  speed: 100,
+  speed: 120,
   fontSize: 20,
   heightRatio: 0.9,
   danmakuFilter: 0,
