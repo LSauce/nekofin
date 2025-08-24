@@ -1,14 +1,6 @@
 import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { StyleSheet } from 'react-native';
-import Animated, {
-  cancelAnimation,
-  Easing,
-  runOnJS,
-  useAnimatedStyle,
-  useSharedValue,
-  withTiming,
-} from 'react-native-reanimated';
+import { Animated, Easing, StyleSheet } from 'react-native';
 
 import StrokeText from '../StokeText';
 import { ActiveBullet } from './DanmakuTypes';
@@ -33,7 +25,7 @@ export function Bullet({
   fontOptions: string;
   isPlaying: boolean;
 }) {
-  const translateX = useSharedValue(0);
+  const translateX = useRef(new Animated.Value(0)).current;
 
   const originalDurationRef = useRef<number>(data.durationMs);
   const remainingDurationRef = useRef<number>(data.durationMs);
@@ -52,7 +44,7 @@ export function Bullet({
       const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
       const totalDistance = isLeftScroll ? -width - 300 : width + 300;
       const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
-      translateX.value = totalDistance * progressed;
+      translateX.setValue(totalDistance * progressed);
     }
   }, [data.durationMs, data.startOffsetMs, data.mode, width, translateX]);
 
@@ -66,8 +58,10 @@ export function Bullet({
 
     if (remainingDurationRef.current > 0) {
       removeTimeoutRef.current = setTimeout(() => {
-        runOnJS(handleExpire)();
-      }, remainingDurationRef.current + 100);
+        handleExpire();
+      }, remainingDurationRef.current);
+    } else {
+      handleExpire();
     }
   }, [handleExpire]);
 
@@ -84,15 +78,23 @@ export function Bullet({
       const totalDistance = isLeftScroll ? -width - 300 : width + 300;
       const originalDuration = originalDurationRef.current;
       const remaining = remainingDurationRef.current;
+
+      if (remaining <= 0) {
+        handleExpire();
+        return;
+      }
+
       const progressed = Math.max(0, Math.min(1, 1 - remaining / originalDuration));
       const currentTranslate = totalDistance * progressed;
-      translateX.value = currentTranslate;
-      translateX.value = withTiming(totalDistance, {
+      translateX.setValue(currentTranslate);
+      Animated.timing(translateX, {
+        toValue: totalDistance,
         duration: Math.max(0, remaining),
         easing: Easing.linear,
-      });
+        useNativeDriver: true,
+      }).start();
     }
-  }, [data.mode, translateX, width, scheduleFadeAndRemoval]);
+  }, [data.mode, translateX, width, scheduleFadeAndRemoval, handleExpire]);
 
   const pauseRun = useCallback(() => {
     if (runStartedAtRef.current == null) return;
@@ -104,7 +106,7 @@ export function Bullet({
 
     remainingDurationRef.current = Math.max(0, remainingDurationRef.current - elapsed);
 
-    cancelAnimation(translateX);
+    translateX.stopAnimation();
   }, [translateX]);
 
   useEffect(() => {
@@ -116,26 +118,29 @@ export function Bullet({
     return () => {
       if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
     };
-  }, [isPlaying, startOrResume, pauseRun]);
+  }, [isPlaying, startOrResume, pauseRun, translateX]);
 
-  const style = useAnimatedStyle(() => ({
-    position: 'absolute',
-    top: data.top,
-    left:
-      data.mode === DANDAN_COMMENT_MODE.Scroll
-        ? width
-        : data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-          ? -100
-          : 0,
-    width:
-      data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom
-        ? '100%'
-        : undefined,
-    transform:
-      data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-        ? [{ translateX: translateX.value }]
-        : [],
-  }));
+  const style = useMemo(
+    () => ({
+      position: 'absolute' as const,
+      top: data.top,
+      left:
+        data.mode === DANDAN_COMMENT_MODE.Scroll
+          ? width
+          : data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+            ? -100
+            : 0,
+      width:
+        data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom
+          ? ('100%' as `${number}%`)
+          : undefined,
+      transform:
+        data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+          ? [{ translateX }]
+          : [],
+    }),
+    [data.top, data.mode, width, translateX],
+  );
 
   const textStyle = useMemo(
     () => [

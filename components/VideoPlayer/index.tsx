@@ -13,11 +13,11 @@ import { LibVlcPlayerView, LibVlcPlayerViewRef, type MediaInfo } from 'expo-libv
 import * as NavigationBar from 'expo-navigation-bar';
 import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
+import * as StatusBar from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   Platform,
-  StatusBar,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -326,7 +326,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const composed = Gesture.Exclusive(doubleTapGesture, tapGesture);
 
   useEffect(() => {
-    StatusBar.setHidden(true, 'none');
+    StatusBar.setStatusBarHidden(true, 'none');
     (async () => {
       try {
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
@@ -336,7 +336,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     })();
 
     return () => {
-      StatusBar.setHidden(false);
+      StatusBar.setStatusBarHidden(false);
       (async () => {
         try {
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
