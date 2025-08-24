@@ -36,7 +36,6 @@ import * as DropdownMenu from 'zeego/dropdown-menu';
 import { DanmakuLayer } from './DanmakuLayer';
 import { DanmakuSettings } from './DanmakuSettings';
 
-const UPDATE_INTERVAL = 100;
 const PLAYBACK_RATE = 1;
 
 const LoadingIndicator = () => {
@@ -81,18 +80,17 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const [externalCurrentTime, setExternalCurrentTime] = useState(0);
-  const [lastSyncTime, setLastSyncTime] = useState(0);
   const [playbackRate, setPlaybackRate] = useState(PLAYBACK_RATE);
   const [seekKey, setSeekKey] = useState(0);
-  const externalTimeInterval = useRef<ReturnType<typeof setInterval> | null>(null);
-
-  const currentTime = useMemo(() => {
-    return position === 0 ? position * (mediaInfo?.duration ?? 0) : externalCurrentTime;
-  }, [position, mediaInfo?.duration, externalCurrentTime]);
+  const externalTimeInterval = useRef<ReturnType<typeof requestAnimationFrame> | null>(null);
 
   const duration = useMemo(() => {
     return mediaInfo?.duration ?? 0;
   }, [mediaInfo]);
+
+  const currentTime = useMemo(() => {
+    return duration * position;
+  }, [duration, position]);
 
   const progress = useMemo(() => {
     return duration > 0 ? currentTime / duration : 0;
@@ -100,29 +98,33 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const startExternalTimeUpdate = useCallback(() => {
     if (externalTimeInterval.current) {
-      clearInterval(externalTimeInterval.current);
+      cancelAnimationFrame(externalTimeInterval.current);
     }
 
-    externalTimeInterval.current = setInterval(() => {
+    let lastTime = performance.now();
+    const updateTime = () => {
+      const currentTime = performance.now();
+      const deltaTime = currentTime - lastTime;
+      lastTime = currentTime;
+
       setExternalCurrentTime((prevTime) => {
         if (isPlaying && !isBuffering) {
-          return prevTime + UPDATE_INTERVAL * playbackRate;
+          return prevTime + deltaTime * playbackRate;
         }
         return prevTime;
       });
-    }, UPDATE_INTERVAL);
+
+      externalTimeInterval.current = requestAnimationFrame(updateTime);
+    };
+
+    externalTimeInterval.current = requestAnimationFrame(updateTime);
   }, [isPlaying, isBuffering, playbackRate]);
 
   const stopExternalTimeUpdate = useCallback(() => {
     if (externalTimeInterval.current) {
-      clearInterval(externalTimeInterval.current);
+      cancelAnimationFrame(externalTimeInterval.current);
       externalTimeInterval.current = null;
     }
-  }, []);
-
-  const syncWithVideoProgress = useCallback((videoTime: number) => {
-    setExternalCurrentTime(videoTime);
-    setLastSyncTime(videoTime);
   }, []);
 
   const formattedTitle = useMemo(() => {
@@ -243,7 +245,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     const position = mediaInfo.duration > 0 ? clampedTime / mediaInfo.duration : 0;
     player.current.seek(position);
     setExternalCurrentTime(time);
-    setLastSyncTime(time);
     setSeekKey((prev) => prev + 1);
   };
 
@@ -451,11 +452,11 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           onPositionChanged={({ position }) => {
             setPosition(position);
             setIsBuffering(false);
-            syncWithVideoProgress(position * (mediaInfo?.duration ?? 0));
           }}
           onFirstPlay={(mediaInfo) => {
             setIsLoaded(true);
             setMediaInfo(mediaInfo);
+            setExternalCurrentTime(0);
           }}
           onEncounteredError={(error) => {
             console.warn('Encountered error', error);
@@ -473,7 +474,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
       {comments.length > 0 && (
         <DanmakuLayer
-          currentTimeMs={currentTime}
+          currentTimeMs={externalCurrentTime}
           isPlaying={!showLoading && !isStopped && isPlaying}
           comments={comments}
           {...danmakuSettings}
