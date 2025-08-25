@@ -25,27 +25,25 @@ export function Bullet({
   fontOptions: string;
   isPlaying: boolean;
 }) {
-  const translateX = useRef(new Animated.Value(0)).current;
+  const initTranslateX = useMemo(() => {
+    const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
+    const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
+    const totalDistance = isLeftScroll ? -width - 300 : width + 300;
+    const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
+    return totalDistance * progressed;
+  }, [data.mode, data.startOffsetMs, data.durationMs, width]);
+
+  const translateX = useRef(new Animated.Value(initTranslateX)).current;
 
   const originalDurationRef = useRef<number>(data.durationMs);
   const remainingDurationRef = useRef<number>(data.durationMs);
   const runStartedAtRef = useRef<number | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-  const fadeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   useEffect(() => {
     originalDurationRef.current = data.durationMs;
     const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
     remainingDurationRef.current = Math.max(0, data.durationMs - clampedOffset);
-    if (
-      data.mode === DANDAN_COMMENT_MODE.Scroll ||
-      data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-    ) {
-      const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
-      const totalDistance = isLeftScroll ? -width - 300 : width + 300;
-      const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
-      translateX.setValue(totalDistance * progressed);
-    }
   }, [data.durationMs, data.startOffsetMs, data.mode, width, translateX]);
 
   const handleExpire = useCallback(() => {
@@ -54,7 +52,6 @@ export function Bullet({
 
   const scheduleFadeAndRemoval = useCallback(() => {
     if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
-    if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
     if (remainingDurationRef.current > 0) {
       removeTimeoutRef.current = setTimeout(() => {
@@ -76,7 +73,6 @@ export function Bullet({
     ) {
       const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
       const totalDistance = isLeftScroll ? -width - 300 : width + 300;
-      const originalDuration = originalDurationRef.current;
       const remaining = remainingDurationRef.current;
 
       if (remaining <= 0) {
@@ -84,9 +80,6 @@ export function Bullet({
         return;
       }
 
-      const progressed = Math.max(0, Math.min(1, 1 - remaining / originalDuration));
-      const currentTranslate = totalDistance * progressed;
-      translateX.setValue(currentTranslate);
       Animated.timing(translateX, {
         toValue: totalDistance,
         duration: Math.max(0, remaining),
@@ -102,7 +95,6 @@ export function Bullet({
     runStartedAtRef.current = null;
 
     if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
-    if (fadeTimeoutRef.current) clearTimeout(fadeTimeoutRef.current);
 
     remainingDurationRef.current = Math.max(0, remainingDurationRef.current - elapsed);
 
