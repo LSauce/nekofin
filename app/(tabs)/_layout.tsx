@@ -2,15 +2,19 @@ import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from 'expo-router';
-import { Platform } from 'react-native';
+import { ColorValue, Platform, PlatformColor } from 'react-native';
 
 export default function TabLayout() {
   const colorScheme = useColorScheme();
   const { accentColor } = useAccentColor();
+  const backgroundColorDefault = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const backgroundColor: ColorValue =
+    Platform.OS === 'ios' ? PlatformColor('systemGroupedBackground') : backgroundColorDefault;
 
   return (
     <Tabs
@@ -26,16 +30,8 @@ export default function TabLayout() {
           },
           default: {},
         }),
-        headerStyle: {
-          borderBottomWidth: 0,
-          shadowColor: 'transparent',
-          shadowOpacity: 0,
-          shadowOffset: {
-            width: 0,
-            height: 0,
-          },
-          shadowRadius: 0,
-        },
+        headerTransparent: true,
+        headerBackground: TabBarBackground,
       }}
     >
       <Tabs.Screen

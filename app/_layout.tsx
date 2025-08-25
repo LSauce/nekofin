@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import 'react-native-reanimated';
 
+import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
 import { MediaServerProvider } from '@/lib/contexts/MediaServerContext';
@@ -33,7 +34,13 @@ export default function RootLayout() {
             <ThemeColorProvider>
               <BottomSheetModalProvider>
                 <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
-                  <Stack>
+                  <Stack
+                    screenOptions={{
+                      headerTransparent: true,
+                      headerBackground: TabBarBackground,
+                      headerBackTitle: '返回',
+                    }}
+                  >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen
                       name="media/player"
@@ -52,7 +59,8 @@ export default function RootLayout() {
                     <Stack.Screen
                       name="danmaku-settings"
                       options={{
-                        headerShown: false,
+                        title: '弹幕设置',
+                        headerShown: true,
                       }}
                     />
                     <Stack.Screen

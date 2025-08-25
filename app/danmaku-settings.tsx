@@ -1,4 +1,4 @@
-import { Header } from '@/components/ui/Header';
+import PageScrollView from '@/components/PageScrollView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { defaultSettings, useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
@@ -166,126 +166,114 @@ export default function DanmakuSettingsScreen() {
   };
 
   return (
-    <>
-      <View style={[styles.container, { backgroundColor }]}>
-        <Header title="弹幕设置" />
+    <PageScrollView showsVerticalScrollIndicator={false}>
+      <SettingSection title="基础设置">
+        <SliderSetting
+          title="透明度"
+          subtitle="弹幕显示的透明度"
+          value={settings.opacity}
+          min={0.1}
+          max={1.0}
+          onValueChange={(value) => updateSetting('opacity', value)}
+          formatValue={(value) => `${Math.round(value * 100)}%`}
+        />
+        <View style={[styles.separator, { backgroundColor: separatorColor }]} />
+        <SliderSetting
+          title="字体大小"
+          subtitle="弹幕文字的大小"
+          value={settings.fontSize}
+          min={12}
+          max={36}
+          onValueChange={(value) => updateSetting('fontSize', value)}
+          formatValue={(value) => `${value}px`}
+        />
+        <View style={[styles.separator, { backgroundColor: separatorColor }]} />
+        <SliderSetting
+          title="显示区域"
+          subtitle="弹幕在屏幕上的显示范围"
+          value={settings.heightRatio}
+          min={0.3}
+          max={1.0}
+          onValueChange={(value) => updateSetting('heightRatio', value)}
+          formatValue={(value) => `${Math.round(value * 100)}%`}
+        />
+        <View style={[styles.separator, { backgroundColor: separatorColor }]} />
+        <SliderSetting
+          title="时间偏移"
+          subtitle="弹幕显示时间的调整"
+          value={settings.curEpOffset}
+          min={-10}
+          max={10}
+          onValueChange={(value) => updateSetting('curEpOffset', value)}
+          formatValue={(value) => `${value > 0 ? '+' : ''}${value}s`}
+        />
+      </SettingSection>
 
-        <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-          <SettingSection title="基础设置">
-            <SliderSetting
-              title="透明度"
-              subtitle="弹幕显示的透明度"
-              value={settings.opacity}
-              min={0.1}
-              max={1.0}
-              onValueChange={(value) => updateSetting('opacity', value)}
-              formatValue={(value) => `${Math.round(value * 100)}%`}
-            />
-            <View style={[styles.separator, { backgroundColor: separatorColor }]} />
-            <SliderSetting
-              title="字体大小"
-              subtitle="弹幕文字的大小"
-              value={settings.fontSize}
-              min={12}
-              max={36}
-              onValueChange={(value) => updateSetting('fontSize', value)}
-              formatValue={(value) => `${value}px`}
-            />
-            <View style={[styles.separator, { backgroundColor: separatorColor }]} />
-            <SliderSetting
-              title="显示区域"
-              subtitle="弹幕在屏幕上的显示范围"
-              value={settings.heightRatio}
-              min={0.3}
-              max={1.0}
-              onValueChange={(value) => updateSetting('heightRatio', value)}
-              formatValue={(value) => `${Math.round(value * 100)}%`}
-            />
-            <View style={[styles.separator, { backgroundColor: separatorColor }]} />
-            <SliderSetting
-              title="时间偏移"
-              subtitle="弹幕显示时间的调整"
-              value={settings.curEpOffset}
-              min={-10}
-              max={10}
-              onValueChange={(value) => updateSetting('curEpOffset', value)}
-              formatValue={(value) => `${value > 0 ? '+' : ''}${value}s`}
-            />
-          </SettingSection>
+      <SettingSection title="弹幕来源过滤">
+        <SwitchSetting
+          title="B站弹幕"
+          subtitle="显示来自哔哩哔哩的弹幕"
+          value={(settings.danmakuFilter & 1) !== 1}
+          onValueChange={() => toggleFilter(1)}
+        />
+        <SwitchSetting
+          title="巴哈弹幕"
+          subtitle="显示来自巴哈姆特的弹幕"
+          value={(settings.danmakuFilter & 2) !== 2}
+          onValueChange={() => toggleFilter(2)}
+        />
+        <SwitchSetting
+          title="弹弹Play弹幕"
+          subtitle="显示来自弹弹Play的弹幕"
+          value={(settings.danmakuFilter & 4) !== 4}
+          onValueChange={() => toggleFilter(4)}
+        />
+        <SwitchSetting
+          title="其他来源弹幕"
+          subtitle="显示来自其他平台的弹幕"
+          value={(settings.danmakuFilter & 8) !== 8}
+          onValueChange={() => toggleFilter(8)}
+          isLast
+        />
+      </SettingSection>
 
-          <SettingSection title="弹幕来源过滤">
-            <SwitchSetting
-              title="B站弹幕"
-              subtitle="显示来自哔哩哔哩的弹幕"
-              value={(settings.danmakuFilter & 1) !== 1}
-              onValueChange={() => toggleFilter(1)}
-            />
-            <SwitchSetting
-              title="巴哈弹幕"
-              subtitle="显示来自巴哈姆特的弹幕"
-              value={(settings.danmakuFilter & 2) !== 2}
-              onValueChange={() => toggleFilter(2)}
-            />
-            <SwitchSetting
-              title="弹弹Play弹幕"
-              subtitle="显示来自弹弹Play的弹幕"
-              value={(settings.danmakuFilter & 4) !== 4}
-              onValueChange={() => toggleFilter(4)}
-            />
-            <SwitchSetting
-              title="其他来源弹幕"
-              subtitle="显示来自其他平台的弹幕"
-              value={(settings.danmakuFilter & 8) !== 8}
-              onValueChange={() => toggleFilter(8)}
-              isLast
-            />
-          </SettingSection>
+      <SettingSection title="弹幕类型过滤">
+        <SwitchSetting
+          title="底部弹幕"
+          subtitle="显示固定在底部的弹幕"
+          value={(settings.danmakuModeFilter & 1) !== 1}
+          onValueChange={() => toggleModeFilter(1)}
+        />
+        <SwitchSetting
+          title="顶部弹幕"
+          subtitle="显示固定在顶部的弹幕"
+          value={(settings.danmakuModeFilter & 2) !== 2}
+          onValueChange={() => toggleModeFilter(2)}
+        />
+        <SwitchSetting
+          title="滚动弹幕"
+          subtitle="显示从右到左滚动的弹幕"
+          value={(settings.danmakuModeFilter & 4) !== 4}
+          onValueChange={() => toggleModeFilter(4)}
+          isLast
+        />
+      </SettingSection>
 
-          <SettingSection title="弹幕类型过滤">
-            <SwitchSetting
-              title="底部弹幕"
-              subtitle="显示固定在底部的弹幕"
-              value={(settings.danmakuModeFilter & 1) !== 1}
-              onValueChange={() => toggleModeFilter(1)}
-            />
-            <SwitchSetting
-              title="顶部弹幕"
-              subtitle="显示固定在顶部的弹幕"
-              value={(settings.danmakuModeFilter & 2) !== 2}
-              onValueChange={() => toggleModeFilter(2)}
-            />
-            <SwitchSetting
-              title="滚动弹幕"
-              subtitle="显示从右到左滚动的弹幕"
-              value={(settings.danmakuModeFilter & 4) !== 4}
-              onValueChange={() => toggleModeFilter(4)}
-              isLast
-            />
-          </SettingSection>
+      <View style={styles.bottomSpacing} />
 
-          <View style={styles.bottomSpacing} />
-
-          <View style={styles.resetSection}>
-            <TouchableOpacity
-              style={[styles.resetButton, { backgroundColor: '#FF6B6B' }]}
-              onPress={handleResetToDefault}
-            >
-              <Text style={styles.resetButtonText}>恢复默认设置</Text>
-            </TouchableOpacity>
-          </View>
-        </ScrollView>
+      <View style={styles.resetSection}>
+        <TouchableOpacity
+          style={[styles.resetButton, { backgroundColor: '#FF6B6B' }]}
+          onPress={handleResetToDefault}
+        >
+          <Text style={styles.resetButtonText}>恢复默认设置</Text>
+        </TouchableOpacity>
       </View>
-    </>
+    </PageScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-  scrollView: {
-    flex: 1,
-  },
   section: {
     marginTop: 28,
   },

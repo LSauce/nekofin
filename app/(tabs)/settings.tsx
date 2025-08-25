@@ -1,8 +1,12 @@
+import PageScrollView from '@/components/PageScrollView';
+import { Section } from '@/components/ui/Section';
+import { SettingsRow } from '@/components/ui/SettingsRow';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
+import { useHeaderHeight } from '@react-navigation/elements';
 import { useRouter } from 'expo-router';
 import {
   Platform,
@@ -18,6 +22,7 @@ import {
 export default function SettingsScreen() {
   const router = useRouter();
   const bottomTabBarHeight = useBottomTabBarHeight();
+  const headerHeight = useHeaderHeight();
   const backgroundColorDefault = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const secondaryTextColorDefault = useThemeColor({ light: '#666', dark: '#999' }, 'text');
@@ -26,59 +31,13 @@ export default function SettingsScreen() {
     Platform.OS === 'ios' ? PlatformColor('systemGroupedBackground') : backgroundColorDefault;
   const cardBackgroundColor: ColorValue =
     Platform.OS === 'ios' ? PlatformColor('secondarySystemGroupedBackground') : backgroundColor;
-  const separatorColor: ColorValue = Platform.OS === 'ios' ? PlatformColor('separator') : '#eee';
   const secondaryTextColor: ColorValue =
     Platform.OS === 'ios' ? PlatformColor('secondaryLabel') : secondaryTextColorDefault;
   const { currentServer, servers } = useMediaServers();
   const { accentColor, setAccentColor } = useAccentColor();
 
-  const SettingItem = ({
-    title,
-    subtitle,
-    icon,
-    onPress,
-    showArrow = true,
-    rightComponent,
-    disableBorder = false,
-  }: {
-    title: string;
-    subtitle?: string;
-    icon: string;
-    onPress?: () => void;
-    showArrow?: boolean;
-    rightComponent?: React.ReactNode;
-    disableBorder?: boolean;
-  }) => (
-    <TouchableOpacity
-      style={[
-        styles.settingItem,
-        { backgroundColor: cardBackgroundColor },
-        Platform.OS === 'ios' && disableBorder ? styles.settingItemNoBorder : null,
-      ]}
-      onPress={onPress}
-      disabled={!onPress}
-    >
-      <View style={styles.settingItemLeft}>
-        <MaterialIcons
-          name={icon as any}
-          size={24}
-          color={accentColor}
-          style={styles.settingIcon}
-        />
-        <View style={styles.settingTextContainer}>
-          <Text style={[styles.settingTitle, { color: textColor }]}>{title}</Text>
-          {subtitle && (
-            <Text style={[styles.settingSubtitle, { color: secondaryTextColor }]}>{subtitle}</Text>
-          )}
-        </View>
-      </View>
-      <View style={styles.settingItemRight}>
-        {rightComponent}
-        {showArrow && onPress && (
-          <MaterialIcons name="chevron-right" size={24} color={secondaryTextColor as any} />
-        )}
-      </View>
-    </TouchableOpacity>
+  const SettingItem = (props: React.ComponentProps<typeof SettingsRow>) => (
+    <SettingsRow {...props} />
   );
 
   const ColorOption = ({ color, isSelected }: { color: string; isSelected: boolean }) => (
@@ -95,120 +54,90 @@ export default function SettingsScreen() {
   );
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor, paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0 },
-      ]}
-    >
-      <ScrollView style={styles.scrollView} showsVerticalScrollIndicator={false}>
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>服务器</Text>
-          <View style={[styles.groupContainer, { backgroundColor: cardBackgroundColor }]}>
-            <SettingItem
-              title="当前服务器"
-              subtitle={currentServer?.name || '未选择'}
-              icon="dns"
-              onPress={() => router.push('/media')}
-              disableBorder
-            />
-            <View style={[styles.separator, { backgroundColor: separatorColor }]} />
-            <SettingItem
-              title="服务器列表"
-              subtitle={`${servers.length} 个服务器`}
-              icon="list"
-              onPress={() => router.push('/media')}
-              disableBorder
-            />
-          </View>
-        </View>
+    <PageScrollView showsVerticalScrollIndicator={false}>
+      <Section title="服务器" titleColor={secondaryTextColor}>
+        <SettingItem
+          title="当前服务器"
+          subtitle={currentServer?.name || '未选择'}
+          icon="dns"
+          onPress={() => router.push('/media')}
+          disableBorder
+        />
+        <SettingItem
+          title="服务器列表"
+          subtitle={`${servers.length} 个服务器`}
+          icon="list"
+          onPress={() => router.push('/media')}
+          disableBorder
+        />
+      </Section>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>外观</Text>
-          <View style={[styles.groupContainer, { backgroundColor: cardBackgroundColor }]}>
-            <View
-              style={[
-                styles.settingItem,
-                styles.settingItemNoBorder,
-                { backgroundColor: cardBackgroundColor },
-              ]}
-            >
-              <View style={styles.settingItemLeft}>
-                <MaterialIcons
-                  name="palette"
-                  size={24}
-                  color={accentColor}
-                  style={styles.settingIcon}
-                />
-                <View style={styles.settingTextContainer}>
-                  <Text style={[styles.settingTitle, { color: textColor }]}>主题色</Text>
-                  <Text style={[styles.settingSubtitle, { color: secondaryTextColor }]}>
-                    选择应用的主题颜色
-                  </Text>
-                </View>
-              </View>
-              <View style={styles.colorOptions}>
-                <View style={styles.colorRow}>
-                  <ColorOption color="#9C4DFF" isSelected={accentColor === '#9C4DFF'} />
-                  <ColorOption color="#FF6B6B" isSelected={accentColor === '#FF6B6B'} />
-                  <ColorOption color="#4ECDC4" isSelected={accentColor === '#4ECDC4'} />
-                </View>
-                <View style={styles.colorRow}>
-                  <ColorOption color="#45B7D1" isSelected={accentColor === '#45B7D1'} />
-                  <ColorOption color="#96CEB4" isSelected={accentColor === '#96CEB4'} />
-                  <ColorOption color="#FFEAA7" isSelected={accentColor === '#FFEAA7'} />
-                </View>
-              </View>
+      <Section
+        title="外观"
+        titleColor={secondaryTextColor}
+        groupBackgroundColor={cardBackgroundColor}
+      >
+        <View style={[styles.settingItem, styles.settingItemNoBorder]}>
+          <View style={styles.settingItemLeft}>
+            <MaterialIcons
+              name="palette"
+              size={24}
+              color={accentColor}
+              style={styles.settingIcon}
+            />
+            <View style={styles.settingTextContainer}>
+              <Text style={[styles.settingTitle, { color: textColor }]}>主题色</Text>
+              <Text style={[styles.settingSubtitle, { color: secondaryTextColor }]}>
+                选择应用的主题颜色
+              </Text>
+            </View>
+          </View>
+          <View style={styles.colorOptions}>
+            <View style={styles.colorRow}>
+              <ColorOption color="#9C4DFF" isSelected={accentColor === '#9C4DFF'} />
+              <ColorOption color="#FF6B6B" isSelected={accentColor === '#FF6B6B'} />
+              <ColorOption color="#4ECDC4" isSelected={accentColor === '#4ECDC4'} />
+            </View>
+            <View style={styles.colorRow}>
+              <ColorOption color="#45B7D1" isSelected={accentColor === '#45B7D1'} />
+              <ColorOption color="#96CEB4" isSelected={accentColor === '#96CEB4'} />
+              <ColorOption color="#FFEAA7" isSelected={accentColor === '#FFEAA7'} />
             </View>
           </View>
         </View>
+      </Section>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>播放</Text>
-          <View style={[styles.groupContainer, { backgroundColor: cardBackgroundColor }]}>
-            <SettingItem
-              title="弹幕设置"
-              subtitle="配置弹幕显示选项"
-              icon="chat"
-              onPress={() => router.push('/danmaku-settings')}
-              disableBorder
-            />
-          </View>
-        </View>
+      <Section title="播放">
+        <SettingItem
+          title="弹幕设置"
+          subtitle="配置弹幕显示选项"
+          icon="chat"
+          onPress={() => router.push('/danmaku-settings')}
+          disableBorder
+        />
+      </Section>
 
-        <View style={styles.section}>
-          <Text style={[styles.sectionTitle, { color: secondaryTextColor }]}>关于</Text>
-          <View style={[styles.groupContainer, { backgroundColor: cardBackgroundColor }]}>
-            <SettingItem
-              title="版本信息"
-              subtitle="nekofin v1.0.0"
-              icon="info"
-              showArrow={false}
-              disableBorder
-            />
-            <View style={[styles.separator, { backgroundColor: separatorColor }]} />
-            <SettingItem
-              title="开源协议"
-              subtitle="MIT License"
-              icon="code"
-              showArrow={false}
-              disableBorder
-            />
-          </View>
-        </View>
-      </ScrollView>
-    </View>
+      <Section title="关于">
+        <SettingItem
+          title="版本信息"
+          subtitle="nekofin v1.0.0"
+          icon="info"
+          showArrow={false}
+          disableBorder
+        />
+        <SettingItem
+          title="开源协议"
+          subtitle="MIT License"
+          icon="code"
+          showArrow={false}
+          disableBorder
+        />
+      </Section>
+    </PageScrollView>
   );
 }
 
 const styles = StyleSheet.create({
-  container: {
-    flex: 1,
-  },
-
-  scrollView: {
-    flex: 1,
-  },
   section: {
     marginTop: 28,
   },
@@ -274,13 +203,6 @@ const styles = StyleSheet.create({
   colorOptionSelected: {
     borderColor: '#fff',
     borderWidth: 2,
-  },
-  groupContainer: {
-    marginHorizontal: 16,
-    borderRadius: 12,
-    overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
   },
   separator: {
     height: StyleSheet.hairlineWidth,

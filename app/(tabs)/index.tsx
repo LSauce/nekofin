@@ -140,9 +140,6 @@ export default function HomeScreen() {
       <View style={styles.header}>
         <Text style={[styles.title, { color: textColor }]}>首页</Text>
         <View style={styles.headerButtons}>
-          <TouchableOpacity style={styles.testButton} onPress={() => router.push('/danmaku-test')}>
-            <Text style={styles.testButtonText}>弹幕测试</Text>
-          </TouchableOpacity>
           <TouchableOpacity
             onPress={() => BottomSheetModalRef.current?.present()}
             style={styles.serverButton}
@@ -199,8 +196,8 @@ export default function HomeScreen() {
         </View>
       </ScrollView>
 
-      <BottomSheetBackdropModal ref={BottomSheetModalRef} backgroundStyle={{ backgroundColor }}>
-        <BottomSheetView style={[styles.serverListContainer, { backgroundColor }]}>
+      <BottomSheetBackdropModal ref={BottomSheetModalRef}>
+        <BottomSheetView style={styles.serverListContainer}>
           <Text style={styles.serverListTitle}>选择服务器</Text>
           {servers.map((server) => (
             <TouchableOpacity
@@ -409,6 +406,7 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 16,
     textAlign: 'center',
+    color: '#000',
   },
   serverItem: {
     padding: 16,
@@ -417,15 +415,16 @@ const styles = StyleSheet.create({
     marginBottom: 8,
   },
   currentServerItem: {
-    backgroundColor: '#9C4DFF',
+    backgroundColor: '#e5e5ea',
   },
   serverItemText: {
     fontSize: 16,
     fontWeight: 'bold',
     marginBottom: 4,
+    color: '#000',
   },
   serverItemAddress: {
     fontSize: 14,
-    color: '#888',
+    color: '#666',
   },
 });

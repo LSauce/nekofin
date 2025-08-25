@@ -1,6 +1,6 @@
 import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, StyleSheet } from 'react-native';
+import { Animated, Easing, StyleSheet, TextStyle } from 'react-native';
 
 import StrokeText from '../StokeText';
 import { ActiveBullet } from './DanmakuTypes';
@@ -140,10 +140,10 @@ export function Bullet({
         fontSize,
         fontFamily: fontFamily.replace(/"/g, ''),
         ...(fontOptions && {
-          fontStyle: (fontOptions.includes('italic') ? 'italic' : 'normal') as 'normal' | 'italic',
+          fontStyle: fontOptions.includes('italic') ? 'italic' : 'normal',
         }),
-        fontWeight: (fontOptions?.includes('bold') ? 'bold' : '600') as 'bold' | '600',
-      },
+        fontWeight: fontOptions?.includes('bold') ? 'bold' : '600',
+      } as TextStyle,
     ],
     [fontSize, fontFamily, fontOptions],
   );
