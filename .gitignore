@@ -40,3 +40,7 @@ app-example
 
 /android
 /ios
+
+/build
+/Payload/*.app
+*.ipa
