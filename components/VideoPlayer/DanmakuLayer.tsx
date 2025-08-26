@@ -1,14 +1,16 @@
+import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { defaultSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { DANDAN_COMMENT_MODE, DandanComment } from '@/services/dandanplay';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
+import { SharedValue } from 'react-native-reanimated';
 
 import { Bullet } from './Bullet';
 import { DanmakuSettingsType } from './DanmakuSettings';
 import { ActiveBullet } from './DanmakuTypes';
 
 type DanmakuLayerProps = {
-  currentTimeMs: number;
+  currentTime: SharedValue<number>;
   isPlaying: boolean;
   comments: DandanComment[];
   seekKey?: number;
@@ -16,7 +18,7 @@ type DanmakuLayerProps = {
 } & Partial<DanmakuSettingsType>;
 
 export function DanmakuLayer({
-  currentTimeMs,
+  currentTime,
   isPlaying,
   comments,
   seekKey,
@@ -32,6 +34,8 @@ export function DanmakuLayer({
   fontFamily = defaultSettings.fontFamily,
   fontOptions = defaultSettings.fontOptions,
 }: DanmakuLayerProps) {
+  const currentTimeMs = useCurrentTime({ time: currentTime });
+
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState<ActiveBullet[]>([]);
   const lastTimeMsRef = useRef<number>(-1);

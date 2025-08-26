@@ -1,5 +1,3 @@
-import * as Crypto from 'expo-crypto';
-
 export type DandanSearchResult = {
   hasMore: boolean;
   animes: DandanAnime[];
