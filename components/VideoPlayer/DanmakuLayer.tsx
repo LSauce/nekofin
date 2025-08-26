@@ -1,9 +1,10 @@
 import { useCurrentTime } from '@/hooks/useCurrentTime';
+import { usePreciseTimer } from '@/hooks/usePreciseTimer';
 import { defaultSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { DANDAN_COMMENT_MODE, DandanComment } from '@/services/dandanplay';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import { SharedValue } from 'react-native-reanimated';
+import { runOnJS, SharedValue, useAnimatedReaction } from 'react-native-reanimated';
 
 import { Bullet } from './Bullet';
 import { DanmakuSettingsType } from './DanmakuSettings';
@@ -13,7 +14,7 @@ type DanmakuLayerProps = {
   currentTime: SharedValue<number>;
   isPlaying: boolean;
   comments: DandanComment[];
-  seekKey?: number;
+  seekTime?: number;
   density?: number;
 } & Partial<DanmakuSettingsType>;
 
@@ -21,7 +22,7 @@ export function DanmakuLayer({
   currentTime,
   isPlaying,
   comments,
-  seekKey,
+  seekTime,
   density = 1,
   opacity = defaultSettings.opacity,
   speed = defaultSettings.speed,
@@ -34,7 +35,10 @@ export function DanmakuLayer({
   fontFamily = defaultSettings.fontFamily,
   fontOptions = defaultSettings.fontOptions,
 }: DanmakuLayerProps) {
-  const currentTimeMs = useCurrentTime({ time: currentTime });
+  const { time: currentTimeMs, sync } = usePreciseTimer({
+    interval: 100,
+    isRunning: isPlaying,
+  });
 
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState<ActiveBullet[]>([]);
@@ -511,7 +515,7 @@ export function DanmakuLayer({
   ]);
 
   useEffect(() => {
-    if (seekKey !== undefined) {
+    if (seekTime !== undefined) {
       setActive([]);
 
       processedCommentsRef.current.clear();
@@ -528,8 +532,10 @@ export function DanmakuLayer({
       }
 
       lastTimeMsRef.current = -1;
+
+      sync(seekTime);
     }
-  }, [seekKey, ensureLanes]);
+  }, [seekTime, ensureLanes, sync]);
 
   useEffect(() => {
     if (!isPlaying) return;

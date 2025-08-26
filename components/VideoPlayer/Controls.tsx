@@ -12,6 +12,7 @@ import Animated, {
   runOnJS,
   SharedValue,
   useAnimatedStyle,
+  useDerivedValue,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
@@ -125,8 +126,15 @@ export function Controls({
     }
   }, [menuOpen, hideControlsWithDelay, fadeAnim]);
 
+  useDerivedValue(() => {
+    if (!isDragging && duration > 0) {
+      const progress = currentTime.value / duration;
+      progressValue.value = progress;
+    }
+  });
+
   const handleSeek = (position: number) => {
-    if (duration) return;
+    if (!duration) return;
     const clampedTime = Math.max(0, Math.min(position, duration));
     const newPosition = duration > 0 ? clampedTime / duration : 0;
     onSeek(newPosition);

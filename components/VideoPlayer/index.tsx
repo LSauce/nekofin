@@ -1,3 +1,4 @@
+import { usePreciseTimer } from '@/hooks/usePreciseTimer';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
@@ -12,7 +13,6 @@ import {
   type MediaInfo,
 } from 'expo-libvlc-player';
 import * as NavigationBar from 'expo-navigation-bar';
-import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as StatusBar from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -31,7 +31,6 @@ const LoadingIndicator = () => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
-  const router = useRouter();
   const [videoSource, setVideoSource] = useState<string | null>(null);
   const [itemDetail, setItemDetail] = useState<BaseItemDto | null>(null);
   const [comments, setComments] = useState<DandanComment[]>([]);
@@ -50,7 +49,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isBuffering, setIsBuffering] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
-  const [seekKey, setSeekKey] = useState(0);
+  const [seekTime, setSeekTime] = useState(0);
+  const [isSeeking, setIsSeeking] = useState(false);
+
+  const showLoading = useMemo(() => {
+    return isBuffering || !videoSource || !isLoaded;
+  }, [isBuffering, videoSource, isLoaded]);
 
   const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -147,10 +151,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }
   }, []);
 
-  const showLoading = useMemo(() => {
-    return isBuffering || !videoSource || !isLoaded;
-  }, [isBuffering, videoSource, isLoaded]);
-
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
       player.current?.pause();
@@ -173,8 +173,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     (position: number) => {
       currentTime.value = position * duration;
       player.current?.seek(position);
+      setSeekTime(position * duration);
       setIsBuffering(false);
-      setSeekKey((prev) => prev + 1);
     },
     [currentTime, duration],
   );
@@ -226,7 +226,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           currentTime={currentTime}
           isPlaying={!showLoading && !isStopped && isPlaying}
           comments={comments}
-          seekKey={seekKey}
+          seekTime={seekTime}
         />
       )}
 
