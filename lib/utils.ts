@@ -86,10 +86,10 @@ export enum VideoPlayer {
   VLC_4 = 1,
 }
 
-export const getDeviceId = () => {
+export const getDeviceId = (address?: string) => {
   const deviceId = storage.getString('deviceId');
   if (!deviceId) {
-    const newDeviceId = uuid.v4();
+    const newDeviceId = address ? `${address}-${uuid.v4()}` : uuid.v4();
     storage.set('deviceId', newDeviceId);
     return newDeviceId;
   }
