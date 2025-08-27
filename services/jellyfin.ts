@@ -224,3 +224,31 @@ export async function getAllItemsByFolder(
     includeItemTypes: itemTypes,
   });
 }
+
+export async function getSeasonsBySeries(api: Api, seriesId: string, userId: string) {
+  return await getItemsApi(api).getItems({
+    userId,
+    parentId: seriesId,
+    includeItemTypes: ['Season'],
+    recursive: false,
+    sortBy: ['IndexNumber'],
+    sortOrder: ['Ascending'],
+    fields: ['PrimaryImageAspectRatio'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+  });
+}
+
+export async function getEpisodesBySeason(api: Api, seasonId: string, userId: string) {
+  return await getItemsApi(api).getItems({
+    userId,
+    parentId: seasonId,
+    includeItemTypes: ['Episode'],
+    recursive: true,
+    sortBy: ['IndexNumber'],
+    sortOrder: ['Ascending'],
+    fields: ['PrimaryImageAspectRatio'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+  });
+}

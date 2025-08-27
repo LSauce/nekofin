@@ -83,23 +83,22 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   return (
     <View style={[styles.container, { backgroundColor }]}>
       <Stack.Screen options={{ title }} />
-      {items.length > 0 ? (
-        <FlatList
-          data={items}
-          renderItem={renderItem}
-          keyExtractor={(item) => item.Id!}
-          numColumns={useThreeCols ? 3 : 2}
-          key={useThreeCols ? '3-cols' : '2-cols'}
-          contentContainerStyle={styles.listContainer}
-          columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
-          showsVerticalScrollIndicator={false}
-          contentInsetAdjustmentBehavior="automatic"
-        />
-      ) : (
-        <View style={styles.emptyContainer}>
-          <Text style={[styles.emptyText, { color: textColor }]}>暂无内容</Text>
-        </View>
-      )}
+      <FlatList
+        data={items}
+        renderItem={renderItem}
+        keyExtractor={(item) => item.Id!}
+        numColumns={useThreeCols ? 3 : 2}
+        key={useThreeCols ? '3-cols' : '2-cols'}
+        contentContainerStyle={styles.listContainer}
+        columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        ListEmptyComponent={
+          <View style={styles.emptyContainer}>
+            <Text style={[styles.emptyText, { color: textColor }]}>暂无内容</Text>
+          </View>
+        }
+      />
     </View>
   );
 }

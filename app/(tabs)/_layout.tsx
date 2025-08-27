@@ -1,4 +1,5 @@
 import { HapticTab } from '@/components/HapticTab';
+import HeaderLeftComponent from '@/components/HeaderLeftComponent';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';

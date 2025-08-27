@@ -5,6 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import 'react-native-reanimated';
 
+import HeaderLeftComponent from '@/components/HeaderLeftComponent';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
@@ -15,6 +16,7 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { Platform, Text } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
 export default function RootLayout() {
@@ -63,9 +65,10 @@ export default function RootLayout() {
                 <ThemeProvider value={colorScheme === 'dark' ? DarkTheme : DefaultTheme}>
                   <Stack
                     screenOptions={{
-                      headerTransparent: true,
+                      headerTransparent: Platform.OS === 'ios',
                       headerBackground: TabBarBackground,
                       headerBackTitle: '返回',
+                      headerLeft: HeaderLeftComponent,
                     }}
                   >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
@@ -75,12 +78,6 @@ export default function RootLayout() {
                         headerShown: false,
                         presentation: 'fullScreenModal',
                         autoHideHomeIndicator: true,
-                      }}
-                    />
-                    <Stack.Screen
-                      name="viewall/[type]"
-                      options={{
-                        headerShown: true,
                       }}
                     />
                     <Stack.Screen

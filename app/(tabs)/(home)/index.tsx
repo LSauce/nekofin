@@ -384,17 +384,6 @@ const styles = StyleSheet.create({
     alignItems: 'center',
     gap: 12,
   },
-  testButton: {
-    backgroundColor: '#007AFF',
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 8,
-  },
-  testButtonText: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '600',
-  },
   serverButton: {
     borderWidth: 1,
     borderColor: '#f2f2f2',
@@ -419,17 +408,6 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
     backgroundColor: '#f7f7f7',
   },
-  progressBar: {
-    height: 2,
-    backgroundColor: 'rgba(255,255,255,0.3)',
-    borderRadius: 1,
-    marginBottom: 4,
-  },
-  progressFill: {
-    height: '100%',
-    backgroundColor: '#fff',
-    borderRadius: 1,
-  },
   userViewDuration: {
     color: '#fff',
     fontSize: 12,
@@ -443,10 +421,6 @@ const styles = StyleSheet.create({
     fontWeight: 'bold',
     marginBottom: 2,
     textAlign: 'center',
-  },
-  userViewSubtitle: {
-    fontSize: 12,
-    color: '#888',
   },
   cover: {
     width: '100%',

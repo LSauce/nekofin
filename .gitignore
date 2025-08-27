@@ -44,3 +44,4 @@ app-example
 /build
 /Payload/*.app
 *.ipa
+build*.sh

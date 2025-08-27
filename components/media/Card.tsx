@@ -124,6 +124,7 @@ export function SeriesCard({
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { width } = useWindowDimensions();
+  const router = useRouter();
   const imageUrl = useMemo(() => {
     if (!currentServer) return null;
     const imgId = item.SeriesId ?? item.Id;
@@ -134,7 +135,17 @@ export function SeriesCard({
   }, [item, currentServer]);
 
   return (
-    <TouchableOpacity style={[styles.card, { width: width * 0.3, backgroundColor }, style]}>
+    <TouchableOpacity
+      style={[styles.card, { width: width * 0.3, backgroundColor }, style]}
+      onPress={() => {
+        const seriesId = item.SeriesId ?? item.Id;
+        if (!seriesId) return;
+        router.push({
+          pathname: '/series/[id]',
+          params: { id: seriesId },
+        });
+      }}
+    >
       {imageUrl ? (
         <Image source={{ uri: imageUrl }} style={styles.posterCover} contentFit="cover" />
       ) : (
