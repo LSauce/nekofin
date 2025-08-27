@@ -2,6 +2,7 @@ import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
+import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
@@ -16,7 +17,6 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
-import * as DropdownMenu from 'zeego/dropdown-menu';
 
 import { DanmakuSettings } from './DanmakuSettings';
 
@@ -238,18 +238,26 @@ export function Controls({
         pointerEvents={showControls ? 'auto' : 'none'}
       >
         <BlurView tint="dark" intensity={100} style={styles.danmakuButtonBlur}>
-          <DropdownMenu.Root open={menuOpen} onOpenChange={setMenuOpen}>
-            <DropdownMenu.Trigger asChild>
-              <TouchableOpacity style={styles.danmakuButtonTouchable}>
-                <AntDesign name="setting" size={20} color="white" />
-              </TouchableOpacity>
-            </DropdownMenu.Trigger>
-            <DropdownMenu.Content>
-              <DropdownMenu.Item key="danmaku-settings" onSelect={handleDanmakuSettingsPress}>
-                <DropdownMenu.ItemTitle>弹幕设置</DropdownMenu.ItemTitle>
-              </DropdownMenu.Item>
-            </DropdownMenu.Content>
-          </DropdownMenu.Root>
+          <MenuView
+            isAnchoredToRight
+            onPressAction={({ nativeEvent }) => {
+              const key = (nativeEvent as any).event ?? (nativeEvent as any).actionId;
+              if (key === 'danmaku-settings') {
+                handleDanmakuSettingsPress();
+              }
+              setMenuOpen(false);
+            }}
+            actions={[{ id: 'danmaku-settings', title: '弹幕设置' }]}
+          >
+            <TouchableOpacity
+              style={styles.danmakuButtonTouchable}
+              onPress={() => {
+                setMenuOpen(true);
+              }}
+            >
+              <AntDesign name="setting" size={20} color="white" />
+            </TouchableOpacity>
+          </MenuView>
         </BlurView>
       </Animated.View>
 

@@ -34,10 +34,14 @@ export function MediaCard({
   item,
   currentServer,
   style,
+  hideText,
+  imgType = 'Backdrop',
 }: {
   item: BaseItemDto;
   currentServer?: MediaServerInfo | null;
   style?: StyleProp<ViewStyle>;
+  hideText?: boolean;
+  imgType?: 'Backdrop' | 'Primary' | 'Thumb';
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
@@ -48,13 +52,16 @@ export function MediaCard({
 
   const imageUrl = useMemo(() => {
     if (item.Type === 'Episode') {
+      if (imgType === 'Primary') {
+        return `${currentServer?.address}/Items/${item.Id}/Images/Primary?maxWidth=300`;
+      }
       if (item.ParentThumbItemId) {
         return `${currentServer?.address}/Items/${item.ParentThumbItemId}/Images/Thumb?maxWidth=300`;
       }
       return `${currentServer?.address}/Items/${item.SeriesId}/Images/Backdrop?maxWidth=300`;
     }
     return `${currentServer?.address}/Items/${item.Id}/Images/Backdrop?maxWidth=300`;
-  }, [item, currentServer]);
+  }, [item.Type, item.Id, item.ParentThumbItemId, item.SeriesId, currentServer?.address, imgType]);
 
   const handlePress = async () => {
     if (!currentServer || !item.Id) return;
@@ -72,6 +79,8 @@ export function MediaCard({
       ? item.UserData.PlayedPercentage
       : undefined;
 
+  const isPlayed = item.UserData?.Played === true;
+
   return (
     <TouchableOpacity
       style={[styles.card, { width: width * 0.5, backgroundColor }, style]}
@@ -80,6 +89,11 @@ export function MediaCard({
       {imageUrl ? (
         <View style={styles.coverContainer}>
           <Image source={{ uri: imageUrl }} style={styles.cover} contentFit="cover" />
+          {isPlayed && (
+            <View style={styles.playedOverlay}>
+              <IconSymbol name="checkmark.circle.fill" size={24} color={accentColor} />
+            </View>
+          )}
           {playedPercentage !== undefined && (
             <View style={styles.progressContainer}>
               <View style={styles.progressBackground}>
@@ -101,12 +115,16 @@ export function MediaCard({
           <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
         </View>
       )}
-      <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-        {item.SeriesName || item.Name || '未知标题'}
-      </Text>
-      <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
-        {getSubtitle(item)}
-      </Text>
+      {!hideText && (
+        <>
+          <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
+            {item.SeriesName || item.Name || '未知标题'}
+          </Text>
+          <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
+            {getSubtitle(item)}
+          </Text>
+        </>
+      )}
     </TouchableOpacity>
   );
 }
@@ -203,6 +221,15 @@ const styles = StyleSheet.create({
   progressFill: {
     height: '100%',
     borderRadius: 0,
+  },
+  playedOverlay: {
+    position: 'absolute',
+    top: 8,
+    right: 8,
+    zIndex: 2,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 9999,
+    padding: 2,
   },
   cardTitle: {
     fontSize: 16,

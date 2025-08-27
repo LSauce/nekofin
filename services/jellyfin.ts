@@ -240,16 +240,11 @@ export async function getSeasonsBySeries(api: Api, seriesId: string, userId: str
 }
 
 export async function getEpisodesBySeason(api: Api, seasonId: string, userId: string) {
-  return await getItemsApi(api).getItems({
+  return await getTvShowsApi(api).getEpisodes({
     userId,
-    parentId: seasonId,
-    includeItemTypes: ['Episode'],
-    recursive: true,
-    sortBy: ['IndexNumber'],
-    sortOrder: ['Ascending'],
-    fields: ['PrimaryImageAspectRatio'],
-    imageTypeLimit: 1,
-    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+    seasonId,
+    fields: ['ItemCounts', 'PrimaryImageAspectRatio', 'CanDelete', 'MediaSourceCount', 'Overview'],
+    seriesId: seasonId,
   });
 }
 

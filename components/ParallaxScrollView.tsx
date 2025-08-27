@@ -100,10 +100,14 @@ export default function ParallaxScrollView({
                 height: '100%',
               }}
             />
-            <ThemedView style={styles.content}>{children}</ThemedView>
+            <ThemedView style={styles.content} lightColor="#fff" darkColor="#000">
+              {children}
+            </ThemedView>
           </ThemedView>
         ) : (
-          <ThemedView style={styles.content}>{children}</ThemedView>
+          <ThemedView style={styles.content} lightColor="#fff" darkColor="#000">
+            {children}
+          </ThemedView>
         )}
       </Animated.ScrollView>
     </ThemedView>

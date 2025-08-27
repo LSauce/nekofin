@@ -63,8 +63,6 @@
     "react-native-awesome-slider": "^2.9.0",
     "react-native-easing-gradient": "^1.1.1",
     "react-native-gesture-handler": "~2.24.0",
-    "react-native-ios-context-menu": "3.1.0",
-    "react-native-ios-utilities": "5.1.2",
     "react-native-mmkv": "^3.3.0",
     "react-native-modal": "^14.0.0-rc.1",
     "react-native-reanimated": "~3.17.4",
@@ -75,7 +73,6 @@
     "react-native-video": "^6.16.1",
     "react-native-web": "~0.20.0",
     "react-native-webview": "13.13.5",
-    "zeego": "^3.0.6",
     "zod": "^4.0.15"
   },
   "devDependencies": {

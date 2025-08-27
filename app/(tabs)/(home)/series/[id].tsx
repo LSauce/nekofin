@@ -1,3 +1,4 @@
+import { MediaCard } from '@/components/media/Card';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
@@ -13,6 +14,7 @@ import {
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Api } from '@jellyfin/sdk';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MenuView } from '@react-native-menu/menu';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
@@ -27,7 +29,10 @@ export default function SeriesDetailPage() {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const buttonColor = useThemeColor({ light: '#eee', dark: '#222' }, 'background');
+
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string | null>(null);
 
   const api = useMemo(
     () => (currentServer ? createApiFromServerInfo(currentServer) : null),
@@ -61,6 +66,15 @@ export default function SeriesDetailPage() {
     setIsFavorite(!!series.UserData?.IsFavorite);
   }, [series]);
 
+  useEffect(() => {
+    if (!seasons || seasons.length === 0) return;
+    if (!selectedSeasonId) {
+      setSelectedSeasonId(seasons[0].Id || null);
+    } else if (!seasons.find((s) => s.Id === selectedSeasonId)) {
+      setSelectedSeasonId(seasons[0].Id || null);
+    }
+  }, [seasons, selectedSeasonId]);
+
   if (isLoading || !series) {
     return (
       <View style={[styles.center, { backgroundColor }]}>
@@ -71,6 +85,7 @@ export default function SeriesDetailPage() {
 
   const headerImageUrl = `${currentServer?.address}/Items/${series.Id}/Images/Backdrop?maxWidth=1200`;
   const logoImageUrl = `${currentServer?.address}/Items/${series.Id}/Images/Logo?quality=90`;
+  const selectedSeason = seasons?.find((s) => s.Id === selectedSeasonId) || null;
 
   return (
     <>
@@ -123,37 +138,50 @@ export default function SeriesDetailPage() {
             </Text>
           )}
 
-          {seasons?.map((season) => (
+          <View style={styles.selectorWrapper}>
+            <Text style={[styles.selectorLabel, { color: subtitleColor }]}>选择季度</Text>
+            <MenuView
+              isAnchoredToRight={false}
+              onPressAction={({ nativeEvent }) => {
+                const key = nativeEvent.event;
+                if (!key) return;
+                const found = seasons?.find((s) => (s.Id ?? '') === key);
+                if (found) setSelectedSeasonId(found.Id || null);
+              }}
+              actions={(seasons || []).map((s, idx) => ({
+                id: s.Id ?? String(idx),
+                title: s.Name ?? '未命名季',
+              }))}
+              style={{ alignSelf: 'flex-start' }}
+            >
+              <View
+                style={[
+                  styles.selectorButton,
+                  { borderColor: subtitleColor, backgroundColor: buttonColor },
+                ]}
+              >
+                <Text style={[styles.selectorText, { color: textColor }]} numberOfLines={1}>
+                  {selectedSeason?.Name || '无季度'}
+                </Text>
+              </View>
+            </MenuView>
+          </View>
+
+          {!!selectedSeason && (
             <SeasonBlock
-              key={season.Id}
-              season={season}
+              key={selectedSeason.Id}
+              season={selectedSeason}
               api={api as Api}
               userId={currentServer?.userId ?? ''}
-              serverAddress={currentServer?.address ?? ''}
-              onPlay={(episodeId) => {
-                router.push({ pathname: '/media/player', params: { itemId: episodeId } });
-              }}
             />
-          ))}
+          )}
         </View>
       </ParallaxScrollView>
     </>
   );
 }
 
-function SeasonBlock({
-  season,
-  api,
-  userId,
-  serverAddress,
-  onPlay,
-}: {
-  season: BaseItemDto;
-  api: Api;
-  userId: string;
-  serverAddress: string;
-  onPlay: (episodeId: string) => void;
-}) {
+function SeasonBlock({ season, api, userId }: { season: BaseItemDto; api: Api; userId: string }) {
   const { data: episodes, isLoading } = useQuery({
     queryKey: ['season-episodes', season.Id, userId],
     queryFn: async () => {
@@ -166,6 +194,7 @@ function SeasonBlock({
 
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const { currentServer } = useMediaServers();
 
   return (
     <View style={styles.seasonBlock}>
@@ -174,33 +203,25 @@ function SeasonBlock({
         <ActivityIndicator />
       ) : (
         <View style={styles.episodeList}>
-          {episodes?.map((ep) => {
-            const cover = ep.ImageTags?.Thumb
-              ? `${serverAddress}/Items/${ep.Id}/Images/Thumb?maxWidth=400`
-              : ep.ParentThumbItemId
-                ? `${serverAddress}/Items/${ep.ParentThumbItemId}/Images/Thumb?maxWidth=400`
-                : `${serverAddress}/Items/${ep.SeriesId}/Images/Backdrop?maxWidth=400`;
-            return (
-              <TouchableOpacity
-                key={ep.Id}
-                style={styles.episodeItem}
-                onPress={() => onPlay(ep.Id!)}
-              >
-                <Image source={{ uri: cover }} style={styles.episodeCover} contentFit="cover" />
-                <View style={styles.episodeInfo}>
-                  <Text style={[styles.episodeTitle, { color: textColor }]} numberOfLines={1}>
-                    {`E${ep.IndexNumber} ${ep.Name}`}
-                  </Text>
-                  <Text
-                    style={[styles.episodeSubtitle, { color: subtitleColor }]}
-                    numberOfLines={2}
-                  >
-                    {ep.Overview || ''}
-                  </Text>
-                </View>
-              </TouchableOpacity>
-            );
-          })}
+          {episodes?.map((ep) => (
+            <View key={ep.Id} style={styles.episodeItem}>
+              <MediaCard
+                item={ep}
+                currentServer={currentServer}
+                hideText
+                style={{ width: 140, marginRight: 8 }}
+                imgType="Primary"
+              />
+              <View style={styles.episodeInfo}>
+                <Text style={[styles.episodeTitle, { color: textColor }]} numberOfLines={1}>
+                  {`${ep.IndexNumber}. ${ep.Name}`}
+                </Text>
+                <Text style={[styles.episodeSubtitle, { color: subtitleColor }]} numberOfLines={2}>
+                  {ep.Overview || ''}
+                </Text>
+              </View>
+            </View>
+          ))}
         </View>
       )}
     </View>
@@ -223,6 +244,23 @@ const styles = StyleSheet.create({
     padding: 20,
     gap: 8,
   },
+  selectorWrapper: {
+    marginTop: 8,
+    gap: 8,
+  },
+  selectorLabel: {
+    fontSize: 12,
+  },
+  selectorButton: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    paddingHorizontal: 12,
+    paddingVertical: 10,
+    borderRadius: 12,
+  },
+  selectorText: {
+    fontSize: 14,
+  },
   logo: {
     width: 240,
     height: 120,
@@ -242,6 +280,13 @@ const styles = StyleSheet.create({
   seasonBlock: {
     marginTop: 16,
   },
+  optionItem: {
+    paddingHorizontal: 16,
+    paddingVertical: 12,
+  },
+  optionText: {
+    fontSize: 14,
+  },
   seasonTitle: {
     fontSize: 18,
     fontWeight: '600',
@@ -252,14 +297,6 @@ const styles = StyleSheet.create({
   },
   episodeItem: {
     flexDirection: 'row',
-    gap: 12,
-    alignItems: 'center',
-  },
-  episodeCover: {
-    width: 140,
-    aspectRatio: 16 / 9,
-    borderRadius: 8,
-    backgroundColor: '#eee',
   },
   episodeInfo: {
     flex: 1,
@@ -267,7 +304,7 @@ const styles = StyleSheet.create({
   },
   episodeTitle: {
     fontSize: 16,
-    fontWeight: '600',
+    fontWeight: '500',
   },
   episodeSubtitle: {
     fontSize: 13,
