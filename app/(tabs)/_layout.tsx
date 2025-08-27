@@ -1,20 +1,14 @@
 import { HapticTab } from '@/components/HapticTab';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
-import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Tabs } from 'expo-router';
-import { ColorValue, Platform, PlatformColor } from 'react-native';
+import { Platform } from 'react-native';
 
 export default function TabLayout() {
-  const colorScheme = useColorScheme();
   const { accentColor } = useAccentColor();
-  const backgroundColorDefault = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const backgroundColor: ColorValue =
-    Platform.OS === 'ios' ? PlatformColor('systemGroupedBackground') : backgroundColorDefault;
 
   return (
     <Tabs
@@ -30,12 +24,12 @@ export default function TabLayout() {
           },
           default: {},
         }),
-        headerTransparent: true,
+        headerTransparent: Platform.OS === 'ios',
         headerBackground: TabBarBackground,
       }}
     >
       <Tabs.Screen
-        name="index"
+        name="(home)"
         options={{
           title: '首页',
           headerShown: false,

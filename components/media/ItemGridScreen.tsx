@@ -53,7 +53,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   if (isLoading) {
     return (
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ title }} />
         <View style={styles.loadingContainer}>
           <ActivityIndicator size="large" color="#9C4DFF" />
         </View>
@@ -64,7 +64,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   if (isError) {
     return (
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
-        <Stack.Screen options={{ headerShown: false }} />
+        <Stack.Screen options={{ title }} />
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: textColor }]}>加载失败，请重试</Text>
           <TouchableOpacity
@@ -81,8 +81,8 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   }
 
   return (
-    <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
-      <Stack.Screen options={{ headerShown: false }} />
+    <View style={[styles.container, { backgroundColor }]}>
+      <Stack.Screen options={{ title }} />
       {items.length > 0 ? (
         <FlatList
           data={items}
@@ -93,6 +93,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
           contentContainerStyle={styles.listContainer}
           columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
           showsVerticalScrollIndicator={false}
+          contentInsetAdjustmentBehavior="automatic"
         />
       ) : (
         <View style={styles.emptyContainer}>
