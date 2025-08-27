@@ -2,11 +2,11 @@ import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
 import { Animated, Easing, StyleSheet, TextStyle } from 'react-native';
 
-import StrokeText from '../StokeText';
+import StrokeText from '../StrokeText';
 import { ActiveBullet } from './DanmakuTypes';
 
 const STROKE_COLOR = '#000';
-const STROKE_WIDTH = 0.7;
+const STROKE_WIDTH = 0.6;
 
 export function Bullet({
   width,
