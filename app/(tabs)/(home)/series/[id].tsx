@@ -3,17 +3,20 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import {
+  addFavoriteItem,
   createApiFromServerInfo,
   getEpisodesBySeason,
   getItemDetail,
   getSeasonsBySeries,
+  removeFavoriteItem,
 } from '@/services/jellyfin';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Api } from '@jellyfin/sdk';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { Stack, useLocalSearchParams, useRouter } from 'expo-router';
-import { useMemo } from 'react';
+import { useEffect, useMemo, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function SeriesDetailPage() {
@@ -24,6 +27,7 @@ export default function SeriesDetailPage() {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   const api = useMemo(
     () => (currentServer ? createApiFromServerInfo(currentServer) : null),
@@ -35,7 +39,7 @@ export default function SeriesDetailPage() {
     queryFn: async () => {
       if (!api || !id || !currentServer?.userId) return null as unknown as BaseItemDto | null;
       const res = await getItemDetail(api, id, currentServer.userId);
-      return res.data as unknown as BaseItemDto;
+      return res.data;
     },
     enabled: !!api && !!id && !!currentServer?.userId,
   });
@@ -52,6 +56,11 @@ export default function SeriesDetailPage() {
 
   const totalEpisodeCount = series?.RecursiveItemCount ?? series?.ChildCount ?? 0;
 
+  useEffect(() => {
+    if (!series) return;
+    setIsFavorite(!!series.UserData?.IsFavorite);
+  }, [series]);
+
   if (isLoading || !series) {
     return (
       <View style={[styles.center, { backgroundColor }]}>
@@ -60,49 +69,75 @@ export default function SeriesDetailPage() {
     );
   }
 
-  const headerImageUrl = series.ImageTags?.Backdrop
-    ? `${currentServer?.address}/Items/${series.Id}/Images/Backdrop?maxWidth=1200`
-    : series.ImageTags?.Primary
-      ? `${currentServer?.address}/Items/${series.Id}/Images/Primary?maxWidth=1200`
-      : undefined;
+  const headerImageUrl = `${currentServer?.address}/Items/${series.Id}/Images/Backdrop?maxWidth=1200`;
+  const logoImageUrl = `${currentServer?.address}/Items/${series.Id}/Images/Logo?quality=90`;
 
   return (
-    <ParallaxScrollView
-      enableMaskView
-      headerBackgroundColor={{ light: '#eee', dark: '#222' }}
-      headerImage={
-        headerImageUrl ? (
-          <Image source={{ uri: headerImageUrl }} style={styles.header} contentFit="cover" />
-        ) : (
-          <View style={[styles.header, { backgroundColor: '#eee' }]} />
-        )
-      }
-    >
-      <View style={styles.content}>
-        <Text style={[styles.title, { color: textColor }]}>{series.Name}</Text>
-        <Text style={[styles.meta, { color: subtitleColor }]}>
-          季：{seasons?.length ?? 0} · 集数：{totalEpisodeCount}
-        </Text>
-        {!!series.Overview && (
-          <Text style={[styles.overview, { color: subtitleColor }]} numberOfLines={5}>
-            {series.Overview}
+    <>
+      <Stack.Screen
+        options={{
+          headerRight: () => (
+            <TouchableOpacity
+              onPress={async () => {
+                if (!api || !currentServer?.userId || !series?.Id) return;
+                try {
+                  if (isFavorite) {
+                    await removeFavoriteItem(api, currentServer.userId, series.Id);
+                    setIsFavorite(false);
+                  } else {
+                    await addFavoriteItem(api, currentServer.userId, series.Id);
+                    setIsFavorite(true);
+                  }
+                } catch (e) {}
+              }}
+              style={{ padding: 8 }}
+            >
+              <MaterialCommunityIcons
+                name={isFavorite ? 'heart' : 'heart-outline'}
+                size={24}
+                color={textColor}
+              />
+            </TouchableOpacity>
+          ),
+        }}
+      />
+      <ParallaxScrollView
+        enableMaskView
+        headerBackgroundColor={{ light: '#eee', dark: '#222' }}
+        headerImage={
+          headerImageUrl ? (
+            <Image source={{ uri: headerImageUrl }} style={styles.header} contentFit="cover" />
+          ) : (
+            <View style={[styles.header, { backgroundColor: '#eee' }]} />
+          )
+        }
+      >
+        <View style={styles.content}>
+          <Image source={{ uri: logoImageUrl }} style={styles.logo} contentFit="contain" />
+          <Text style={[styles.meta, { color: subtitleColor }]}>
+            季：{seasons?.length ?? 0} · 集数：{totalEpisodeCount}
           </Text>
-        )}
+          {!!series.Overview && (
+            <Text style={[styles.overview, { color: subtitleColor }]} numberOfLines={5}>
+              {series.Overview}
+            </Text>
+          )}
 
-        {seasons?.map((season) => (
-          <SeasonBlock
-            key={season.Id}
-            season={season}
-            api={api as Api}
-            userId={currentServer?.userId ?? ''}
-            serverAddress={currentServer?.address ?? ''}
-            onPlay={(episodeId) => {
-              router.push({ pathname: '/media/player', params: { itemId: episodeId } });
-            }}
-          />
-        ))}
-      </View>
-    </ParallaxScrollView>
+          {seasons?.map((season) => (
+            <SeasonBlock
+              key={season.Id}
+              season={season}
+              api={api as Api}
+              userId={currentServer?.userId ?? ''}
+              serverAddress={currentServer?.address ?? ''}
+              onPlay={(episodeId) => {
+                router.push({ pathname: '/media/player', params: { itemId: episodeId } });
+              }}
+            />
+          ))}
+        </View>
+      </ParallaxScrollView>
+    </>
   );
 }
 
@@ -184,8 +219,14 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   content: {
+    top: -160,
     padding: 20,
     gap: 8,
+  },
+  logo: {
+    width: 240,
+    height: 120,
+    borderRadius: 120,
   },
   title: {
     fontSize: 24,

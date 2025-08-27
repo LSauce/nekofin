@@ -122,6 +122,5 @@ const styles = StyleSheet.create({
     flex: 1,
     padding: 8,
     gap: 16,
-    overflow: 'hidden',
   },
 });

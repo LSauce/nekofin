@@ -252,3 +252,11 @@ export async function getEpisodesBySeason(api: Api, seasonId: string, userId: st
     enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
   });
 }
+
+export async function addFavoriteItem(api: Api, userId: string, itemId: string) {
+  return await getUserLibraryApi(api).markFavoriteItem({ userId, itemId });
+}
+
+export async function removeFavoriteItem(api: Api, userId: string, itemId: string) {
+  return await getUserLibraryApi(api).unmarkFavoriteItem({ userId, itemId });
+}
