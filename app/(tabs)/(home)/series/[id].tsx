@@ -68,6 +68,7 @@ export default function SeriesDetailPage() {
 
   return (
     <ParallaxScrollView
+      enableMaskView
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
       headerImage={
         headerImageUrl ? (

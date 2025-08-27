@@ -1,3 +1,8 @@
+import { ThemedView } from '@/components/ThemedView';
+import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
+import { useColorScheme } from '@/hooks/useColorScheme';
+import { useThemeColor } from '@/hooks/useThemeColor';
+import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren, ReactElement } from 'react';
 import { StyleSheet } from 'react-native';
 import Animated, {
@@ -7,38 +12,43 @@ import Animated, {
   useScrollViewOffset,
 } from 'react-native-reanimated';
 
-import { ThemedView } from '@/components/ThemedView';
-import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
-import { useColorScheme } from '@/hooks/useColorScheme';
-
-const HEADER_HEIGHT = 250;
+const HEADER_HEIGHT = 450;
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
   headerBackgroundColor: { dark: string; light: string };
+  headerHeight?: number;
+  enableMaskView?: boolean;
 }>;
 
 export default function ParallaxScrollView({
   children,
   headerImage,
   headerBackgroundColor,
+  headerHeight = HEADER_HEIGHT,
+  enableMaskView = false,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
+  const linearColor = useThemeColor(
+    { light: 'rgb(255, 255, 255)', dark: 'rgba(0,0,0,1)' },
+    'background',
+  );
+
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
       transform: [
         {
           translateY: interpolate(
             scrollOffset.value,
-            [-HEADER_HEIGHT, 0, HEADER_HEIGHT],
-            [-HEADER_HEIGHT / 2, 0, HEADER_HEIGHT * 0.75]
+            [-headerHeight, 0, headerHeight],
+            [-headerHeight / 2, 0, headerHeight * 0.75],
           ),
         },
         {
-          scale: interpolate(scrollOffset.value, [-HEADER_HEIGHT, 0, HEADER_HEIGHT], [2, 1, 1]),
+          scale: interpolate(scrollOffset.value, [-headerHeight, 0, headerHeight], [2, 1, 1]),
         },
       ],
     };
@@ -50,16 +60,51 @@ export default function ParallaxScrollView({
         ref={scrollRef}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ bottom }}
-        contentContainerStyle={{ paddingBottom: bottom }}>
+        contentContainerStyle={{ paddingBottom: bottom }}
+      >
         <Animated.View
           style={[
             styles.header,
             { backgroundColor: headerBackgroundColor[colorScheme] },
             headerAnimatedStyle,
-          ]}>
+          ]}
+        >
           {headerImage}
         </Animated.View>
-        <ThemedView style={styles.content}>{children}</ThemedView>
+        {enableMaskView ? (
+          <ThemedView
+            style={{
+              position: 'relative',
+              flex: 1,
+              top: -50,
+              backgroundColor: 'transparent',
+              paddingBottom: bottom,
+            }}
+          >
+            <LinearGradient
+              colors={['transparent', linearColor]}
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: -200,
+                height: 200,
+              }}
+            />
+            <ThemedView
+              style={{
+                position: 'absolute',
+                left: 0,
+                right: 0,
+                top: 50,
+                height: '100%',
+              }}
+            />
+            <ThemedView style={styles.content}>{children}</ThemedView>
+          </ThemedView>
+        ) : (
+          <ThemedView style={styles.content}>{children}</ThemedView>
+        )}
       </Animated.ScrollView>
     </ThemedView>
   );
@@ -75,7 +120,7 @@ const styles = StyleSheet.create({
   },
   content: {
     flex: 1,
-    padding: 32,
+    padding: 8,
     gap: 16,
     overflow: 'hidden',
   },
