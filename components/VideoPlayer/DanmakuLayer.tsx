@@ -4,7 +4,7 @@ import { defaultSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { DANDAN_COMMENT_MODE, DandanComment } from '@/services/dandanplay';
 import React, { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, useWindowDimensions, View } from 'react-native';
-import { runOnJS, SharedValue, useAnimatedReaction } from 'react-native-reanimated';
+import { SharedValue } from 'react-native-reanimated';
 
 import { Bullet } from './Bullet';
 import { DanmakuSettingsType } from './DanmakuSettings';
@@ -39,6 +39,8 @@ export function DanmakuLayer({
     interval: 100,
     isRunning: isPlaying,
   });
+
+  const videoTime = useCurrentTime({ time: currentTime });
 
   const { width, height } = useWindowDimensions();
   const [active, setActive] = useState<ActiveBullet[]>([]);
@@ -108,7 +110,7 @@ export function DanmakuLayer({
     (textWidth: number): number => {
       const base = Math.max(50, speed);
       const ratio = Math.min(2, Math.max(0, textWidth / Math.max(1, width)));
-      const factor = 1 + 0.2 * ratio;
+      const factor = 1 + 0.4 * ratio;
       return Math.min(base * factor, 900);
     },
     [speed, width],
@@ -151,9 +153,11 @@ export function DanmakuLayer({
         case DANDAN_COMMENT_MODE.ScrollBottom:
           const scrollStart = 0;
           const effSpeed = computeEffectiveSpeed(baseParams.textWidth);
+          // 长弹幕需要更多时间完全通过屏幕，总距离应该是屏幕宽度 + 弹幕宽度 + 缓冲距离
+          const totalDistance = width + baseParams.textWidth + 300;
           const durationMs = Math.max(
             3000,
-            Math.round(((width + 300) / Math.max(1, effSpeed)) * 1000),
+            Math.round((totalDistance / Math.max(1, effSpeed)) * 1000),
           );
           return {
             ...baseParams,
@@ -189,7 +193,12 @@ export function DanmakuLayer({
       const newTextWidth = estimateTextWidth(text);
       const vEff = computeEffectiveSpeed(newTextWidth); // px/s
       const vEffPxPerMs = Math.max(0.01, vEff / 1000);
-      const newDurationMs = Math.max(3000, Math.round(((width + 300) / Math.max(1, vEff)) * 1000));
+      // 长弹幕需要更多时间完全通过屏幕
+      const newTotalDistance = width + newTextWidth + 300;
+      const newDurationMs = Math.max(
+        3000,
+        Math.round((newTotalDistance / Math.max(1, vEff)) * 1000),
+      );
       const deltaCurrMs = Math.ceil(((newTextWidth + rowMinGapPx) / Math.max(1, vEff)) * 1000);
       const gapBuffer = Math.max(8, newTextWidth * 0.05);
 
@@ -225,7 +234,7 @@ export function DanmakuLayer({
 
             if (b.mode === DANDAN_COMMENT_MODE.Scroll) {
               // 左滚（从右到左）
-              const totalDist = width + 300;
+              const totalDist = width + (b.textWidth || estimateTextWidth(b.text)) + 300;
               const headX = width - totalDist * progress;
               const tailX = headX + prevTextWidth;
               // 入场门槛：前车尾部需越过安全阈值
@@ -233,7 +242,7 @@ export function DanmakuLayer({
 
               // 追尾检测：新车更快会在可视窗口内追上
               const prevV = totalDist / Math.max(1, b.durationMs); // px/ms
-              const newV = totalDist / Math.max(1, newDurationMs); // px/ms
+              const newV = newTotalDistance / Math.max(1, newDurationMs); // px/ms
               if (newV > prevV) {
                 const d0 = width - tailX; // 初始 head_new - tail_prev
                 const surplus = d0 - requiredGap; // 初始冗余间距
@@ -245,7 +254,7 @@ export function DanmakuLayer({
               }
             } else if (b.mode === DANDAN_COMMENT_MODE.ScrollBottom) {
               // 右滚（从左到右）
-              const totalDist = width + 300;
+              const totalDist = width + (b.textWidth || estimateTextWidth(b.text)) + 300;
               const headX = -100 + totalDist * progress;
               const tailX = headX + prevTextWidth;
               // 入场门槛：前车头部需进入可视区域一定距离
@@ -253,7 +262,7 @@ export function DanmakuLayer({
 
               // 追尾检测
               const prevV = totalDist / Math.max(1, b.durationMs); // px/ms
-              const newV = totalDist / Math.max(1, newDurationMs); // px/ms
+              const newV = newTotalDistance / Math.max(1, newDurationMs); // px/ms
               if (newV > prevV) {
                 const d0 = tailX - -100; // 初始 tail_prev - head_new
                 const surplus = d0 - requiredGap;
@@ -515,6 +524,10 @@ export function DanmakuLayer({
   ]);
 
   useEffect(() => {
+    sync(videoTime);
+  }, [sync, videoTime]);
+
+  useEffect(() => {
     if (seekTime !== undefined) {
       setActive([]);
 
@@ -608,7 +621,13 @@ export function DanmakuLayer({
             const maxOffset =
               c.mode === DANDAN_COMMENT_MODE.Top || c.mode === DANDAN_COMMENT_MODE.Bottom
                 ? 3700
-                : Math.max(0, Math.max(4000, Math.round(((width + 300) / speed) * 1000)) - 300);
+                : Math.max(
+                    0,
+                    Math.max(
+                      4000,
+                      Math.round(((width + estimateTextWidth(c.text) + 300) / speed) * 1000),
+                    ) - 300,
+                  );
             const startOffsetMs = Math.min(lateOffset, maxOffset);
 
             const bullet = createDanmakuBullet(c, rowIndex, startOffsetMs, scheduledMs);
@@ -694,6 +713,7 @@ export function DanmakuLayer({
     pickBottomRow,
     pickScrollRow,
     createDanmakuBullet,
+    estimateTextWidth,
   ]);
 
   useEffect(() => {

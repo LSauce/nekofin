@@ -50,7 +50,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
-  const [isSeeking, setIsSeeking] = useState(false);
 
   const showLoading = useMemo(() => {
     return isBuffering || !videoSource || !isLoaded;
@@ -183,6 +182,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     ({ position: newPosition }: Position) => {
       currentTime.value = newPosition * duration;
       setIsBuffering(false);
+      setIsPlaying(true);
     },
     [currentTime, duration],
   );
@@ -201,7 +201,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           onBuffering={handleBuffering}
           onPlaying={() => {
             setIsBuffering(false);
-            setIsPlaying(true);
+            // setIsPlaying(true);
             setIsStopped(false);
           }}
           onPaused={() => {

@@ -28,10 +28,12 @@ export function Bullet({
   const initTranslateX = useMemo(() => {
     const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
     const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
-    const totalDistance = isLeftScroll ? -width - 300 : width + 300;
+    const totalDistance = isLeftScroll
+      ? -(width + (data.textWidth || 0) + 300)
+      : width + (data.textWidth || 0) + 300;
     const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
     return totalDistance * progressed;
-  }, [data.mode, data.startOffsetMs, data.durationMs, width]);
+  }, [data.mode, data.startOffsetMs, data.durationMs, width, data.textWidth]);
 
   const translateX = useRef(new Animated.Value(initTranslateX)).current;
 
@@ -72,7 +74,10 @@ export function Bullet({
       data.mode === DANDAN_COMMENT_MODE.ScrollBottom
     ) {
       const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
-      const totalDistance = isLeftScroll ? -width - 300 : width + 300;
+      // 长弹幕需要更大的移动距离，确保完全离开屏幕
+      const totalDistance = isLeftScroll
+        ? -(width + (data.textWidth || 0) + 300)
+        : width + (data.textWidth || 0) + 300;
       const remaining = remainingDurationRef.current;
 
       if (remaining <= 0) {
@@ -87,7 +92,7 @@ export function Bullet({
         useNativeDriver: true,
       }).start();
     }
-  }, [data.mode, translateX, width, scheduleFadeAndRemoval, handleExpire]);
+  }, [scheduleFadeAndRemoval, data.mode, data.textWidth, width, translateX, handleExpire]);
 
   const pauseRun = useCallback(() => {
     if (runStartedAtRef.current == null) return;

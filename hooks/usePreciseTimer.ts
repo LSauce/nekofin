@@ -14,15 +14,19 @@ export function usePreciseTimer({
   onTick,
 }: TimerOptions) {
   const [time, setTime] = useState(initialTime);
-  const intervalRef = useRef<ReturnType<typeof setInterval> | null>(null);
+  const animationFrameRef = useRef<number | null>(null);
+  const startTimestampRef = useRef<number | null>(null);
+  const lastTickTimeRef = useRef<number>(0);
 
-  useEffect(() => {
-    if (isRunning) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+  const step = useCallback(
+    (timestamp: number) => {
+      if (!startTimestampRef.current) {
+        startTimestampRef.current = timestamp;
+        lastTickTimeRef.current = timestamp;
       }
 
-      intervalRef.current = setInterval(() => {
+      if (timestamp >= lastTickTimeRef.current + interval) {
+        lastTickTimeRef.current = timestamp;
         setTime((prevTime) => {
           const newTime = prevTime + interval;
           if (onTick) {
@@ -30,44 +34,53 @@ export function usePreciseTimer({
           }
           return newTime;
         });
-      }, interval);
+      }
+
+      if (isRunning) {
+        animationFrameRef.current = requestAnimationFrame(step);
+      }
+    },
+    [interval, isRunning, onTick],
+  );
+
+  useEffect(() => {
+    if (isRunning) {
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+      }
+      startTimestampRef.current = null;
+      lastTickTimeRef.current = 0;
+      animationFrameRef.current = requestAnimationFrame(step);
     } else {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     }
 
     return () => {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
-        intervalRef.current = null;
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
+        animationFrameRef.current = null;
       }
     };
-  }, [isRunning, interval, onTick]);
+  }, [isRunning, step]);
 
   const start = useCallback(() => {
     if (!isRunning) {
-      if (intervalRef.current) {
-        clearInterval(intervalRef.current);
+      if (animationFrameRef.current) {
+        cancelAnimationFrame(animationFrameRef.current);
       }
-
-      intervalRef.current = setInterval(() => {
-        setTime((prevTime) => {
-          const newTime = prevTime + interval;
-          if (onTick) {
-            onTick(newTime);
-          }
-          return newTime;
-        });
-      }, interval);
+      startTimestampRef.current = null;
+      lastTickTimeRef.current = 0;
+      animationFrameRef.current = requestAnimationFrame(step);
     }
-  }, [interval, isRunning, onTick]);
+  }, [isRunning, step]);
 
   const stop = useCallback(() => {
-    if (intervalRef.current) {
-      clearInterval(intervalRef.current);
-      intervalRef.current = null;
+    if (animationFrameRef.current) {
+      cancelAnimationFrame(animationFrameRef.current);
+      animationFrameRef.current = null;
     }
   }, []);
 
