@@ -1,16 +1,9 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
 import React, { useState } from 'react';
 import { Controller, useForm } from 'react-hook-form';
-import {
-  Alert,
-  KeyboardAvoidingView,
-  Platform,
-  StyleSheet,
-  TextInput,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Alert, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { z } from 'zod';
 
 import { ThemedText } from './ThemedText';
@@ -69,9 +62,10 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
   };
 
   return (
-    <KeyboardAvoidingView
+    <BottomSheetScrollView
       style={styles.container}
-      behavior={Platform.OS === 'ios' ? 'padding' : 'height'}
+      contentContainerStyle={styles.contentContainer}
+      keyboardShouldPersistTaps="handled"
     >
       <ThemedText type="title" style={styles.title}>
         添加媒体服务器
@@ -114,7 +108,7 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           control={control}
           name="address"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
+            <BottomSheetTextInput
               style={[styles.input, errors.address && styles.inputError]}
               value={value}
               onChangeText={onChange}
@@ -137,7 +131,7 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           control={control}
           name="username"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
+            <BottomSheetTextInput
               style={[styles.input, errors.username && styles.inputError]}
               value={value}
               onChangeText={onChange}
@@ -160,7 +154,7 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           control={control}
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
-            <TextInput
+            <BottomSheetTextInput
               style={[styles.input, errors.password && styles.inputError]}
               value={value}
               onChangeText={onChange}
@@ -197,7 +191,7 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           </ThemedText>
         </TouchableOpacity>
       </View>
-    </KeyboardAvoidingView>
+    </BottomSheetScrollView>
   );
 };
 
@@ -205,6 +199,9 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     padding: 20,
+  },
+  contentContainer: {
+    paddingBottom: 24,
   },
   title: {
     marginBottom: 24,

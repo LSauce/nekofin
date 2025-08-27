@@ -43,6 +43,9 @@ export const BottomSheetBackdropModal = ({
     <GorhomBottomSheetModal
       ref={ref}
       snapPoints={['90%']}
+      keyboardBehavior="interactive"
+      keyboardBlurBehavior="restore"
+      android_keyboardInputMode="adjustResize"
       backdropComponent={(props) => (
         <BottomSheetBackdrop
           {...props}
