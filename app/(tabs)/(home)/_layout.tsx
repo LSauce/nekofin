@@ -37,7 +37,7 @@ export default function HomeLayout() {
         }}
       />
       <Stack.Screen
-        name="series/season/[id]"
+        name="season/[id]"
         options={{
           headerTitle: '',
           headerTransparent: true,

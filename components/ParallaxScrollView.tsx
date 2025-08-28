@@ -4,7 +4,8 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren, ReactElement } from 'react';
-import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Easing, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { easeGradient } from 'react-native-easing-gradient';
 import Animated, {
   interpolate,
   useAnimatedRef,
@@ -37,9 +38,20 @@ export default function ParallaxScrollView({
   const scrollOffset = useScrollViewOffset(scrollRef);
   const bottom = useBottomTabOverflow();
   const linearColor = useThemeColor(
-    { light: 'rgb(255, 255, 255)', dark: 'rgba(0,0,0,1)' },
+    { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
     'background',
   );
+
+  const gradientStartColor = colorScheme === 'light' ? 'rgba(255,255,255,0)' : 'rgba(0,0,0,0)';
+
+  const { colors, locations } = easeGradient({
+    colorStops: {
+      0: { color: gradientStartColor },
+      1: { color: String(linearColor) },
+    },
+    easing: Easing.out(Easing.cubic),
+    extraColorStopsPerTransition: 12,
+  });
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -84,12 +96,13 @@ export default function ParallaxScrollView({
             }}
           >
             <LinearGradient
-              colors={['transparent', linearColor]}
+              colors={colors as unknown as readonly [string, string, ...string[]]}
+              locations={locations as unknown as readonly [number, number, ...number[]]}
               style={{
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: -200,
+                top: -150,
                 height: 200,
               }}
             />

@@ -161,7 +161,7 @@ export function SeriesCard({
       style={[styles.card, { width: 120, backgroundColor }, style]}
       onPress={() => {
         if (hideSubtitle && item.Id) {
-          router.push({ pathname: '/(tabs)/(home)/series/season/[id]', params: { id: item.Id } });
+          router.push({ pathname: '/season/[id]', params: { id: item.Id } });
           return;
         }
         const seriesId = item.SeriesId ?? item.Id;

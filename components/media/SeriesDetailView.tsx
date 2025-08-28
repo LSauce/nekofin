@@ -19,7 +19,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BaseItemDto, type BaseItemPerson } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Stack } from 'expo-router';
+import { Stack, useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -41,6 +41,7 @@ export type SeriesDetailViewProps = {
 };
 
 export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps) {
+  const navigation = useNavigation();
   const { currentServer, currentApi } = useMediaServers();
   const { accentColor } = useAccentColor();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -138,10 +139,47 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
 
   const isLoading = mode === 'series' ? isLoadingSeasons : isLoadingEpisodes;
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () =>
+        mode === 'series' && item?.Id ? (
+          <TouchableOpacity
+            onPress={async () => {
+              if (!currentApi || !currentServer?.userId || !item?.Id) return;
+              try {
+                if (isFavorite) {
+                  await removeFavoriteItem(currentApi, currentServer.userId, item.Id);
+                  setIsFavorite(false);
+                } else {
+                  await addFavoriteItem(currentApi, currentServer.userId, item.Id);
+                  setIsFavorite(true);
+                }
+              } catch (e) {}
+            }}
+            style={{ padding: 8 }}
+          >
+            <MaterialCommunityIcons
+              name={isFavorite ? 'heart' : 'heart-outline'}
+              size={24}
+              color={textColor}
+            />
+          </TouchableOpacity>
+        ) : null,
+    });
+  }, [
+    navigation,
+    item?.Name,
+    mode,
+    isFavorite,
+    currentApi,
+    currentServer?.userId,
+    item?.Id,
+    textColor,
+  ]);
+
   if (isLoading || !item) {
     return (
       <View style={[styles.center, { backgroundColor }]}>
-        <Stack.Screen options={{ title: mode === 'series' ? '剧集' : '季度' }} />
         <ActivityIndicator size="large" color={accentColor} />
       </View>
     );
@@ -154,121 +192,92 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
   const logoImageUrl = logoImageInfo.url;
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          title: item?.Name || (mode === 'series' ? '剧集' : '季度'),
-          headerRight: () =>
-            mode === 'series' && item?.Id ? (
-              <TouchableOpacity
-                onPress={async () => {
-                  if (!currentApi || !currentServer?.userId || !item?.Id) return;
-                  try {
-                    if (isFavorite) {
-                      await removeFavoriteItem(currentApi, currentServer.userId, item.Id);
-                      setIsFavorite(false);
-                    } else {
-                      await addFavoriteItem(currentApi, currentServer.userId, item.Id);
-                      setIsFavorite(true);
-                    }
-                  } catch (e) {}
-                }}
-                style={{ padding: 8 }}
-              >
-                <MaterialCommunityIcons
-                  name={isFavorite ? 'heart' : 'heart-outline'}
-                  size={24}
-                  color={textColor}
-                />
-              </TouchableOpacity>
-            ) : null,
-        }}
-      />
-      <ParallaxScrollView
-        enableMaskView
-        headerBackgroundColor={{ light: '#eee', dark: '#222' }}
-        headerImage={
-          headerImageUrl ? (
-            <Image
-              source={{ uri: headerImageUrl }}
-              style={styles.header}
-              placeholder={{ blurhash: headerImageInfo.blurhash }}
-              contentFit="cover"
-            />
-          ) : (
-            <View style={[styles.header, { backgroundColor: '#eee' }]} />
-          )
-        }
-      >
-        <View style={styles.content}>
-          {!!logoImageUrl && (
-            <Image source={{ uri: logoImageUrl }} style={styles.logo} contentFit="contain" />
-          )}
-          {
-            <Text style={[styles.meta, { color: textColor }]}>
-              {mode === 'series' ? (
-                ratingText ? (
-                  <>
-                    <Text style={styles.star}>★</Text>
-                    <Text>{` ${ratingText}`}</Text>
-                    {yearText ? <Text>{` · ${yearText}`}</Text> : null}
-                  </>
-                ) : (
-                  <>{yearText}</>
-                )
+    <ParallaxScrollView
+      enableMaskView
+      headerHeight={400}
+      headerBackgroundColor={{ light: '#eee', dark: '#222' }}
+      headerImage={
+        headerImageUrl ? (
+          <Image
+            source={{ uri: headerImageUrl }}
+            style={styles.header}
+            placeholder={{ blurhash: headerImageInfo.blurhash }}
+            contentFit="cover"
+          />
+        ) : (
+          <View style={[styles.header, { backgroundColor: '#eee' }]} />
+        )
+      }
+    >
+      <View style={styles.content}>
+        {!!logoImageUrl && (
+          <Image source={{ uri: logoImageUrl }} style={styles.logo} contentFit="contain" />
+        )}
+        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>{item.Name}</Text>
+        {
+          <Text style={[styles.meta, { color: textColor }]}>
+            {mode === 'series' ? (
+              ratingText ? (
+                <>
+                  <Text style={styles.star}>★</Text>
+                  <Text>{` ${ratingText}`}</Text>
+                  {yearText ? <Text>{` · ${yearText}`}</Text> : null}
+                </>
               ) : (
-                `第${item.IndexNumber}季`
-              )}
-            </Text>
-          }
-          {!!item.Overview && (
-            <Text style={[styles.overview, { color: textColor }]} numberOfLines={5}>
-              {item.Overview.trim()}
-            </Text>
-          )}
+                <>{yearText}</>
+              )
+            ) : (
+              `第${item.IndexNumber}季`
+            )}
+          </Text>
+        }
+        {!!item.Overview && (
+          <Text style={[styles.overview, { color: textColor }]} numberOfLines={5}>
+            {item.Overview.trim()}
+          </Text>
+        )}
 
-          {mode === 'series' && (genreText || writerText || studioText) ? (
-            <View style={styles.infoBlock}>
-              {!!genreText && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: subtitleColor }]}>类型</Text>
-                  <ThemedText style={styles.infoValue}>{genreText}</ThemedText>
-                </View>
-              )}
-              {!!writerText && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: subtitleColor }]}>编剧</Text>
-                  <ThemedText style={styles.infoValue}>{writerText}</ThemedText>
-                </View>
-              )}
-              {!!studioText && (
-                <View style={styles.infoRow}>
-                  <Text style={[styles.infoLabel, { color: subtitleColor }]}>工作室</Text>
-                  <ThemedText style={styles.infoValue}>{studioText}</ThemedText>
-                </View>
-              )}
-            </View>
-          ) : null}
+        {mode === 'series' && (genreText || writerText || studioText) ? (
+          <View style={styles.infoBlock}>
+            {!!genreText && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: subtitleColor }]}>类型</Text>
+                <ThemedText style={styles.infoValue}>{genreText}</ThemedText>
+              </View>
+            )}
+            {!!writerText && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: subtitleColor }]}>编剧</Text>
+                <ThemedText style={styles.infoValue}>{writerText}</ThemedText>
+              </View>
+            )}
+            {!!studioText && (
+              <View style={styles.infoRow}>
+                <Text style={[styles.infoLabel, { color: subtitleColor }]}>工作室</Text>
+                <ThemedText style={styles.infoValue}>{studioText}</ThemedText>
+              </View>
+            )}
+          </View>
+        ) : null}
 
-          {mode === 'series' ? (
-            <SeriesModeContent
-              seasons={seasons}
-              nextUpItems={nextUpItems}
-              people={(item?.People ?? []).slice(0, 20) as BaseItemPerson[]}
-              similarItems={similarShows}
-              currentServer={currentServer}
-              textColor={textColor}
-            />
-          ) : (
-            <SeasonModeContent
-              episodes={episodes}
-              currentServer={currentServer}
-              subtitleColor={subtitleColor}
-            />
-          )}
-        </View>
-      </ParallaxScrollView>
-    </>
+        {mode === 'series' ? (
+          <SeriesModeContent
+            seasons={seasons}
+            nextUpItems={nextUpItems}
+            people={(item?.People ?? []).slice(0, 20) as BaseItemPerson[]}
+            similarItems={similarShows}
+            currentServer={currentServer}
+            textColor={textColor}
+          />
+        ) : (
+          <SeasonModeContent
+            episodes={episodes}
+            currentServer={currentServer}
+            subtitleColor={subtitleColor}
+          />
+        )}
+      </View>
+    </ParallaxScrollView>
   );
 }
 
@@ -500,11 +509,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   content: {
-    top: -160,
+    top: -140,
     padding: 20,
     gap: 8,
   },
   logo: {
+    top: -40,
     width: '100%',
     height: 120,
   },
