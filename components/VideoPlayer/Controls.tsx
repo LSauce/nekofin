@@ -241,7 +241,7 @@ export function Controls({
           <MenuView
             isAnchoredToRight
             onPressAction={({ nativeEvent }) => {
-              const key = (nativeEvent as any).event ?? (nativeEvent as any).actionId;
+              const key = nativeEvent.event;
               if (key === 'danmaku-settings') {
                 handleDanmakuSettingsPress();
               }

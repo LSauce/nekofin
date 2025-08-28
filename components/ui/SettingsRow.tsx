@@ -5,22 +5,24 @@ import React from 'react';
 import {
   Platform,
   PlatformColor,
+  StyleProp,
   StyleSheet,
   Text,
   TouchableOpacity,
   View,
+  ViewStyle,
   type ColorValue,
 } from 'react-native';
 
 export interface SettingsRowProps {
   title: string;
   subtitle?: string;
-  icon: string;
+  icon: keyof typeof MaterialIcons.glyphMap;
   onPress?: () => void;
   showArrow?: boolean;
   rightComponent?: React.ReactNode;
   disableBorder?: boolean;
-  containerStyle?: any;
+  containerStyle?: StyleProp<ViewStyle>;
 }
 
 export const SettingsRow: React.FC<SettingsRowProps> = ({
@@ -54,12 +56,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       disabled={!onPress}
     >
       <View style={styles.settingItemLeft}>
-        <MaterialIcons
-          name={icon as any}
-          size={24}
-          color={accentColor}
-          style={styles.settingIcon}
-        />
+        <MaterialIcons name={icon} size={24} color={accentColor} style={styles.settingIcon} />
         <View style={styles.settingTextContainer}>
           <Text style={[styles.settingTitle, { color: textColor }]}>{title}</Text>
           {subtitle ? (
@@ -70,7 +67,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       <View style={styles.settingItemRight}>
         {rightComponent}
         {showArrow && onPress ? (
-          <MaterialIcons name="chevron-right" size={24} color={secondaryTextColor as any} />
+          <MaterialIcons name="chevron-right" size={24} color={secondaryTextColor} />
         ) : null}
       </View>
     </TouchableOpacity>

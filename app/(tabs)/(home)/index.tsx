@@ -56,7 +56,7 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
       ]);
 
       const mediaFolders = (foldersRes.data.Items || []).filter(
-        (f: any) => f.CollectionType !== 'playlists',
+        (f) => f.CollectionType !== 'playlists',
       );
 
       const latestByFolder: { folderId: string; items: BaseItemDto[]; name: string }[] = [];

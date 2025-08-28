@@ -6,6 +6,7 @@ import {
   getItemsApi,
   getLibraryApi,
   getMediaInfoApi,
+  getPlaystateApi,
   getSystemApi,
   getTvShowsApi,
   getUserApi,
@@ -252,10 +253,37 @@ export async function getEpisodesBySeason(api: Api, seasonId: string, userId: st
   });
 }
 
+export async function getSimilarShows(
+  api: Api,
+  itemId: string,
+  userId: string,
+  limit: number = 30,
+) {
+  return await getLibraryApi(api).getSimilarShows({
+    itemId,
+    userId,
+    limit,
+    fields: ['PrimaryImageAspectRatio'],
+  });
+}
+
 export async function addFavoriteItem(api: Api, userId: string, itemId: string) {
   return await getUserLibraryApi(api).markFavoriteItem({ userId, itemId });
 }
 
 export async function removeFavoriteItem(api: Api, userId: string, itemId: string) {
   return await getUserLibraryApi(api).unmarkFavoriteItem({ userId, itemId });
+}
+
+export async function markItemPlayed(
+  api: Api,
+  userId: string,
+  itemId: string,
+  datePlayed?: string,
+) {
+  return await getPlaystateApi(api).markPlayedItem({ itemId, userId, datePlayed });
+}
+
+export async function markItemUnplayed(api: Api, userId: string, itemId: string) {
+  return await getPlaystateApi(api).markUnplayedItem({ itemId, userId });
 }

@@ -20,7 +20,7 @@ export default function FolderScreen() {
 
   const loadItems = useMemo(() => {
     return async () => {
-      if (!api || !currentServer || !id) return [] as any[];
+      if (!api || !currentServer || !id) return [];
       const response = await getAllItemsByFolder(
         api,
         currentServer.userId,

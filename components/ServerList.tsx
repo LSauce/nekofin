@@ -1,4 +1,4 @@
-import { useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { createApiFromServerInfo } from '@/services/jellyfin';
 import React from 'react';
 import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -13,7 +13,7 @@ interface ServerListProps {
 export function ServerList({ onAddServer }: ServerListProps) {
   const { servers, removeServer } = useMediaServers();
 
-  const handleServerPress = (server: any) => {
+  const handleServerPress = (server: MediaServerInfo) => {
     try {
       const api = createApiFromServerInfo(server);
       console.log('Connected to server:', server.name, api);
@@ -26,7 +26,7 @@ export function ServerList({ onAddServer }: ServerListProps) {
     await removeServer(id);
   };
 
-  const renderServer = ({ item }: { item: any }) => (
+  const renderServer = ({ item }: { item: MediaServerInfo }) => (
     <TouchableOpacity style={styles.serverItem} onPress={() => handleServerPress(item)}>
       <View style={styles.serverInfo}>
         <ThemedText style={styles.serverName}>{item.name}</ThemedText>

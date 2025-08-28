@@ -9,7 +9,7 @@ import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from '
 
 import { IconSymbol } from '../ui/IconSymbol';
 
-const getSubtitle = (item: BaseItemDto) => {
+export const getSubtitle = (item: BaseItemDto) => {
   if (item.Type === 'Episode') {
     return `S${item.ParentIndexNumber}E${item.IndexNumber} - ${item.Name}`;
   }
@@ -134,10 +134,12 @@ export function SeriesCard({
   item,
   style,
   imgType = 'Primary',
+  hideSubtitle = false,
 }: {
   item: BaseItemDto;
   style?: StyleProp<ViewStyle>;
   imgType?: ImageType;
+  hideSubtitle?: boolean;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -158,6 +160,10 @@ export function SeriesCard({
     <TouchableOpacity
       style={[styles.card, { width: 120, backgroundColor }, style]}
       onPress={() => {
+        if (hideSubtitle && item.Id) {
+          router.push({ pathname: '/(tabs)/(home)/series/season/[id]', params: { id: item.Id } });
+          return;
+        }
         const seriesId = item.SeriesId ?? item.Id;
         if (!seriesId) return;
         router.push({
@@ -181,11 +187,13 @@ export function SeriesCard({
         </View>
       )}
       <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-        {item.SeriesName || item.Name || '未知标题'}
+        {hideSubtitle ? `第${item.IndexNumber}季` : item.SeriesName || item.Name || '未知标题'}
       </Text>
-      <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
-        {getSubtitle(item)}
-      </Text>
+      {!hideSubtitle && (
+        <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
+          {getSubtitle(item)}
+        </Text>
+      )}
     </TouchableOpacity>
   );
 }
