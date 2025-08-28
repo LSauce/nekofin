@@ -105,7 +105,7 @@ export default function ParallaxScrollView({
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: -160,
+                top: -180,
                 height: 200,
               }}
             />

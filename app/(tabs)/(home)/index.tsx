@@ -16,10 +16,9 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Stack, useNavigation, useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import {
-  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -182,15 +181,14 @@ export default function HomeScreen() {
   }
 
   return (
-    <ScrollView
-      showsVerticalScrollIndicator={false}
-      contentInsetAdjustmentBehavior="automatic"
-      style={{ flex: 1, backgroundColor }}
-      refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={handleRefresh} />}
-    >
-      <View
-        style={{
-          paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0,
+    <>
+      <ScrollView
+        showsVerticalScrollIndicator={false}
+        contentInsetAdjustmentBehavior="automatic"
+        style={{ flex: 1, backgroundColor }}
+        refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={handleRefresh} />}
+        contentContainerStyle={{
+          paddingBottom: bottomTabBarHeight,
         }}
       >
         {sectionsQuery.data?.map((section) => {
@@ -250,7 +248,7 @@ export default function HomeScreen() {
             />
           );
         })}
-      </View>
+      </ScrollView>
 
       <BottomSheetBackdropModal ref={BottomSheetModalRef}>
         <BottomSheetView style={styles.serverListContainer}>
@@ -270,7 +268,7 @@ export default function HomeScreen() {
           ))}
         </BottomSheetView>
       </BottomSheetBackdropModal>
-    </ScrollView>
+    </>
   );
 }
 

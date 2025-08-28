@@ -214,7 +214,7 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
         {!!logoImageUrl && (
           <Image source={{ uri: logoImageUrl }} style={styles.logo} contentFit="contain" />
         )}
-        <Text style={{ fontSize: 24, fontWeight: 'bold' }}>{item.Name}</Text>
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.Name}</Text>
         {
           <Text style={[styles.meta, { color: textColor }]}>
             {mode === 'series' ? (
