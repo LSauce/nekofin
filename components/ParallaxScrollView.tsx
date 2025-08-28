@@ -22,6 +22,7 @@ type Props = PropsWithChildren<{
   enableMaskView?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
+  showsVerticalScrollIndicator?: boolean;
 }>;
 
 export default function ParallaxScrollView({
@@ -32,6 +33,7 @@ export default function ParallaxScrollView({
   enableMaskView = false,
   containerStyle,
   contentStyle,
+  showsVerticalScrollIndicator = true,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -49,8 +51,8 @@ export default function ParallaxScrollView({
       0: { color: gradientStartColor },
       1: { color: String(linearColor) },
     },
-    easing: Easing.out(Easing.cubic),
-    extraColorStopsPerTransition: 12,
+    easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+    extraColorStopsPerTransition: 24,
   });
 
   const headerAnimatedStyle = useAnimatedStyle(() => {
@@ -76,6 +78,7 @@ export default function ParallaxScrollView({
         ref={scrollRef}
         scrollEventThrottle={16}
         scrollIndicatorInsets={{ bottom }}
+        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
       >
         <Animated.View
           style={[
@@ -102,7 +105,7 @@ export default function ParallaxScrollView({
                 position: 'absolute',
                 left: 0,
                 right: 0,
-                top: -150,
+                top: -160,
                 height: 200,
               }}
             />

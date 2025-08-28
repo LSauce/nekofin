@@ -195,6 +195,7 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
     <ParallaxScrollView
       enableMaskView
       headerHeight={400}
+      showsVerticalScrollIndicator={false}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
       headerImage={
         headerImageUrl ? (
