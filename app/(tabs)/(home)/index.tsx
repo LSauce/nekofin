@@ -16,8 +16,8 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useMutation, useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Stack, useRouter } from 'expo-router';
-import { useMemo, useRef } from 'react';
+import { Stack, useNavigation, useRouter } from 'expo-router';
+import { useEffect, useMemo, useRef } from 'react';
 import {
   Platform,
   RefreshControl,
@@ -50,8 +50,8 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
 
       const [userViewRes, nextUpRes, resumeRes, foldersRes] = await Promise.all([
         getUserView(api, currentServer.userId),
-        getNextUpItems(api, currentServer.userId),
-        getResumeItems(api, currentServer.userId),
+        getNextUpItems(api, currentServer.userId, 10),
+        getResumeItems(api, currentServer.userId, 10),
         getMediaFolders(api),
       ]);
 
@@ -111,6 +111,7 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
 
 export default function HomeScreen() {
   const { servers, currentServer, setCurrentServer, refreshServerInfo } = useMediaServers();
+  const navigation = useNavigation();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const BottomSheetModalRef = useRef<BottomSheetModal>(null);
@@ -142,6 +143,25 @@ export default function HomeScreen() {
     refreshServerInfo(serverId);
   };
 
+  useEffect(() => {
+    navigation.setOptions({
+      headerRight: () => (
+        <View style={styles.headerButtons}>
+          <TouchableOpacity
+            onPress={() => BottomSheetModalRef.current?.present()}
+            style={styles.serverButton}
+          >
+            <Image
+              source={{ uri: currentServer?.userAvatar }}
+              style={styles.serverButtonAvatar}
+              contentFit="cover"
+            />
+          </TouchableOpacity>
+        </View>
+      ),
+    });
+  }, [currentServer?.userAvatar, navigation]);
+
   if (servers.length === 0) {
     return (
       <View
@@ -162,115 +182,95 @@ export default function HomeScreen() {
   }
 
   return (
-    <>
-      <Stack.Screen
-        options={{
-          headerRight: () => (
-            <View style={styles.headerButtons}>
-              <TouchableOpacity
-                onPress={() => BottomSheetModalRef.current?.present()}
-                style={styles.serverButton}
-              >
-                <Image
-                  source={{ uri: currentServer?.userAvatar }}
-                  style={styles.serverButtonAvatar}
-                  contentFit="cover"
-                />
-              </TouchableOpacity>
-            </View>
-          ),
+    <ScrollView
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ flex: 1, backgroundColor }}
+      refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={handleRefresh} />}
+    >
+      <View
+        style={{
+          paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0,
         }}
-      />
-      <ScrollView
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor }}
-        refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={handleRefresh} />}
       >
-        <View
-          style={{
-            paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0,
-          }}
-        >
-          {sectionsQuery.data?.map((section) => {
-            if (section.type === 'userview') {
-              return (
-                <UserViewSection
-                  key={section.key}
-                  userView={section.items}
-                  currentServer={currentServer}
-                />
-              );
-            }
-            if (section.type === 'resume') {
-              return (
-                <Section
-                  key={section.key}
-                  title={section.title}
-                  onViewAll={() => router.push('/viewall/resume')}
-                  items={section.items}
-                  isLoading={sectionsQuery.isLoading}
-                  currentServer={currentServer}
-                />
-              );
-            }
-            if (section.type === 'nextup') {
-              return (
-                <Section
-                  key={section.key}
-                  title={section.title}
-                  onViewAll={() => router.push('/viewall/nextup')}
-                  items={section.items}
-                  isLoading={sectionsQuery.isLoading}
-                  currentServer={currentServer}
-                />
-              );
-            }
-            // latest by folder
-            const folderId = section.key.replace('latest_', '');
+        {sectionsQuery.data?.map((section) => {
+          if (section.type === 'userview') {
+            return (
+              <UserViewSection
+                key={section.key}
+                userView={section.items}
+                currentServer={currentServer}
+              />
+            );
+          }
+          if (section.type === 'resume') {
             return (
               <Section
                 key={section.key}
                 title={section.title}
-                onViewAll={() =>
-                  router.push({
-                    pathname: '/viewall/[type]',
-                    params: {
-                      folderId,
-                      folderName: section.title.replace('最近添加的 ', ''),
-                      type: 'latest',
-                    },
-                  })
-                }
+                onViewAll={() => router.push('/viewall/resume')}
                 items={section.items}
                 isLoading={sectionsQuery.isLoading}
                 currentServer={currentServer}
-                type="series"
               />
             );
-          })}
-        </View>
+          }
+          if (section.type === 'nextup') {
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() => router.push('/viewall/nextup')}
+                items={section.items}
+                isLoading={sectionsQuery.isLoading}
+                currentServer={currentServer}
+              />
+            );
+          }
+          // latest by folder
+          const folderId = section.key.replace('latest_', '');
+          return (
+            <Section
+              key={section.key}
+              title={section.title}
+              onViewAll={() =>
+                router.push({
+                  pathname: '/viewall/[type]',
+                  params: {
+                    folderId,
+                    folderName: section.title.replace('最近添加的 ', ''),
+                    type: 'latest',
+                  },
+                })
+              }
+              items={section.items}
+              isLoading={sectionsQuery.isLoading}
+              currentServer={currentServer}
+              type="series"
+            />
+          );
+        })}
+      </View>
 
-        <BottomSheetBackdropModal ref={BottomSheetModalRef}>
-          <BottomSheetView style={styles.serverListContainer}>
-            <Text style={styles.serverListTitle}>选择服务器</Text>
-            {servers.map((server) => (
-              <TouchableOpacity
-                key={server.id}
-                style={[
-                  styles.serverItem,
-                  currentServer?.id === server.id && styles.currentServerItem,
-                ]}
-                onPress={() => handleServerSelect(server.id)}
-              >
-                <Text style={styles.serverItemText}>{server.name}</Text>
-                <Text style={styles.serverItemAddress}>{server.address}</Text>
-              </TouchableOpacity>
-            ))}
-          </BottomSheetView>
-        </BottomSheetBackdropModal>
-      </ScrollView>
-    </>
+      <BottomSheetBackdropModal ref={BottomSheetModalRef}>
+        <BottomSheetView style={styles.serverListContainer}>
+          <Text style={styles.serverListTitle}>选择服务器</Text>
+          {servers.map((server) => (
+            <TouchableOpacity
+              key={server.id}
+              style={[
+                styles.serverItem,
+                currentServer?.id === server.id && styles.currentServerItem,
+              ]}
+              onPress={() => handleServerSelect(server.id)}
+            >
+              <Text style={styles.serverItemText}>{server.name}</Text>
+              <Text style={styles.serverItemAddress}>{server.address}</Text>
+            </TouchableOpacity>
+          ))}
+        </BottomSheetView>
+      </BottomSheetBackdropModal>
+    </ScrollView>
   );
 }
 

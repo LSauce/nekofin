@@ -17,40 +17,12 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: '首页',
+          title: '设置',
           headerLargeTitle: true,
           headerLargeTitleShadowVisible: false,
           headerLargeStyle: {
             backgroundColor,
           },
-        }}
-      />
-      <Stack.Screen
-        name="series/[id]"
-        options={{
-          headerTitle: '',
-          headerTransparent: true,
-          headerBlurEffect: 'none',
-        }}
-      />
-      <Stack.Screen
-        name="season/[id]"
-        options={{
-          headerTitle: '',
-          headerTransparent: true,
-          headerBlurEffect: 'none',
-        }}
-      />
-      <Stack.Screen
-        name="folder/[id]"
-        options={{
-          title: '查看全部',
-        }}
-      />
-      <Stack.Screen
-        name="viewall/[type]"
-        options={{
-          title: '查看全部',
         }}
       />
     </Stack>

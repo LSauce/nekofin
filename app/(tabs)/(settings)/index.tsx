@@ -7,7 +7,8 @@ import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useHeaderHeight } from '@react-navigation/elements';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
+import { useEffect } from 'react';
 import {
   Platform,
   PlatformColor,
@@ -20,9 +21,9 @@ import {
 } from 'react-native';
 
 export default function SettingsScreen() {
+  const navigation = useNavigation();
+
   const router = useRouter();
-  const bottomTabBarHeight = useBottomTabBarHeight();
-  const headerHeight = useHeaderHeight();
   const backgroundColorDefault = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const secondaryTextColorDefault = useThemeColor({ light: '#666', dark: '#999' }, 'text');
@@ -52,6 +53,12 @@ export default function SettingsScreen() {
       {isSelected && <MaterialIcons name="check" size={20} color="#fff" />}
     </TouchableOpacity>
   );
+
+  useEffect(() => {
+    navigation.setOptions({
+      headerLargeTitle: true,
+    });
+  }, [navigation]);
 
   return (
     <PageScrollView showsVerticalScrollIndicator={false}>

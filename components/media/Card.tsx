@@ -88,6 +88,7 @@ export function MediaCard({
             placeholder={{
               blurhash: imageInfo.blurhash,
             }}
+            cachePolicy="memory-disk"
             contentFit="cover"
           />
           {isPlayed && (
@@ -179,6 +180,7 @@ export function SeriesCard({
           placeholder={{
             blurhash: imageInfo.blurhash,
           }}
+          cachePolicy="memory-disk"
           contentFit="cover"
         />
       ) : (
