@@ -5,7 +5,7 @@ import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-
 import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api';
 import uuid from 'react-native-uuid';
 
-import { storage } from './storage';
+import { storage } from '../storage';
 
 export const ticksToSeconds = (ticks: number) => {
   return ticks / 10000000;
@@ -118,3 +118,7 @@ export const getCommentsByItem = async (item: BaseItemDto, originalTitle?: strin
     return comments;
   }
 };
+
+export function isNil(value: unknown): value is null | undefined {
+  return value === null || value === undefined;
+}

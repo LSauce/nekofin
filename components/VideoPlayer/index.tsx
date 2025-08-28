@@ -1,4 +1,3 @@
-import { usePreciseTimer } from '@/hooks/usePreciseTimer';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getDeviceProfile } from '@/lib/Device';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';

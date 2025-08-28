@@ -36,6 +36,10 @@ export function getApiInstance() {
   return apiInstance;
 }
 
+export function setGlobalApiInstance(api: Api | null) {
+  apiInstance = api;
+}
+
 export async function discoverServers(host: string) {
   const jellyfin = getJellyfinInstance();
   return await jellyfin.discovery.getRecommendedServerCandidates(host);

@@ -49,7 +49,7 @@ export function Section({
             type === 'episode' ? (
               <MediaCard item={item} currentServer={currentServer} />
             ) : (
-              <SeriesCard item={item} currentServer={currentServer} />
+              <SeriesCard item={item} />
             )
           }
           keyExtractor={(item) => item.Id!}

@@ -1,12 +1,15 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -22,9 +25,11 @@ export type ItemGridScreenProps = {
 
 export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) {
   const insets = useSafeAreaInsets();
+  const bottomTabBarHeight = useBottomTabBarHeight();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { currentServer } = useMediaServers();
+  const { accentColor } = useAccentColor();
 
   const {
     data: items = [],
@@ -40,11 +45,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
 
   const renderItem = ({ item }: { item: BaseItemDto }) => {
     return useThreeCols ? (
-      <SeriesCard
-        item={item}
-        currentServer={currentServer}
-        style={useThreeCols ? styles.gridItemThird : styles.gridItem}
-      />
+      <SeriesCard item={item} style={useThreeCols ? styles.gridItemThird : styles.gridItem} />
     ) : (
       <MediaCard item={item} currentServer={currentServer} style={styles.gridItem} />
     );
@@ -55,7 +56,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
       <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
         <Stack.Screen options={{ title }} />
         <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color="#9C4DFF" />
+          <ActivityIndicator size="large" color={accentColor} />
         </View>
       </View>
     );
@@ -68,7 +69,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
         <View style={styles.errorContainer}>
           <Text style={[styles.errorText, { color: textColor }]}>加载失败，请重试</Text>
           <TouchableOpacity
-            style={styles.retryButton}
+            style={[styles.retryButton, { backgroundColor: accentColor }]}
             onPress={() => {
               refetch();
             }}
@@ -81,7 +82,12 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   }
 
   return (
-    <View style={[styles.container, { backgroundColor }]}>
+    <View
+      style={[
+        styles.container,
+        { backgroundColor, paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0 },
+      ]}
+    >
       <Stack.Screen options={{ title }} />
       <FlatList
         data={items}
@@ -142,7 +148,6 @@ const styles = StyleSheet.create({
     marginBottom: 20,
   },
   retryButton: {
-    backgroundColor: '#9C4DFF',
     paddingHorizontal: 20,
     paddingVertical: 12,
     borderRadius: 8,

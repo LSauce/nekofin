@@ -1,4 +1,9 @@
-import { authenticateAndSaveServer } from '@/services/jellyfin';
+import {
+  authenticateAndSaveServer,
+  createApiFromServerInfo,
+  setGlobalApiInstance,
+} from '@/services/jellyfin';
+import { Api } from '@jellyfin/sdk';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { storage } from '../storage';
@@ -17,6 +22,7 @@ export interface MediaServerInfo {
 interface MediaServerContextType {
   servers: MediaServerInfo[];
   currentServer: MediaServerInfo | null;
+  currentApi: Api | null;
   setCurrentServer: (server: MediaServerInfo) => void;
   isInitialized: boolean;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
@@ -48,6 +54,22 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const currentServer = useMemo(() => {
     return servers.find((server) => server.id === currentServerId) || null;
   }, [servers, currentServerId]);
+
+  const currentApi = useMemo(() => {
+    if (!currentServer) {
+      setGlobalApiInstance(null);
+      return null;
+    }
+    try {
+      const api = createApiFromServerInfo(currentServer);
+      setGlobalApiInstance(api);
+      return api;
+    } catch (error) {
+      console.error('Failed to create API instance:', error);
+      setGlobalApiInstance(null);
+      return null;
+    }
+  }, [currentServer]);
 
   const setCurrentServer = (server: MediaServerInfo) => {
     setCurrentServerId(server.id);
@@ -153,6 +175,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const value: MediaServerContextType = {
     servers,
     currentServer,
+    currentApi,
     setCurrentServer,
     isInitialized,
     addServer,

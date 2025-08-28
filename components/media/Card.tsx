@@ -1,19 +1,11 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { getImageInfo } from '@/lib/utils/image';
+import { BaseItemDto, ImageType } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useMemo } from 'react';
-import {
-  StyleProp,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  useWindowDimensions,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 import { IconSymbol } from '../ui/IconSymbol';
 
@@ -25,7 +17,13 @@ const getSubtitle = (item: BaseItemDto) => {
     return item.ProductionYear;
   }
   if (item.Type === 'Series') {
-    return `${item.ProductionYear} - ${item.Status === 'Continuing' ? '现在' : new Date(item.EndDate ?? '').getFullYear()}`;
+    if (item.Status === 'Continuing') {
+      return `${item.ProductionYear} - 现在`;
+    }
+    if (item.EndDate) {
+      return `${item.ProductionYear} - ${new Date(item.EndDate).getFullYear()}`;
+    }
+    return item.ProductionYear;
   }
   return item.Name;
 };
@@ -35,33 +33,29 @@ export function MediaCard({
   currentServer,
   style,
   hideText,
-  imgType = 'Backdrop',
+  imgType = 'Thumb',
 }: {
   item: BaseItemDto;
   currentServer?: MediaServerInfo | null;
   style?: StyleProp<ViewStyle>;
   hideText?: boolean;
-  imgType?: 'Backdrop' | 'Primary' | 'Thumb';
+  imgType?: ImageType;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
-  const { width } = useWindowDimensions();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { accentColor } = useAccentColor();
 
-  const imageUrl = useMemo(() => {
-    if (item.Type === 'Episode') {
-      if (imgType === 'Primary') {
-        return `${currentServer?.address}/Items/${item.Id}/Images/Primary?maxWidth=300`;
-      }
-      if (item.ParentThumbItemId) {
-        return `${currentServer?.address}/Items/${item.ParentThumbItemId}/Images/Thumb?maxWidth=300`;
-      }
-      return `${currentServer?.address}/Items/${item.SeriesId}/Images/Backdrop?maxWidth=300`;
-    }
-    return `${currentServer?.address}/Items/${item.Id}/Images/Backdrop?maxWidth=300`;
-  }, [item.Type, item.Id, item.ParentThumbItemId, item.SeriesId, currentServer?.address, imgType]);
+  const imageInfo = getImageInfo(item, {
+    preferBackdrop: imgType === 'Backdrop',
+    preferThumb: imgType === 'Thumb',
+    preferBanner: imgType === 'Banner',
+    preferLogo: imgType === 'Logo',
+    width: 400,
+  });
+
+  const imageUrl = imageInfo.url;
 
   const handlePress = async () => {
     if (!currentServer || !item.Id) return;
@@ -83,12 +77,19 @@ export function MediaCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: width * 0.5, backgroundColor }, style]}
+      style={[styles.card, { width: 200, backgroundColor }, style]}
       onPress={handlePress}
     >
       {imageUrl ? (
         <View style={styles.coverContainer}>
-          <Image source={{ uri: imageUrl }} style={styles.cover} contentFit="cover" />
+          <Image
+            source={{ uri: imageUrl }}
+            style={styles.cover}
+            placeholder={{
+              blurhash: imageInfo.blurhash,
+            }}
+            contentFit="cover"
+          />
           {isPlayed && (
             <View style={styles.playedOverlay}>
               <IconSymbol name="checkmark.circle.fill" size={24} color={accentColor} />
@@ -131,30 +132,31 @@ export function MediaCard({
 
 export function SeriesCard({
   item,
-  currentServer,
   style,
+  imgType = 'Primary',
 }: {
   item: BaseItemDto;
-  currentServer?: MediaServerInfo | null;
   style?: StyleProp<ViewStyle>;
+  imgType?: ImageType;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const { width } = useWindowDimensions();
   const router = useRouter();
-  const imageUrl = useMemo(() => {
-    if (!currentServer) return null;
-    const imgId = item.SeriesId ?? item.Id;
-    if (item.ImageTags?.Primary) {
-      return `${currentServer.address}/Items/${imgId}/Images/Primary?maxWidth=400`;
-    }
-    return `${currentServer.address}/Items/${imgId}/Images/Backdrop?maxWidth=400`;
-  }, [item, currentServer]);
+
+  const imageInfo = getImageInfo(item, {
+    preferBackdrop: imgType === 'Backdrop',
+    preferThumb: imgType === 'Thumb',
+    preferBanner: imgType === 'Banner',
+    preferLogo: imgType === 'Logo',
+    width: 400,
+  });
+
+  const imageUrl = imageInfo.url;
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: width * 0.3, backgroundColor }, style]}
+      style={[styles.card, { width: 120, backgroundColor }, style]}
       onPress={() => {
         const seriesId = item.SeriesId ?? item.Id;
         if (!seriesId) return;
@@ -165,7 +167,14 @@ export function SeriesCard({
       }}
     >
       {imageUrl ? (
-        <Image source={{ uri: imageUrl }} style={styles.posterCover} contentFit="cover" />
+        <Image
+          source={{ uri: imageUrl }}
+          style={styles.posterCover}
+          placeholder={{
+            blurhash: imageInfo.blurhash,
+          }}
+          contentFit="cover"
+        />
       ) : (
         <View style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}>
           <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
