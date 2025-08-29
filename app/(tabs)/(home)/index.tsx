@@ -1,4 +1,3 @@
-import { BottomSheetBackdropModal } from '@/components/BottomSheetBackdropModal';
 import { Section } from '@/components/media/Section';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import useRefresh from '@/hooks/useRefresh';
@@ -12,15 +11,16 @@ import {
   getResumeItems,
   getUserView,
 } from '@/services/jellyfin';
-import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useMemo, useRef } from 'react';
+import { useCallback, useEffect, useMemo } from 'react';
 import {
   FlatList,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -113,7 +113,6 @@ export default function HomeScreen() {
   const navigation = useNavigation();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const BottomSheetModalRef = useRef<BottomSheetModal>(null);
   const bottomTabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
@@ -127,30 +126,53 @@ export default function HomeScreen() {
     await sectionsQuery.refetch();
   });
 
-  const handleServerSelect = (serverId: string) => {
-    setCurrentServer(servers.find((server) => server.id === serverId)!);
-    BottomSheetModalRef.current?.dismiss();
-    refreshServerInfo(serverId);
-  };
+  const handleServerSelect = useCallback(
+    (serverId: string) => {
+      setCurrentServer(servers.find((server) => server.id === serverId)!);
+      refreshServerInfo(serverId);
+    },
+    [servers, setCurrentServer, refreshServerInfo],
+  );
 
   useEffect(() => {
     navigation.setOptions({
       headerRight: () => (
         <View style={styles.headerButtons}>
-          <TouchableOpacity
-            onPress={() => BottomSheetModalRef.current?.present()}
-            style={styles.serverButton}
+          <MenuView
+            isAnchoredToRight
+            title="服务器列表"
+            onPressAction={({ nativeEvent }) => {
+              const serverId = nativeEvent.event;
+              if (serverId && serverId !== 'current') {
+                handleServerSelect(serverId);
+              }
+            }}
+            actions={[
+              ...(servers.map((server) => ({
+                id: server.id,
+                title: server.name,
+                state:
+                  currentServer?.id === server.id
+                    ? 'on'
+                    : Platform.select({
+                        ios: 'off',
+                        android: 'mixed',
+                      }),
+              })) as MenuAction[]),
+            ]}
           >
-            <Image
-              source={{ uri: currentServer?.userAvatar }}
-              style={styles.serverButtonAvatar}
-              contentFit="cover"
-            />
-          </TouchableOpacity>
+            <TouchableOpacity style={styles.serverButton}>
+              <Image
+                source={{ uri: currentServer?.userAvatar }}
+                style={styles.serverButtonAvatar}
+                contentFit="cover"
+              />
+            </TouchableOpacity>
+          </MenuView>
         </View>
       ),
     });
-  }, [currentServer?.userAvatar, navigation]);
+  }, [currentServer?.userAvatar, navigation, servers, currentServer?.id, handleServerSelect]);
 
   if (servers.length === 0) {
     return (
@@ -231,25 +253,6 @@ export default function HomeScreen() {
           );
         })}
       </ScrollView>
-
-      <BottomSheetBackdropModal ref={BottomSheetModalRef}>
-        <BottomSheetView style={styles.serverListContainer}>
-          <Text style={styles.serverListTitle}>选择服务器</Text>
-          {servers.map((server) => (
-            <TouchableOpacity
-              key={server.id}
-              style={[
-                styles.serverItem,
-                currentServer?.id === server.id && styles.currentServerItem,
-              ]}
-              onPress={() => handleServerSelect(server.id)}
-            >
-              <Text style={styles.serverItemText}>{server.name}</Text>
-              <Text style={styles.serverItemAddress}>{server.address}</Text>
-            </TouchableOpacity>
-          ))}
-        </BottomSheetView>
-      </BottomSheetBackdropModal>
     </>
   );
 }
@@ -388,35 +391,5 @@ const styles = StyleSheet.create({
     aspectRatio: 16 / 9,
     backgroundColor: '#eee',
     borderRadius: 12,
-  },
-  serverListContainer: {
-    flex: 1,
-    padding: 20,
-  },
-  serverListTitle: {
-    fontSize: 20,
-    fontWeight: 'bold',
-    marginBottom: 16,
-    textAlign: 'center',
-    color: '#000',
-  },
-  serverItem: {
-    padding: 16,
-    borderRadius: 12,
-    backgroundColor: '#f7f7f7',
-    marginBottom: 8,
-  },
-  currentServerItem: {
-    backgroundColor: '#e5e5ea',
-  },
-  serverItemText: {
-    fontSize: 16,
-    fontWeight: 'bold',
-    marginBottom: 4,
-    color: '#000',
-  },
-  serverItemAddress: {
-    fontSize: 14,
-    color: '#666',
   },
 });

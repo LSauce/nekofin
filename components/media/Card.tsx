@@ -185,6 +185,8 @@ export function SeriesCard({
           router.push({ pathname: '/movie/[id]', params: { id: item.Id! } });
           return;
         }
+
+        console.warn('Unknown type:', type);
       }}
     >
       {imageUrl ? (

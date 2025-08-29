@@ -17,7 +17,7 @@ import {
 let jellyfin: Jellyfin | null = null;
 let apiInstance: Api | null = null;
 
-export function getJellyfinInstance(address?: string) {
+export function getJellyfinInstance() {
   if (!jellyfin) {
     jellyfin = new Jellyfin({
       clientInfo: {
@@ -26,7 +26,7 @@ export function getJellyfinInstance(address?: string) {
       },
       deviceInfo: {
         name: 'Nekofin Device',
-        id: getDeviceId(address),
+        id: getDeviceId(),
       },
     });
   }
@@ -52,7 +52,7 @@ export function findBestServer(servers: RecommendedServerInfo[]) {
 }
 
 export function createApi(address: string) {
-  const jellyfin = getJellyfinInstance(address);
+  const jellyfin = getJellyfinInstance();
   const api = jellyfin.createApi(address);
   return api;
 }
@@ -146,7 +146,7 @@ export async function getUserInfo(api: Api, userId: string) {
 }
 
 export function createApiFromServerInfo(serverInfo: MediaServerInfo) {
-  const jellyfin = getJellyfinInstance(serverInfo.address);
+  const jellyfin = getJellyfinInstance();
   const api = jellyfin.createApi(serverInfo.address);
   api.accessToken = serverInfo.accessToken;
   return api;
