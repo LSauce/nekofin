@@ -302,7 +302,9 @@ function SeasonModeContent({ episodes, item }: { episodes: BaseItemDto[]; item: 
                     } else {
                       await markItemPlayed(currentApi!, currentServer.userId, item.Id);
                     }
-                    await queryClient.invalidateQueries({ queryKey: ['detail-bundle', 'season'] });
+                    await queryClient.invalidateQueries({
+                      queryKey: ['detail-bundle', 'season', item.Id],
+                    });
                   } catch (e) {}
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}

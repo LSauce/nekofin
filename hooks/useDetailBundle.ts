@@ -23,7 +23,7 @@ export function useDetailBundle(mode: 'series' | 'season' | 'movie', itemId: str
   const { currentServer, currentApi } = useMediaServers();
 
   const query = useQuery<DetailBundle>({
-    queryKey: ['detail-bundle', mode],
+    queryKey: ['detail-bundle', mode, itemId],
     queryFn: async () => {
       if (!currentApi || !itemId || !currentServer?.userId) return null;
       const userId = currentServer.userId;
