@@ -47,7 +47,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
     return useThreeCols ? (
       <SeriesCard item={item} style={useThreeCols ? styles.gridItemThird : styles.gridItem} />
     ) : (
-      <MediaCard item={item} currentServer={currentServer} style={styles.gridItem} />
+      <MediaCard item={item} style={styles.gridItem} />
     );
   };
 
@@ -114,22 +114,21 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   listContainer: {
-    padding: 20,
+    paddingHorizontal: 20,
+    paddingVertical: 20,
+    rowGap: 16,
   },
   row: {
-    justifyContent: 'space-between',
+    columnGap: 16,
   },
   rowLeft: {
-    justifyContent: 'flex-start',
+    columnGap: 12,
   },
   gridItem: {
     width: '48%',
-    marginRight: 0,
-    marginBottom: 20,
   },
   gridItemThird: {
-    width: '30%',
-    marginBottom: 20,
+    width: '31%',
   },
   loadingContainer: {
     flex: 1,

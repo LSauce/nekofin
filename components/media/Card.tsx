@@ -1,5 +1,4 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { getImageInfo } from '@/lib/utils/image';
 import { BaseItemDto, ImageType } from '@jellyfin/sdk/lib/generated-client/models';
@@ -14,16 +13,18 @@ export const getSubtitle = (item: BaseItemDto) => {
     return `S${item.ParentIndexNumber}E${item.IndexNumber} - ${item.Name}`;
   }
   if (item.Type === 'Movie') {
-    return item.ProductionYear;
+    return item.ProductionYear ?? '未知时间';
   }
   if (item.Type === 'Series') {
+    const startYear = item.ProductionYear?.toString() ?? '';
     if (item.Status === 'Continuing') {
-      return `${item.ProductionYear} - 现在`;
+      return startYear ? `${startYear} - 现在` : '现在';
     }
     if (item.EndDate) {
-      return `${item.ProductionYear} - ${new Date(item.EndDate).getFullYear()}`;
+      const endYear = new Date(item.EndDate).getFullYear();
+      return startYear ? `${startYear} - ${endYear}` : `${endYear}`;
     }
-    return item.ProductionYear;
+    return startYear ?? '未知时间';
   }
   return item.Name;
 };
@@ -57,6 +58,14 @@ export function MediaCard({
 
   const handlePress = async () => {
     if (!item.Id) return;
+
+    if (item.Type === 'Movie') {
+      router.push({
+        pathname: '/movie/[id]',
+        params: { id: item.Id },
+      });
+      return;
+    }
 
     router.push({
       pathname: '/media/player',
@@ -159,16 +168,23 @@ export function SeriesCard({
     <TouchableOpacity
       style={[styles.card, { width: 120, backgroundColor }, style]}
       onPress={() => {
-        if (hideSubtitle && item.Id) {
-          router.push({ pathname: '/season/[id]', params: { id: item.Id } });
+        const type = item.Type;
+
+        if (type === 'Season') {
+          router.push({ pathname: '/season/[id]', params: { id: item.Id! } });
           return;
         }
-        const seriesId = item.SeriesId ?? item.Id;
-        if (!seriesId) return;
-        router.push({
-          pathname: '/series/[id]',
-          params: { id: seriesId },
-        });
+
+        if (type === 'Series' || type === 'Episode') {
+          const seriesId = item.SeriesId ?? item.Id;
+          router.push({ pathname: '/series/[id]', params: { id: seriesId! } });
+          return;
+        }
+
+        if (type === 'Movie') {
+          router.push({ pathname: '/movie/[id]', params: { id: item.Id! } });
+          return;
+        }
       }}
     >
       {imageUrl ? (

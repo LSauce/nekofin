@@ -1,5 +1,4 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';

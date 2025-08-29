@@ -265,6 +265,20 @@ export async function getSimilarShows(
   });
 }
 
+export async function getSimilarMovies(
+  api: Api,
+  itemId: string,
+  userId: string,
+  limit: number = 30,
+) {
+  return await getLibraryApi(api).getSimilarMovies({
+    itemId,
+    userId,
+    limit,
+    fields: ['PrimaryImageAspectRatio'],
+  });
+}
+
 export async function addFavoriteItem(api: Api, userId: string, itemId: string) {
   return await getUserLibraryApi(api).markFavoriteItem({ userId, itemId });
 }

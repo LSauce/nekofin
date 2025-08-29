@@ -42,6 +42,14 @@ export default function HomeLayout() {
         }}
       />
       <Stack.Screen
+        name="movie/[id]"
+        options={{
+          headerTitle: '',
+          headerTransparent: true,
+          headerBlurEffect: 'none',
+        }}
+      />
+      <Stack.Screen
         name="folder/[id]"
         options={{
           title: '查看全部',
