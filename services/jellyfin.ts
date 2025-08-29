@@ -52,11 +52,9 @@ export function findBestServer(servers: RecommendedServerInfo[]) {
 }
 
 export function createApi(address: string) {
-  if (!apiInstance) {
-    const jellyfin = getJellyfinInstance(address);
-    apiInstance = jellyfin.createApi(address);
-  }
-  return apiInstance;
+  const jellyfin = getJellyfinInstance(address);
+  const api = jellyfin.createApi(address);
+  return api;
 }
 
 export async function getSystemInfo(api: Api) {

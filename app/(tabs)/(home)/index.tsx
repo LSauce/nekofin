@@ -3,10 +3,10 @@ import { Section } from '@/components/media/Section';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { getImageInfo } from '@/lib/utils/image';
 import {
   createApiFromServerInfo,
   getLatestItemsByFolder,
-  getMediaFolders,
   getNextUpItems,
   getResumeItems,
   getUserView,
@@ -19,12 +19,12 @@ import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
 import {
+  FlatList,
   RefreshControl,
   ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
-  useWindowDimensions,
   View,
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
@@ -47,19 +47,18 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
     queryFn: async (): Promise<HomeSection[]> => {
       if (!currentServer || !api) return [];
 
-      const [userViewRes, nextUpRes, resumeRes, foldersRes] = await Promise.all([
+      const [userViewRes, nextUpRes, resumeRes] = await Promise.all([
         getUserView(api, currentServer.userId),
         getNextUpItems(api, currentServer.userId, 10),
         getResumeItems(api, currentServer.userId, 10),
-        getMediaFolders(api),
       ]);
 
-      const mediaFolders = (foldersRes.data.Items || []).filter(
+      const userViewItems = (userViewRes.data.Items || []).filter(
         (f) => f.CollectionType !== 'playlists',
       );
 
       const latestByFolder: { folderId: string; items: BaseItemDto[]; name: string }[] = [];
-      for (const folder of mediaFolders) {
+      for (const folder of userViewItems) {
         if (!folder.Id) continue;
         try {
           const latest = await getLatestItemsByFolder(api, currentServer.userId, folder.Id, 16);
@@ -77,7 +76,7 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
       sections.push({
         key: 'userview',
         title: '用户视图',
-        items: userViewRes.data.Items || [],
+        items: userViewItems || [],
         type: 'userview',
       });
       sections.push({
@@ -193,13 +192,7 @@ export default function HomeScreen() {
       >
         {sectionsQuery.data?.map((section) => {
           if (section.type === 'userview') {
-            return (
-              <UserViewSection
-                key={section.key}
-                userView={section.items}
-                currentServer={currentServer}
-              />
-            );
+            return <UserViewSection key={section.key} userView={section.items} />;
           }
           if (section.type === 'resume') {
             return (
@@ -209,7 +202,6 @@ export default function HomeScreen() {
                 onViewAll={() => router.push('/viewall/resume')}
                 items={section.items}
                 isLoading={sectionsQuery.isLoading}
-                currentServer={currentServer}
               />
             );
           }
@@ -221,7 +213,6 @@ export default function HomeScreen() {
                 onViewAll={() => router.push('/viewall/nextup')}
                 items={section.items}
                 isLoading={sectionsQuery.isLoading}
-                currentServer={currentServer}
               />
             );
           }
@@ -243,7 +234,6 @@ export default function HomeScreen() {
               }
               items={section.items}
               isLoading={sectionsQuery.isLoading}
-              currentServer={currentServer}
               type="series"
             />
           );
@@ -272,62 +262,40 @@ export default function HomeScreen() {
   );
 }
 
-function UserViewSection({
-  userView,
-  currentServer,
-}: {
-  userView: BaseItemDto[];
-  currentServer?: MediaServerInfo | null;
-}) {
+function UserViewSection({ userView }: { userView: BaseItemDto[] }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const featuredItems = userView?.slice(0, 2) || [];
+  const userViewItems = userView || [];
 
-  if (featuredItems.length === 0) {
+  if (userViewItems.length === 0) {
     return (
       <View style={styles.userViewSection}>
-        <View style={styles.userViewContainer}>
-          <UserViewCard title="暂无内容" imageUrl={null} />
-          <UserViewCard title="暂无内容" imageUrl={null} />
-        </View>
+        <Text style={styles.userViewTitle}>暂无内容</Text>
       </View>
     );
   }
 
   return (
     <View style={[styles.userViewSection, { backgroundColor }]}>
-      <View style={styles.userViewContainer}>
-        {featuredItems.map((item, index) => (
-          <UserViewCard
-            item={item}
-            key={item.Id || index}
-            title={item.Name || '未知标题'}
-            imageUrl={
-              item.ImageTags?.Primary
-                ? `${currentServer?.address}/Items/${item.Id}/Images/Primary?maxWidth=400`
-                : null
-            }
-          />
-        ))}
-        {featuredItems.length === 1 && <UserViewCard title="暂无内容" imageUrl={null} />}
-      </View>
+      <FlatList
+        data={userViewItems}
+        horizontal
+        keyExtractor={(item, index) => (item.Id ? String(item.Id) : String(index))}
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.userViewContainer}
+        renderItem={({ item, index }) => (
+          <UserViewCard item={item} key={item.Id || index} title={item.Name || '未知标题'} />
+        )}
+      />
     </View>
   );
 }
 
-function UserViewCard({
-  item,
-  title,
-  imageUrl,
-}: {
-  item?: BaseItemDto;
-  title: string;
-  imageUrl: string | null;
-  id?: string;
-}) {
+function UserViewCard({ item, title }: { item: BaseItemDto; title: string }) {
   const router = useRouter();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const { width } = useWindowDimensions();
+
+  const imageInfo = getImageInfo(item);
 
   return (
     <TouchableOpacity
@@ -344,10 +312,13 @@ function UserViewCard({
         });
       }}
     >
-      {imageUrl ? (
+      {imageInfo.url ? (
         <Image
-          source={{ uri: imageUrl }}
-          style={[styles.cover, { width: width * 0.5 }]}
+          source={{ uri: imageInfo.url }}
+          placeholder={{
+            blurhash: imageInfo.blurhash,
+          }}
+          style={styles.cover}
           contentFit="cover"
         />
       ) : (
@@ -396,11 +367,11 @@ const styles = StyleSheet.create({
   },
   userViewSection: {
     marginTop: 10,
-    paddingHorizontal: 20,
   },
   userViewContainer: {
     flexDirection: 'row',
     gap: 12,
+    paddingHorizontal: 20,
   },
   userViewCard: {
     overflow: 'hidden',
@@ -421,7 +392,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   cover: {
-    width: '100%',
+    width: 200,
     aspectRatio: 16 / 9,
     backgroundColor: '#eee',
     borderRadius: 12,

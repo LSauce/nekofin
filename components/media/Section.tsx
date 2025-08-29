@@ -11,14 +11,12 @@ export function Section({
   onViewAll,
   items,
   isLoading,
-  currentServer,
   type = 'episode',
 }: {
   title: string;
   onViewAll: () => void;
   items: BaseItemDto[];
   isLoading: boolean;
-  currentServer?: MediaServerInfo | null;
   type?: 'episode' | 'series';
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -43,14 +41,9 @@ export function Section({
           data={items}
           horizontal
           showsHorizontalScrollIndicator={false}
-          style={styles.sectionList}
           contentContainerStyle={styles.sectionListContent}
           renderItem={({ item }) =>
-            type === 'episode' ? (
-              <MediaCard item={item} currentServer={currentServer} />
-            ) : (
-              <SeriesCard item={item} />
-            )
+            type === 'episode' ? <MediaCard item={item} /> : <SeriesCard item={item} />
           }
           keyExtractor={(item) => item.Id!}
         />
@@ -88,11 +81,9 @@ const styles = StyleSheet.create({
     color: '#9C4DFF',
     fontSize: 16,
   },
-  sectionList: {
-    marginLeft: 20,
-  },
   sectionListContent: {
-    paddingRight: 20,
+    paddingHorizontal: 20,
+    gap: 12,
   },
   loadingContainer: {
     paddingHorizontal: 20,

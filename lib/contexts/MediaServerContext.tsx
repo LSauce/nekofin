@@ -37,6 +37,7 @@ interface MediaServerContextType {
 const MediaServerContext = createContext<MediaServerContextType | undefined>(undefined);
 
 const STORAGE_KEY = 'nekofin_servers';
+const CURRENT_SERVER_ID_KEY = 'nekofin_current_server_id';
 
 function normalizeServerAddress(address: string): string {
   return address.replace(/\/$/, '');
@@ -73,6 +74,11 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const setCurrentServer = (server: MediaServerInfo) => {
     setCurrentServerId(server.id);
+    try {
+      storage.set(CURRENT_SERVER_ID_KEY, server.id);
+    } catch (error) {
+      console.error('Failed to persist current server id:', error);
+    }
   };
 
   const loadServers = async () => {
@@ -85,7 +91,10 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
           address: normalizeServerAddress(server.address),
         }));
         setServers(normalizedServers);
-        if (normalizedServers.length > 0) {
+        const persistedId = storage.getString(CURRENT_SERVER_ID_KEY) || null;
+        if (persistedId && normalizedServers.some((s) => s.id === persistedId)) {
+          setCurrentServerId(persistedId);
+        } else if (normalizedServers.length > 0) {
           setCurrentServerId(normalizedServers[0].id);
         }
       }
@@ -116,6 +125,12 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
     const updatedServers = [...servers, newServer];
     await saveServers(updatedServers);
+    setCurrentServerId(newServer.id);
+    try {
+      storage.set(CURRENT_SERVER_ID_KEY, newServer.id);
+    } catch (error) {
+      console.error('Failed to persist current server id on add:', error);
+    }
   };
 
   const authenticateAndAddServer = async (address: string, username: string, password: string) => {
@@ -126,6 +141,19 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const removeServer = async (id: string) => {
     const updatedServers = servers.filter((server) => server.id !== id);
     await saveServers(updatedServers);
+    if (currentServerId === id) {
+      const next = updatedServers[0]?.id || null;
+      setCurrentServerId(next);
+      try {
+        if (next) {
+          storage.set(CURRENT_SERVER_ID_KEY, next);
+        } else {
+          storage.delete(CURRENT_SERVER_ID_KEY);
+        }
+      } catch (error) {
+        console.error('Failed to update persisted current server id on remove:', error);
+      }
+    }
   };
 
   const updateServer = async (id: string, updates: Partial<MediaServerInfo>) => {

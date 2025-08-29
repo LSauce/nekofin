@@ -30,13 +30,11 @@ export const getSubtitle = (item: BaseItemDto) => {
 
 export function MediaCard({
   item,
-  currentServer,
   style,
   hideText,
   imgType = 'Thumb',
 }: {
   item: BaseItemDto;
-  currentServer?: MediaServerInfo | null;
   style?: StyleProp<ViewStyle>;
   hideText?: boolean;
   imgType?: ImageType;
@@ -58,7 +56,7 @@ export function MediaCard({
   const imageUrl = imageInfo.url;
 
   const handlePress = async () => {
-    if (!currentServer || !item.Id) return;
+    if (!item.Id) return;
 
     router.push({
       pathname: '/media/player',
@@ -202,9 +200,7 @@ export function SeriesCard({
 
 const styles = StyleSheet.create({
   card: {
-    marginRight: 16,
     overflow: 'hidden',
-    paddingBottom: 8,
   },
   coverContainer: {
     position: 'relative',

@@ -117,6 +117,9 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
               placeholderTextColor="#999"
               autoCapitalize="none"
               autoCorrect={false}
+              keyboardType="url"
+              autoComplete="url"
+              textContentType="URL"
             />
           )}
         />
@@ -140,6 +143,8 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
               placeholderTextColor="#999"
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="username"
+              textContentType="username"
             />
           )}
         />
@@ -164,6 +169,8 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
+              autoComplete="password"
+              textContentType="password"
             />
           )}
         />
