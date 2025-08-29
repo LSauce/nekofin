@@ -302,7 +302,7 @@ function SeasonModeContent({ episodes, item }: { episodes: BaseItemDto[]; item: 
                     } else {
                       await markItemPlayed(currentApi!, currentServer.userId, item.Id);
                     }
-                    await queryClient.invalidateQueries({ queryKey: ['season-episodes'] });
+                    await queryClient.invalidateQueries({ queryKey: ['detail-bundle', 'season'] });
                   } catch (e) {}
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}
@@ -573,23 +573,13 @@ const styles = StyleSheet.create({
   seasonCard: {
     width: 140,
   },
-  gridWrap: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    justifyContent: 'space-between',
-    marginTop: 8,
-  },
-  gridItem: {
-    width: '48%',
-    marginRight: 0,
-    marginBottom: 20,
-  },
   listContainer: {
     marginTop: 16,
     rowGap: 16,
   },
   listItem: {
     width: '100%',
+    gap: 8,
   },
   emptyContainer: {
     flex: 1,
