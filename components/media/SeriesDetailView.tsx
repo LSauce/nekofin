@@ -19,7 +19,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { BaseItemDto, type BaseItemPerson } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery, useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { Stack, useNavigation } from 'expo-router';
+import { useNavigation } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   ActivityIndicator,
@@ -188,7 +188,7 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
   const headerImageInfo = getImageInfo(item, { preferBackdrop: true, width: 1200 });
   const headerImageUrl = headerImageInfo.url;
 
-  const logoImageInfo = getImageInfo(item, { preferLogo: true, width: 240 });
+  const logoImageInfo = getImageInfo(item, { preferLogo: true, width: 400 });
   const logoImageUrl = logoImageInfo.url;
 
   return (
