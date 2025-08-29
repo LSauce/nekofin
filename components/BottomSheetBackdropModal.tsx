@@ -45,7 +45,7 @@ export const BottomSheetBackdropModal = ({
       snapPoints={['90%']}
       keyboardBehavior="interactive"
       keyboardBlurBehavior="restore"
-      android_keyboardInputMode="adjustResize"
+      android_keyboardInputMode="adjustPan"
       backdropComponent={(props) => (
         <BottomSheetBackdrop
           {...props}

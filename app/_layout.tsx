@@ -16,32 +16,32 @@ import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
-import { Platform, Text } from 'react-native';
+import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+const queryClient = new QueryClient({
+  defaultOptions: {
+    queries: {
+      gcTime: 1000 * 60 * 60 * 24,
+      staleTime: 1000 * 60 * 5,
+      refetchOnWindowFocus: true,
+      structuralSharing: true,
+    },
+  },
+});
+
+const persister = createAsyncStoragePersister({
+  storage: {
+    getItem: (key: string) => storage.getString(key) ?? null,
+    setItem: (key: string, value: string) => storage.set(key, value),
+    removeItem: (key: string) => storage.delete(key),
+  },
+});
 
 export default function RootLayout() {
   const colorScheme = useColorScheme();
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
-  });
-
-  const queryClient = new QueryClient({
-    defaultOptions: {
-      queries: {
-        gcTime: 1000 * 60 * 60 * 24,
-        staleTime: 1000 * 60 * 5,
-        refetchOnWindowFocus: true,
-        structuralSharing: true,
-      },
-    },
-  });
-
-  const persister = createAsyncStoragePersister({
-    storage: {
-      getItem: (key: string) => storage.getString(key) ?? null,
-      setItem: (key: string, value: string) => storage.set(key, value),
-      removeItem: (key: string) => storage.delete(key),
-    },
   });
 
   if (!loaded) {
