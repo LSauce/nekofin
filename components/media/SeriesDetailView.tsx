@@ -215,23 +215,19 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
           <Image source={{ uri: logoImageUrl }} style={styles.logo} contentFit="contain" />
         )}
         <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.Name}</Text>
-        {
+        {mode === 'series' ? (
           <Text style={[styles.meta, { color: textColor }]}>
-            {mode === 'series' ? (
-              ratingText ? (
-                <>
-                  <Text style={styles.star}>★</Text>
-                  <Text>{` ${ratingText}`}</Text>
-                  {yearText ? <Text>{` · ${yearText}`}</Text> : null}
-                </>
-              ) : (
-                <>{yearText}</>
-              )
+            {ratingText ? (
+              <>
+                <Text style={styles.star}>★</Text>
+                <Text>{` ${ratingText}`}</Text>
+                {yearText ? <Text>{` · ${yearText}`}</Text> : null}
+              </>
             ) : (
-              `第${item.IndexNumber}季`
+              <>{yearText}</>
             )}
           </Text>
-        }
+        ) : null}
         {!!item.Overview && (
           <Text style={[styles.overview, { color: textColor }]} numberOfLines={5}>
             {item.Overview.trim()}
