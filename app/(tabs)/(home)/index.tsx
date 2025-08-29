@@ -1,6 +1,7 @@
 import { BottomSheetBackdropModal } from '@/components/BottomSheetBackdropModal';
 import { Section } from '@/components/media/Section';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getImageInfo } from '@/lib/utils/image';
@@ -14,7 +15,7 @@ import {
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useMutation, useQuery } from '@tanstack/react-query';
+import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useMemo, useRef } from 'react';
@@ -120,20 +121,11 @@ export default function HomeScreen() {
 
   const sectionsQuery = useHomeSections(currentServer);
 
-  const { mutate: refreshMutate, isPending: isRefreshing } = useMutation({
-    mutationKey: ['refreshServerInfo', currentServer?.id],
-    mutationFn: async () => {
-      if (!currentServer) return;
-      await refreshServerInfo(currentServer.id);
-    },
-    onSuccess: () => {
-      sectionsQuery.refetch();
-    },
+  const { refreshing, onRefresh } = useRefresh(async () => {
+    if (!currentServer) return Promise.resolve();
+    await refreshServerInfo(currentServer.id);
+    await sectionsQuery.refetch();
   });
-
-  const handleRefresh = () => {
-    refreshMutate();
-  };
 
   const handleServerSelect = (serverId: string) => {
     setCurrentServer(servers.find((server) => server.id === serverId)!);
@@ -185,7 +177,7 @@ export default function HomeScreen() {
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         style={{ flex: 1, backgroundColor }}
-        refreshControl={<RefreshControl refreshing={!!isRefreshing} onRefresh={handleRefresh} />}
+        refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
         contentContainerStyle={{
           paddingBottom: bottomTabBarHeight,
         }}
