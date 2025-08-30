@@ -3,7 +3,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { useRouter } from 'expo-router';
 import { TouchableOpacity } from 'react-native';
 
-export default function HeaderLeftComponent({ canGoBack = true }: { canGoBack?: boolean }) {
+export default function HeaderBackButton({ canGoBack = true }: { canGoBack?: boolean }) {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const router = useRouter();
 

@@ -355,7 +355,7 @@ function MovieModeContent({
       {!!item.Id && (
         <TouchableOpacity
           onPress={() => {
-            router.push({ pathname: '/media/player', params: { itemId: item.Id! } });
+            router.push({ pathname: '/player', params: { itemId: item.Id! } });
           }}
           style={[styles.playButton, { backgroundColor: accentColor }]}
         >

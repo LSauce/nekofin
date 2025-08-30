@@ -68,7 +68,7 @@ export function MediaCard({
     }
 
     router.push({
-      pathname: '/media/player',
+      pathname: '/player',
       params: {
         itemId: item.Id,
       },

@@ -1,6 +1,7 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { Image } from 'expo-image';
 import React from 'react';
 import {
   Platform,
@@ -17,7 +18,8 @@ import {
 export interface SettingsRowProps {
   title: string;
   subtitle?: string;
-  icon: keyof typeof MaterialIcons.glyphMap;
+  icon?: keyof typeof MaterialIcons.glyphMap;
+  imageUri?: string;
   onPress?: () => void;
   showArrow?: boolean;
   rightComponent?: React.ReactNode;
@@ -29,6 +31,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   title,
   subtitle,
   icon,
+  imageUri,
   onPress,
   showArrow = true,
   rightComponent,
@@ -56,7 +59,11 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       disabled={!onPress}
     >
       <View style={styles.settingItemLeft}>
-        <MaterialIcons name={icon} size={24} color={accentColor} style={styles.settingIcon} />
+        {imageUri ? (
+          <Image source={{ uri: imageUri }} style={styles.settingImage} contentFit="cover" />
+        ) : icon ? (
+          <MaterialIcons name={icon} size={24} color={accentColor} style={styles.settingIcon} />
+        ) : null}
         <View style={styles.settingTextContainer}>
           <Text style={[styles.settingTitle, { color: textColor }]}>{title}</Text>
           {subtitle ? (
@@ -97,6 +104,12 @@ const styles = StyleSheet.create({
     alignItems: 'center',
   },
   settingIcon: {
+    marginRight: 12,
+  },
+  settingImage: {
+    width: 24,
+    height: 24,
+    borderRadius: 12,
     marginRight: 12,
   },
   settingTextContainer: {

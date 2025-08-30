@@ -20,15 +20,9 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: '设置',
+          title: '收藏',
           headerLargeTitle: true,
           headerLargeTitleShadowVisible: false,
-        }}
-      />
-      <Stack.Screen
-        name="media"
-        options={{
-          headerTitle: '媒体',
         }}
       />
     </Stack>

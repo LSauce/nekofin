@@ -64,13 +64,6 @@ export default function SettingsScreen() {
     <PageScrollView showsVerticalScrollIndicator={false}>
       <Section title="服务器" titleColor={secondaryTextColor}>
         <SettingItem
-          title="当前服务器"
-          subtitle={currentServer?.name || '未选择'}
-          icon="dns"
-          onPress={() => router.push('/media')}
-          disableBorder
-        />
-        <SettingItem
           title="服务器列表"
           subtitle={`${servers.length} 个服务器`}
           icon="list"

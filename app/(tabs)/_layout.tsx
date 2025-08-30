@@ -1,6 +1,4 @@
 import { HapticTab } from '@/components/HapticTab';
-import HeaderLeftComponent from '@/components/HeaderLeftComponent';
-import { IconSymbol } from '@/components/ui/IconSymbol';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
@@ -38,10 +36,19 @@ export default function TabLayout() {
         }}
       />
       <Tabs.Screen
-        name="media"
+        name="(search)"
         options={{
-          title: '媒体',
-          tabBarIcon: ({ color }) => <IconSymbol size={28} name="video.fill" color={color} />,
+          title: '搜索',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <FontAwesome name="search" size={24} color={color} />,
+        }}
+      />
+      <Tabs.Screen
+        name="(favorites)"
+        options={{
+          title: '收藏',
+          headerShown: false,
+          tabBarIcon: ({ color }) => <FontAwesome name="heart" size={24} color={color} />,
         }}
       />
       <Tabs.Screen

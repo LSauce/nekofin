@@ -5,7 +5,7 @@ import { StatusBar } from 'expo-status-bar';
 
 import 'react-native-reanimated';
 
-import HeaderLeftComponent from '@/components/HeaderLeftComponent';
+import HeaderBackButton from '@/components/HeaderBackButton';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
@@ -68,12 +68,12 @@ export default function RootLayout() {
                       headerTransparent: Platform.OS === 'ios',
                       headerBackground: TabBarBackground,
                       headerBackTitle: '返回',
-                      headerLeft: HeaderLeftComponent,
+                      headerLeft: HeaderBackButton,
                     }}
                   >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen
-                      name="media/player"
+                      name="player/index"
                       options={{
                         headerShown: false,
                         presentation: 'fullScreenModal',

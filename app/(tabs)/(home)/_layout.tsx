@@ -1,4 +1,4 @@
-import HeaderLeftComponent from '@/components/HeaderLeftComponent';
+import HeaderBackButton from '@/components/HeaderBackButton';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
@@ -11,7 +11,7 @@ export default function HomeLayout() {
         headerTransparent: Platform.OS === 'ios',
         headerShadowVisible: false,
         headerBlurEffect: 'prominent',
-        headerLeft: HeaderLeftComponent,
+        headerLeft: HeaderBackButton,
       }}
     >
       <Stack.Screen
