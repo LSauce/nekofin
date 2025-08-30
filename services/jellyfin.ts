@@ -299,3 +299,53 @@ export async function markItemPlayed(
 export async function markItemUnplayed(api: Api, userId: string, itemId: string) {
   return await getPlaystateApi(api).markUnplayedItem({ itemId, userId });
 }
+
+export async function reportPlaybackProgress(
+  api: Api,
+  itemId: string,
+  positionTicks: number,
+  isPaused: boolean = false,
+) {
+  try {
+    await getPlaystateApi(api).reportPlaybackProgress({
+      playbackProgressInfo: {
+        ItemId: itemId,
+        PositionTicks: Math.floor(positionTicks),
+        IsPaused: isPaused,
+        CanSeek: true,
+        PlaybackStartTimeTicks: Date.now() * 10000,
+      },
+    });
+    console.log('reportPlaybackProgress', itemId, positionTicks, isPaused);
+  } catch (error) {
+    console.warn('Error reporting playback progress:', error);
+  }
+}
+
+export async function reportPlaybackStart(api: Api, itemId: string, positionTicks: number = 0) {
+  try {
+    await getPlaystateApi(api).reportPlaybackStart({
+      playbackStartInfo: {
+        ItemId: itemId,
+        PositionTicks: Math.floor(positionTicks),
+        CanSeek: true,
+        PlaybackStartTimeTicks: Date.now() * 10000,
+      },
+    });
+  } catch (error) {
+    console.warn('Error reporting playback start:', error);
+  }
+}
+
+export async function reportPlaybackStop(api: Api, itemId: string, positionTicks: number) {
+  try {
+    await getPlaystateApi(api).reportPlaybackStopped({
+      playbackStopInfo: {
+        ItemId: itemId,
+        PositionTicks: Math.floor(positionTicks),
+      },
+    });
+  } catch (error) {
+    console.warn('Error reporting playback stop:', error);
+  }
+}

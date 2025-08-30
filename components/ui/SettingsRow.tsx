@@ -1,19 +1,8 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import { useSettingsColors } from '@/hooks/useSettingsColors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import React from 'react';
-import {
-  Platform,
-  PlatformColor,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-  type ColorValue,
-} from 'react-native';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
 export interface SettingsRowProps {
   title: string;
@@ -23,7 +12,6 @@ export interface SettingsRowProps {
   onPress?: () => void;
   showArrow?: boolean;
   rightComponent?: React.ReactNode;
-  disableBorder?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
 }
 
@@ -35,26 +23,13 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   onPress,
   showArrow = true,
   rightComponent,
-  disableBorder = false,
   containerStyle,
 }) => {
-  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const secondaryTextColorDefault = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const { accentColor } = useAccentColor();
-
-  const cardBackgroundColor: ColorValue =
-    Platform.OS === 'ios' ? PlatformColor('secondarySystemGroupedBackground') : 'transparent';
-  const secondaryTextColor: ColorValue =
-    Platform.OS === 'ios' ? PlatformColor('secondaryLabel') : secondaryTextColorDefault;
+  const { textColor, secondaryTextColor, backgroundColor, accentColor } = useSettingsColors();
 
   return (
     <TouchableOpacity
-      style={[
-        styles.settingItem,
-        { backgroundColor: cardBackgroundColor },
-        Platform.OS === 'ios' && disableBorder ? styles.settingItemNoBorder : null,
-        containerStyle,
-      ]}
+      style={[styles.settingItem, { backgroundColor }, containerStyle]}
       onPress={onPress}
       disabled={!onPress}
     >
@@ -88,11 +63,6 @@ const styles = StyleSheet.create({
     justifyContent: 'space-between',
     paddingHorizontal: 16,
     paddingVertical: 14,
-    borderBottomWidth: StyleSheet.hairlineWidth,
-    borderBottomColor: '#eee',
-  },
-  settingItemNoBorder: {
-    borderBottomWidth: 0,
   },
   settingItemLeft: {
     flexDirection: 'row',

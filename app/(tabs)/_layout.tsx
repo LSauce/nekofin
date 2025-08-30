@@ -26,7 +26,9 @@ export default function TabLayout() {
         headerTransparent: Platform.OS === 'ios',
         headerBackground: TabBarBackground,
       }}
+      initialRouteName="(home)"
     >
+      <Tabs.Screen redirect name="index" />
       <Tabs.Screen
         name="(home)"
         options={{

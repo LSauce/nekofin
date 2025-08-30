@@ -63,7 +63,6 @@ export default function MediaScreen() {
         icon={server.userAvatar ? undefined : 'dns'}
         onPress={() => handleServerPress(server)}
         showArrow={false}
-        disableBorder={isLast}
         rightComponent={
           <MenuView
             isAnchoredToRight
@@ -103,7 +102,7 @@ export default function MediaScreen() {
     <PageScrollView style={[styles.container, { backgroundColor }]}>
       <View style={styles.scrollView}>
         <Section title="服务器管理">
-          <SettingsRow title="添加服务器" icon="add" onPress={handleAddServer} disableBorder />
+          <SettingsRow title="添加服务器" icon="add" onPress={handleAddServer} />
         </Section>
 
         {servers.length > 0 && (

@@ -18,6 +18,7 @@ import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
+import { usePlaybackSync } from '../../hooks/usePlaybackSync';
 import { Controls } from './Controls';
 import { DanmakuLayer } from './DanmakuLayer';
 
@@ -43,12 +44,20 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
 
+  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
+    api,
+    currentServer,
+    itemDetail,
+    currentTime,
+  });
+
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
+  const [initialTime, setInitialTime] = useState<number>(-1);
 
   const showLoading = useMemo(() => {
     return isBuffering || !videoSource || !isLoaded;
@@ -110,11 +119,18 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       );
       setItemDetail(itemDetail.data);
 
+      if (itemDetail.data.UserData?.PlaybackPositionTicks !== undefined) {
+        const startTimeMs = Math.round(itemDetail.data.UserData.PlaybackPositionTicks / 10000);
+        setInitialTime(startTimeMs);
+        currentTime.value = startTimeMs;
+      }
+
       const streamInfo = await getStreamInfo({
         api,
         itemId,
         userId: currentServer.userId,
         deviceProfile: getDeviceProfile(),
+        startTimeTicks: itemDetail.data.UserData?.PlaybackPositionTicks,
       });
 
       if (streamInfo) {
@@ -128,7 +144,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         console.warn('Failed to load danmaku comments:', error);
       }
     })();
-  }, [api, itemId, currentServer]);
+  }, [api, itemId, currentServer, currentTime]);
 
   useEffect(() => {
     (async () => {
@@ -147,6 +163,14 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         NavigationBar.setVisibilityAsync('visible');
       };
     }
+  }, []);
+
+  useEffect(() => {
+    return () => {
+      if (bufferingTimeoutRef.current) {
+        clearTimeout(bufferingTimeoutRef.current);
+      }
+    };
   }, []);
 
   const handlePlayPause = useCallback(() => {
@@ -182,31 +206,38 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       currentTime.value = newPosition * duration;
       setIsBuffering(false);
       setIsPlaying(true);
-    },
-    [currentTime, duration],
-  );
 
-  console.log('Debug: component re-render');
+      if (isPlaying) {
+        syncPlaybackProgress(newPosition * duration, false);
+      }
+    },
+    [currentTime, duration, isPlaying, syncPlaybackProgress],
+  );
 
   return (
     <View style={styles.container}>
-      {videoSource && (
+      {videoSource && initialTime >= 0 && (
         <LibVlcPlayerView
           ref={player}
           style={styles.video}
           source={videoSource}
           options={['network-caching=1000']}
           autoplay={true}
+          time={initialTime}
           onBuffering={handleBuffering}
           onPlaying={() => {
             setIsBuffering(false);
             // setIsPlaying(true);
             setIsStopped(false);
+
+            syncPlaybackStart(currentTime.value);
           }}
           onPaused={() => {
             setIsBuffering(false);
             setIsPlaying(false);
             setIsStopped(false);
+
+            syncPlaybackProgress(currentTime.value, true);
           }}
           onPositionChanged={handlePositionChanged}
           onFirstPlay={(mediaInfo) => {

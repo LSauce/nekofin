@@ -1,36 +1,21 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { useSettingsColors } from '@/hooks/useSettingsColors';
 import React from 'react';
-import {
-  Platform,
-  PlatformColor,
-  StyleSheet,
-  Text,
-  View,
-  type ColorValue,
-  type ViewProps,
-} from 'react-native';
+import { StyleSheet, Text, View, type ViewProps } from 'react-native';
 
 type SectionProps = ViewProps & {
   title: string;
-  titleColor?: ColorValue;
-  groupBackgroundColor?: ColorValue;
+  titleColor?: string;
   children: React.ReactNode;
   showSeparators?: boolean;
-  separatorColor?: ColorValue;
+  separatorColor?: string;
   separatorInsetLeft?: number;
 };
-
-const separatorColorDefault: ColorValue =
-  Platform.OS === 'ios' ? PlatformColor('separator') : '#eee';
-const groupBackgroundColorDefault: ColorValue =
-  Platform.OS === 'ios' ? PlatformColor('secondarySystemGroupedBackground') : '#fff';
 
 export function Section({
   title,
   titleColor,
-  groupBackgroundColor = groupBackgroundColorDefault,
   showSeparators = true,
-  separatorColor = separatorColorDefault,
+  separatorColor,
   separatorInsetLeft = 16 + 24 + 12,
   style,
   children,
@@ -38,11 +23,9 @@ export function Section({
 }: SectionProps) {
   const childArray = React.Children.toArray(children).filter(Boolean);
 
-  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const groupBackgroundColorWithTheme = useThemeColor(
-    { light: groupBackgroundColorDefault, dark: '#000' },
-    'background',
-  );
+  const { textColor, backgroundColor, separatorColor: defaultSeparatorColor } = useSettingsColors();
+
+  const finalSeparatorColor = separatorColor || defaultSeparatorColor;
 
   return (
     <View style={[styles.section, style]} {...rest}>
@@ -51,14 +34,7 @@ export function Section({
       >
         {title}
       </Text>
-      <View
-        style={[
-          styles.groupContainer,
-          groupBackgroundColor
-            ? { backgroundColor: groupBackgroundColor }
-            : { backgroundColor: groupBackgroundColorWithTheme },
-        ]}
-      >
+      <View style={[styles.groupContainer, { backgroundColor }]}>
         {childArray.map((child, index) => (
           <React.Fragment key={index}>
             {child}
@@ -67,7 +43,7 @@ export function Section({
                 style={[
                   styles.separator,
                   separatorInsetLeft ? { marginLeft: separatorInsetLeft } : null,
-                  separatorColor ? { backgroundColor: separatorColor } : null,
+                  { backgroundColor: finalSeparatorColor },
                 ]}
               />
             ) : null}
@@ -93,8 +69,6 @@ const styles = StyleSheet.create({
     marginHorizontal: 16,
     borderRadius: 12,
     overflow: 'hidden',
-    borderWidth: StyleSheet.hairlineWidth,
-    borderColor: 'transparent',
   },
   separator: {
     height: StyleSheet.hairlineWidth,
