@@ -12,22 +12,25 @@ import {
   removeFavoriteItem,
 } from '@/services/jellyfin';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { BaseItemDto, type BaseItemPerson } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQueryClient } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useMemo, useState } from 'react';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  NativeSyntheticEvent,
   StyleSheet,
   Text,
+  TextLayoutEventData,
   TouchableOpacity,
   View,
 } from 'react-native';
 
+import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
-import { IconSymbol } from '../ui/IconSymbol';
 import { MediaCard, SeriesCard } from './Card';
 import { PersonItem } from './PersonItem';
 
@@ -295,22 +298,20 @@ function SeasonModeContent({ episodes, item }: { episodes: BaseItemDto[]; item: 
               <TouchableOpacity
                 onPress={async () => {
                   if (!currentServer?.userId || !item.Id) return;
-                  try {
-                    const isPlayed = !!item.UserData?.Played;
-                    if (isPlayed) {
-                      await markItemUnplayed(currentApi!, currentServer.userId, item.Id);
-                    } else {
-                      await markItemPlayed(currentApi!, currentServer.userId, item.Id);
-                    }
-                    await queryClient.invalidateQueries({
-                      queryKey: ['detail-bundle', 'season', item.Id],
-                    });
-                  } catch (e) {}
+                  const isPlayed = !!item.UserData?.Played;
+                  if (isPlayed) {
+                    await markItemUnplayed(currentApi!, currentServer.userId, item.Id);
+                  } else {
+                    await markItemPlayed(currentApi!, currentServer.userId, item.Id);
+                  }
+                  await queryClient.invalidateQueries({
+                    queryKey: ['detail-bundle', 'season', item.SeasonId],
+                  });
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}
               >
-                <IconSymbol
-                  name={item.UserData?.Played ? 'checkmark.circle.fill' : 'checkmark.circle'}
+                <MaterialCommunityIcons
+                  name={item.UserData?.Played ? 'check-circle' : 'check-circle-outline'}
                   size={24}
                   color={subtitleColor}
                 />
@@ -438,14 +439,61 @@ function ItemMeta({ item }: { item: BaseItemDto }) {
 
 function ItemOverview({ item }: { item: BaseItemDto }) {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+  const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const [textLineNumber, setTextLineNumber] = useState<number | null>(null);
+  const [lastLineText, setLastLineText] = useState<string>('');
+
+  const { accentColor } = useAccentColor();
 
   const overview = item?.Overview?.trim() ?? '';
+
+  const handleTextLayout = useCallback((event: NativeSyntheticEvent<TextLayoutEventData>) => {
+    const { lines } = event.nativeEvent;
+    if (lines.length > 4) {
+      const lastLine = lines[4];
+      setLastLineText(lastLine.text);
+    }
+    setTextLineNumber(lines.length);
+  }, []);
+
+  const handleShowMore = () => {
+    bottomSheetModalRef.current?.present();
+  };
+
   if (!overview) return null;
 
   return (
-    <Text style={[styles.overview, { color: textColor }]} numberOfLines={5}>
-      {overview}
-    </Text>
+    <>
+      <View style={styles.overviewContainer}>
+        <Text
+          style={[styles.overview, { color: textColor }]}
+          numberOfLines={4}
+          ellipsizeMode="head"
+          onTextLayout={handleTextLayout}
+        >
+          {overview}
+        </Text>
+        {textLineNumber && textLineNumber > 4 && lastLineText.trim() && (
+          <View style={styles.lastLineContainer}>
+            <Text style={[styles.overview, { flex: 1, color: textColor }]} numberOfLines={1}>
+              {lastLineText}
+            </Text>
+            {textLineNumber && textLineNumber > 5 && (
+              <TouchableOpacity onPress={handleShowMore}>
+                <Text style={[styles.overview, { color: accentColor }]}>查看更多</Text>
+              </TouchableOpacity>
+            )}
+          </View>
+        )}
+      </View>
+
+      <BottomSheetBackdropModal ref={bottomSheetModalRef} enableDynamicSizing>
+        <BottomSheetView style={styles.modalContent}>
+          <Text style={[styles.modalTitle, { color: textColor }]}>剧情简介</Text>
+          <Text style={[styles.modalOverview, { color: textColor }]}>{overview}</Text>
+        </BottomSheetView>
+      </BottomSheetBackdropModal>
+    </>
   );
 }
 
@@ -526,6 +574,22 @@ const styles = StyleSheet.create({
     fontSize: 14,
     lineHeight: 20,
   },
+  overviewContainer: {
+    gap: 8,
+  },
+  modalContent: {
+    paddingHorizontal: 20,
+    paddingBottom: 20,
+    gap: 16,
+  },
+  modalTitle: {
+    fontSize: 18,
+    fontWeight: '600',
+  },
+  modalOverview: {
+    fontSize: 16,
+    lineHeight: 24,
+  },
   infoBlock: {
     marginTop: 6,
     rowGap: 6,
@@ -596,5 +660,11 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     opacity: 0.6,
+  },
+  lastLineContainer: {
+    marginTop: -8,
+    flexDirection: 'row',
+    alignItems: 'flex-start',
+    gap: 8,
   },
 });

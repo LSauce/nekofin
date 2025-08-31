@@ -26,8 +26,7 @@ export const usePlaybackSync = ({
     (position: number, isPaused: boolean = false) => {
       if (!api || !currentServer || !itemDetail) return;
 
-      console.log('syncPlaybackProgress', position);
-      const positionTicks = Math.round(position * 10000);
+      const positionTicks = Math.round(position);
       reportPlaybackProgress(api, itemDetail.Id!, positionTicks, isPaused);
     },
     [api, currentServer, itemDetail],
@@ -37,7 +36,7 @@ export const usePlaybackSync = ({
     (position: number) => {
       if (!api || !currentServer || !itemDetail) return;
 
-      const positionTicks = Math.round(position * 10000);
+      const positionTicks = Math.round(position);
       reportPlaybackStart(api, itemDetail.Id!, positionTicks);
     },
     [api, currentServer, itemDetail],
@@ -47,7 +46,7 @@ export const usePlaybackSync = ({
     (position: number) => {
       if (!api || !currentServer || !itemDetail) return;
 
-      const positionTicks = Math.round(position * 10000);
+      const positionTicks = Math.round(position);
       reportPlaybackStop(api, itemDetail.Id!, positionTicks);
     },
     [api, currentServer, itemDetail],
@@ -56,7 +55,7 @@ export const usePlaybackSync = ({
   useEffect(() => {
     return () => {
       if (api && currentServer && itemDetail) {
-        const positionTicks = Math.round(currentTime.value * 10000);
+        const positionTicks = Math.round(currentTime.value);
         syncPlaybackStop(positionTicks);
       }
     };

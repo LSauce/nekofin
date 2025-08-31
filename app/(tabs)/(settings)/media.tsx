@@ -75,21 +75,16 @@ export default function MediaScreen() {
                 handleRemoveServer(server.id);
               }
             }}
-            actions={
-              [
-                {
-                  id: 'set-current',
-                  title: isCurrentServer ? '当前服务器' : '设为当前服务器',
-                  state: isCurrentServer ? 'on' : 'off',
-                },
-                {
-                  id: 'remove',
-                  title: '删除服务器',
-                  state: 'off',
-                  destructive: true,
-                },
-              ] as MenuAction[]
-            }
+            actions={[
+              {
+                id: 'set-current',
+                title: isCurrentServer ? '当前服务器' : '设为当前服务器',
+              },
+              {
+                id: 'remove',
+                title: '删除服务器',
+              },
+            ]}
           >
             <MaterialIcons name="more-vert" size={24} color={secondaryTextColorDefault} />
           </MenuView>

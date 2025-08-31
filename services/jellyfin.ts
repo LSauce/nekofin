@@ -310,13 +310,12 @@ export async function reportPlaybackProgress(
     await getPlaystateApi(api).reportPlaybackProgress({
       playbackProgressInfo: {
         ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks),
+        PositionTicks: Math.floor(positionTicks * 10000),
         IsPaused: isPaused,
         CanSeek: true,
         PlaybackStartTimeTicks: Date.now() * 10000,
       },
     });
-    console.log('reportPlaybackProgress', itemId, positionTicks, isPaused);
   } catch (error) {
     console.warn('Error reporting playback progress:', error);
   }
@@ -327,7 +326,7 @@ export async function reportPlaybackStart(api: Api, itemId: string, positionTick
     await getPlaystateApi(api).reportPlaybackStart({
       playbackStartInfo: {
         ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks),
+        PositionTicks: Math.floor(positionTicks * 10000),
         CanSeek: true,
         PlaybackStartTimeTicks: Date.now() * 10000,
       },
@@ -339,10 +338,11 @@ export async function reportPlaybackStart(api: Api, itemId: string, positionTick
 
 export async function reportPlaybackStop(api: Api, itemId: string, positionTicks: number) {
   try {
+    console.log('reportPlaybackStop', itemId, positionTicks);
     await getPlaystateApi(api).reportPlaybackStopped({
       playbackStopInfo: {
         ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks),
+        PositionTicks: Math.floor(positionTicks * 10000),
       },
     });
   } catch (error) {

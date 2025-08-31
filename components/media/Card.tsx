@@ -1,12 +1,11 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { getImageInfo } from '@/lib/utils/image';
+import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BaseItemDto, ImageType } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
-
-import { IconSymbol } from '../ui/IconSymbol';
 
 export const getSubtitle = (item: BaseItemDto) => {
   if (item.Type === 'Episode') {
@@ -22,6 +21,9 @@ export const getSubtitle = (item: BaseItemDto) => {
     }
     if (item.EndDate) {
       const endYear = new Date(item.EndDate).getFullYear();
+      if (startYear && parseInt(startYear) === endYear) {
+        return startYear;
+      }
       return startYear ? `${startYear} - ${endYear}` : `${endYear}`;
     }
     return startYear ?? '未知时间';
@@ -100,7 +102,7 @@ export function MediaCard({
           />
           {isPlayed && (
             <View style={styles.playedOverlay}>
-              <IconSymbol name="checkmark.circle.fill" size={24} color={accentColor} />
+              <MaterialIcons name="check-circle" size={24} color={accentColor} />
             </View>
           )}
           {playedPercentage !== undefined && (
@@ -121,7 +123,7 @@ export function MediaCard({
         </View>
       ) : (
         <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
+          <MaterialIcons name="chevron-left" size={48} color="#ccc" />
         </View>
       )}
       {!hideText && (
@@ -201,11 +203,11 @@ export function SeriesCard({
         />
       ) : (
         <View style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}>
-          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
+          <MaterialIcons name="chevron-left" size={48} color="#ccc" />
         </View>
       )}
       <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-        {hideSubtitle ? `第${item.IndexNumber}季` : item.SeriesName || item.Name || '未知标题'}
+        {hideSubtitle ? item.Name : item.SeriesName || item.Name || '未知标题'}
       </Text>
       {!hideSubtitle && (
         <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
