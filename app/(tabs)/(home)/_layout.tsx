@@ -1,16 +1,19 @@
 import HeaderBackButton from '@/components/HeaderBackButton';
+import { compareVersions } from 'compare-versions';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
 export default function HomeLayout() {
   const backgroundColor = useColorScheme() === 'dark' ? 'black' : 'white';
+  const iosVersion = Platform.OS === 'ios' ? Platform.Version : '';
+  const isGreaterThanOrEqual26 = compareVersions(iosVersion, '26.0') >= 0;
 
   return (
     <Stack
       screenOptions={{
         headerTransparent: Platform.OS === 'ios',
         headerShadowVisible: false,
-        headerBlurEffect: 'prominent',
+        headerBlurEffect: isGreaterThanOrEqual26 ? undefined : 'prominent',
         headerLeft: HeaderBackButton,
       }}
     >
@@ -21,7 +24,7 @@ export default function HomeLayout() {
           headerLargeTitle: true,
           headerLargeTitleShadowVisible: false,
           headerLargeStyle: {
-            backgroundColor,
+            backgroundColor: isGreaterThanOrEqual26 ? undefined : backgroundColor,
           },
         }}
       />
