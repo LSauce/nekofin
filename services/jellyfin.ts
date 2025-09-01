@@ -338,7 +338,6 @@ export async function reportPlaybackStart(api: Api, itemId: string, positionTick
 
 export async function reportPlaybackStop(api: Api, itemId: string, positionTicks: number) {
   try {
-    console.log('reportPlaybackStop', itemId, positionTicks);
     await getPlaystateApi(api).reportPlaybackStopped({
       playbackStopInfo: {
         ItemId: itemId,

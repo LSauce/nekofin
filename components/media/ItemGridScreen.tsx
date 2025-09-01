@@ -1,6 +1,5 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
@@ -28,7 +27,6 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   const bottomTabBarHeight = useBottomTabBarHeight();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const { currentServer } = useMediaServers();
   const { accentColor } = useAccentColor();
 
   const {

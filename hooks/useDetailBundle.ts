@@ -8,7 +8,8 @@ import {
   getSimilarShows,
 } from '@/services/jellyfin';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
-import { useQuery } from '@tanstack/react-query';
+
+import { useQueryWithFocus } from './useQueryWithFocus';
 
 export type DetailBundle = {
   item: BaseItemDto;
@@ -22,7 +23,8 @@ export type DetailBundle = {
 export function useDetailBundle(mode: 'series' | 'season' | 'movie', itemId: string) {
   const { currentServer, currentApi } = useMediaServers();
 
-  const query = useQuery<DetailBundle>({
+  const query = useQueryWithFocus<DetailBundle>({
+    refetchOnScreenFocus: true,
     queryKey: ['detail-bundle', mode, itemId],
     queryFn: async () => {
       if (!currentApi || !itemId || !currentServer?.userId) return null;

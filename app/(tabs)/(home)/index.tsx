@@ -1,5 +1,6 @@
 import { Section } from '@/components/media/Section';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
@@ -43,7 +44,8 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
     return createApiFromServerInfo(currentServer);
   }, [currentServer]);
 
-  const query = useQuery({
+  const query = useQueryWithFocus({
+    refetchOnScreenFocus: true,
     queryKey: ['homeSections', currentServer?.id],
     queryFn: async (): Promise<HomeSection[]> => {
       if (!currentServer || !api) return [];
