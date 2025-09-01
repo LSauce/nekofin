@@ -2,7 +2,6 @@ import { MediaCard, SeriesCard } from '@/components/media/Card';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import {
@@ -24,7 +23,6 @@ export type ItemGridScreenProps = {
 
 export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) {
   const insets = useSafeAreaInsets();
-  const bottomTabBarHeight = useBottomTabBarHeight();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { accentColor } = useAccentColor();
@@ -80,12 +78,7 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
   }
 
   return (
-    <View
-      style={[
-        styles.container,
-        { backgroundColor, paddingBottom: Platform.OS === 'ios' ? bottomTabBarHeight : 0 },
-      ]}
-    >
+    <View style={[styles.container, { backgroundColor }]}>
       <Stack.Screen options={{ title }} />
       <FlatList
         data={items}

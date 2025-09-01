@@ -1,5 +1,4 @@
 import { ThemedView } from '@/components/ThemedView';
-import { useBottomTabOverflow } from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -38,7 +37,6 @@ export default function ParallaxScrollView({
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollViewOffset(scrollRef);
-  const bottom = useBottomTabOverflow();
   const linearColor = useThemeColor(
     { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
     'background',
@@ -77,7 +75,6 @@ export default function ParallaxScrollView({
       <Animated.ScrollView
         ref={scrollRef}
         scrollEventThrottle={16}
-        scrollIndicatorInsets={{ bottom }}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
       >
         <Animated.View

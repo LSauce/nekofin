@@ -1,9 +1,5 @@
-import { HapticTab } from '@/components/HapticTab';
-import TabBarBackground from '@/components/ui/TabBarBackground';
+import { Tabs } from '@/components/BottomTabs';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { Tabs } from 'expo-router';
 import { Platform } from 'react-native';
 
 export default function TabLayout() {
@@ -13,18 +9,6 @@ export default function TabLayout() {
     <Tabs
       screenOptions={{
         tabBarActiveTintColor: accentColor,
-        headerShown: true,
-        tabBarButton: HapticTab,
-        tabBarBackground: TabBarBackground,
-        tabBarStyle: Platform.select({
-          ios: {
-            // Use a transparent background on iOS to show the blur effect
-            position: 'absolute',
-          },
-          default: {},
-        }),
-        headerTransparent: Platform.OS === 'ios',
-        headerBackground: TabBarBackground,
       }}
       initialRouteName="(home)"
     >
@@ -33,32 +17,42 @@ export default function TabLayout() {
         name="(home)"
         options={{
           title: '首页',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <FontAwesome name="film" size={24} color={color} />,
+          tabBarIcon:
+            Platform.OS === 'android'
+              ? () => require('@/assets/icons/film.png')
+              : ({ focused }) => (focused ? { sfSymbol: 'film.fill' } : { sfSymbol: 'film' }),
         }}
       />
       <Tabs.Screen
         name="(search)"
         options={{
           title: '搜索',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <FontAwesome name="search" size={24} color={color} />,
+          tabBarIcon:
+            Platform.OS === 'android'
+              ? () => require('@/assets/icons/search.png')
+              : ({ focused }) =>
+                  focused ? { sfSymbol: 'magnifyingglass' } : { sfSymbol: 'magnifyingglass' },
         }}
       />
       <Tabs.Screen
         name="(favorites)"
         options={{
           title: '收藏',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <FontAwesome name="heart" size={24} color={color} />,
+          tabBarIcon:
+            Platform.OS === 'android'
+              ? () => require('@/assets/icons/heart.png')
+              : ({ focused }) => (focused ? { sfSymbol: 'heart.fill' } : { sfSymbol: 'heart' }),
         }}
       />
       <Tabs.Screen
         name="(settings)"
         options={{
           title: '设置',
-          headerShown: false,
-          tabBarIcon: ({ color }) => <MaterialIcons name="settings" size={24} color={color} />,
+          tabBarIcon:
+            Platform.OS === 'android'
+              ? () => require('@/assets/icons/settings.png')
+              : ({ focused }) =>
+                  focused ? { sfSymbol: 'gearshape.fill' } : { sfSymbol: 'gearshape' },
         }}
       />
     </Tabs>

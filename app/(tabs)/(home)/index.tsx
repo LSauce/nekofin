@@ -14,8 +14,6 @@ import {
 } from '@/services/jellyfin';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
-import { useBottomTabBarHeight } from '@react-navigation/bottom-tabs';
-import { useQuery } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo } from 'react';
@@ -115,7 +113,6 @@ export default function HomeScreen() {
   const navigation = useNavigation();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const bottomTabBarHeight = useBottomTabBarHeight();
   const insets = useSafeAreaInsets();
 
   const router = useRouter();
@@ -202,9 +199,6 @@ export default function HomeScreen() {
         contentInsetAdjustmentBehavior="automatic"
         style={{ flex: 1, backgroundColor }}
         refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
-        contentContainerStyle={{
-          paddingBottom: bottomTabBarHeight,
-        }}
       >
         {sectionsQuery.data?.map((section) => {
           if (section.type === 'userview') {
