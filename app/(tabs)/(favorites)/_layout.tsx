@@ -1,4 +1,5 @@
 import HeaderBackButton from '@/components/HeaderBackButton';
+import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
@@ -10,10 +11,10 @@ export default function HomeLayout() {
       screenOptions={{
         headerTransparent: Platform.OS === 'ios',
         headerShadowVisible: false,
-        headerBlurEffect: 'prominent',
+        headerBlurEffect: isGreaterThanOrEqual26 ? undefined : 'prominent',
         headerLeft: HeaderBackButton,
         headerLargeStyle: {
-          backgroundColor,
+          backgroundColor: isGreaterThanOrEqual26 ? undefined : backgroundColor,
         },
       }}
     >

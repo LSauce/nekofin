@@ -3,9 +3,15 @@ import { Api } from '@jellyfin/sdk';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api';
+import { compareVersions } from 'compare-versions';
+import { Platform } from 'react-native';
 import uuid from 'react-native-uuid';
 
 import { storage } from '../storage';
+
+export const iosVersion = Platform.OS === 'ios' ? Platform.Version : '0';
+
+export const isGreaterThanOrEqual26 = compareVersions(iosVersion, '26.0') >= 0;
 
 export const ticksToSeconds = (ticks: number) => {
   return ticks / 10000000;

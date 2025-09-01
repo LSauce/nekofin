@@ -1,5 +1,4 @@
-import { BottomTabBarHeightContext } from '@react-navigation/bottom-tabs';
-import React, { useContext } from 'react';
+import React from 'react';
 import { ScrollView, ScrollViewProps } from 'react-native';
 
 type PageScrollViewProps = {
@@ -10,11 +9,9 @@ type PageScrollViewProps = {
 export default function PageScrollView({
   children,
   style,
-  bottomTabBarHeight,
+  bottomTabBarHeight = 20,
   ...rest
 }: PageScrollViewProps) {
-  const bottomTabBarHeightFromContext = useContext(BottomTabBarHeightContext);
-
   return (
     <ScrollView
       style={[{ flex: 1 }, style]}
@@ -22,7 +19,7 @@ export default function PageScrollView({
       nestedScrollEnabled
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        paddingBottom: bottomTabBarHeight ?? bottomTabBarHeightFromContext,
+        paddingBottom: bottomTabBarHeight,
       }}
       {...rest}
     >

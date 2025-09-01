@@ -12,7 +12,7 @@ export default function HeaderBackButton({ canGoBack = true }: { canGoBack?: boo
   }
 
   return (
-    <TouchableOpacity onPress={() => router.back()}>
+    <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 12 }}>
       <MaterialIcons name="arrow-back-ios" size={20} color={textColor} />
     </TouchableOpacity>
   );

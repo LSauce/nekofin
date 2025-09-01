@@ -81,7 +81,7 @@ export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps
                 }
               } catch (e) {}
             }}
-            style={{ padding: 8 }}
+            style={{ marginLeft: 6 }}
           >
             <MaterialCommunityIcons
               name={isFavorite ? 'heart' : 'heart-outline'}
@@ -555,12 +555,12 @@ const styles = StyleSheet.create({
     backgroundColor: '#eee',
   },
   content: {
-    top: -140,
+    top: -160,
     padding: 20,
     gap: 8,
   },
   logo: {
-    top: -40,
+    top: -20,
     width: '100%',
     height: 120,
   },

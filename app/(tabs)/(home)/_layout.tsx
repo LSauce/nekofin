@@ -1,12 +1,10 @@
 import HeaderBackButton from '@/components/HeaderBackButton';
-import { compareVersions } from 'compare-versions';
+import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
 export default function HomeLayout() {
   const backgroundColor = useColorScheme() === 'dark' ? 'black' : 'white';
-  const iosVersion = Platform.OS === 'ios' ? Platform.Version : '';
-  const isGreaterThanOrEqual26 = compareVersions(iosVersion, '26.0') >= 0;
 
   return (
     <Stack

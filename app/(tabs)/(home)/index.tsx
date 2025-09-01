@@ -1,4 +1,5 @@
 import { Section } from '@/components/media/Section';
+import PageScrollView from '@/components/PageScrollView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
@@ -21,7 +22,6 @@ import {
   FlatList,
   Platform,
   RefreshControl,
-  ScrollView,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -194,7 +194,7 @@ export default function HomeScreen() {
 
   return (
     <>
-      <ScrollView
+      <PageScrollView
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         style={{ flex: 1, backgroundColor }}
@@ -248,7 +248,7 @@ export default function HomeScreen() {
             />
           );
         })}
-      </ScrollView>
+      </PageScrollView>
     </>
   );
 }
@@ -342,7 +342,6 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-    gap: 12,
   },
   serverButton: {
     borderWidth: 1,
@@ -352,8 +351,8 @@ const styles = StyleSheet.create({
     overflow: 'hidden',
   },
   serverButtonAvatar: {
-    width: 28,
-    height: 28,
+    width: 34,
+    height: 34,
     borderRadius: 12,
   },
   userViewSection: {
