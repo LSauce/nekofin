@@ -1,12 +1,13 @@
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
+import { BaseItemDto, BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
 import {
   getItemsApi,
   getLibraryApi,
   getMediaInfoApi,
   getPlaystateApi,
+  getSearchApi,
   getSystemApi,
   getTvShowsApi,
   getUserApi,
@@ -134,6 +135,21 @@ export async function getResumeItems(api: Api, userId: string, limit: number = 1
     enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
     mediaTypes: ['Video'],
     enableTotalRecordCount: false,
+  });
+}
+
+export async function getFavoriteItems(api: Api, userId: string, limit: number = 200) {
+  return await getItemsApi(api).getItems({
+    userId,
+    limit,
+    sortBy: ['DateCreated'],
+    sortOrder: ['Descending'],
+    fields: ['PrimaryImageAspectRatio', 'Path'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+    filters: ['IsFavorite'],
+    recursive: true,
+    includeItemTypes: ['Movie', 'Series', 'Episode'],
   });
 }
 
@@ -277,6 +293,62 @@ export async function getSimilarMovies(
     limit,
     fields: ['PrimaryImageAspectRatio'],
   });
+}
+
+export async function getSearchHints(
+  api: Api,
+  searchTerm: string,
+  userId?: string,
+  limit: number = 10,
+) {
+  return await getSearchApi(api).getSearchHints({
+    searchTerm,
+    userId,
+    limit,
+    includeMedia: true,
+    includePeople: false,
+    includeGenres: false,
+    includeStudios: false,
+    includeArtists: false,
+  });
+}
+
+export async function searchItems(
+  api: Api,
+  userId: string,
+  searchTerm: string,
+  limit: number = 100,
+  includeItemTypes: BaseItemKind[] = ['Movie', 'Series', 'Episode'],
+): Promise<BaseItemDto[]> {
+  const res = await getItemsApi(api).getItems({
+    userId,
+    searchTerm,
+    limit,
+    recursive: true,
+    sortBy: ['SortName'],
+    sortOrder: ['Ascending'],
+    includeItemTypes,
+    fields: ['PrimaryImageAspectRatio'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+  });
+  return res.data?.Items ?? [];
+}
+
+export async function getRecommendedSearchKeywords(api: Api, userId: string, limit: number = 20) {
+  const res = await getItemsApi(api).getItems({
+    userId,
+    limit,
+    recursive: true,
+    includeItemTypes: ['Movie', 'Series', 'MusicArtist'],
+    sortBy: ['IsFavoriteOrLiked', 'Random'],
+    imageTypeLimit: 0,
+    enableTotalRecordCount: false,
+    enableImages: false,
+  });
+  const items = res.data?.Items ?? [];
+  const titles = items.map((i) => i.Name).filter((v): v is string => Boolean(v));
+  return Array.from(new Set(titles)).slice(0, limit);
 }
 
 export async function addFavoriteItem(api: Api, userId: string, itemId: string) {

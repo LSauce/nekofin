@@ -32,6 +32,7 @@ export default function TabLayout() {
               ? () => require('@/assets/icons/search.png')
               : ({ focused }) =>
                   focused ? { sfSymbol: 'magnifyingglass' } : { sfSymbol: 'magnifyingglass' },
+          role: 'search',
         }}
       />
       <Tabs.Screen
