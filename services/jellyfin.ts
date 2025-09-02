@@ -153,6 +153,27 @@ export async function getFavoriteItems(api: Api, userId: string, limit: number =
   });
 }
 
+export async function getFavoriteItemsPaged(
+  api: Api,
+  userId: string,
+  startIndex: number = 0,
+  limit: number = 40,
+) {
+  return await getItemsApi(api).getItems({
+    userId,
+    startIndex,
+    limit,
+    sortBy: ['DateCreated'],
+    sortOrder: ['Descending'],
+    fields: ['PrimaryImageAspectRatio', 'Path'],
+    imageTypeLimit: 1,
+    enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
+    filters: ['IsFavorite'],
+    recursive: true,
+    includeItemTypes: ['Movie', 'Series', 'Episode'],
+  });
+}
+
 export async function logout(api: Api) {
   return await api.logout();
 }
@@ -227,6 +248,7 @@ export async function getAllItemsByFolder(
   api: Api,
   userId: string,
   folderId: string,
+  startIndex: number = 0,
   limit: number = 200,
   itemTypes: BaseItemKind[] = ['Movie', 'Series', 'Episode'],
 ) {
@@ -241,6 +263,7 @@ export async function getAllItemsByFolder(
     imageTypeLimit: 1,
     enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
     includeItemTypes: itemTypes,
+    startIndex,
   });
 }
 

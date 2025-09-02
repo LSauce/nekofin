@@ -298,7 +298,7 @@ function UserViewCard({ item, title }: { item: BaseItemDto; title: string }) {
           params: {
             id: item.Id!,
             name: title,
-            itemTypes: item.CollectionType === 'movies' ? ['Movie'] : ['Series'],
+            itemTypes: item.CollectionType === 'movies' ? 'Movie' : 'Series',
           },
         });
       }}

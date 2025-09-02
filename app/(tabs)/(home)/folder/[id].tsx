@@ -1,36 +1,47 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { createApiFromServerInfo, getAllItemsByFolder } from '@/services/jellyfin';
-import { BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
+import { getAllItemsByFolder } from '@/services/jellyfin';
+import { BaseItemDto, BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
 
 export default function FolderScreen() {
   const { id, name, itemTypes } = useLocalSearchParams<{
     id: string;
     name?: string;
-    itemTypes?: BaseItemKind[];
+    itemTypes?: BaseItemKind;
   }>();
-  const { currentServer } = useMediaServers();
 
-  const api = useMemo(() => {
-    if (!currentServer) return null;
-    return createApiFromServerInfo(currentServer);
-  }, [currentServer]);
+  const { currentServer, currentApi: api } = useMediaServers();
 
-  const loadItems = useMemo(() => {
-    return async () => {
-      if (!api || !currentServer || !id) return [];
+  const PAGE_SIZE = 60;
+
+  const query = useInfiniteQuery({
+    enabled: !!api && !!currentServer && !!id,
+    queryKey: ['folder-items', currentServer?.id, id, itemTypes],
+    initialPageParam: 0,
+    queryFn: async ({ pageParam = 0 }) => {
+      if (!api || !currentServer || !id) return { items: [], total: 0 };
       const response = await getAllItemsByFolder(
         api,
         currentServer.userId,
-        id as string,
-        200,
-        itemTypes,
+        id,
+        pageParam,
+        PAGE_SIZE,
+        itemTypes ? [itemTypes] : [],
       );
-      return response.data.Items || [];
-    };
-  }, [api, currentServer, id, itemTypes]);
+      const items = response.data.Items || [];
+      const total = response.data.TotalRecordCount ?? items.length;
+      return { items: items as BaseItemDto[], total };
+    },
+    getNextPageParam: (
+      lastPage: { items: BaseItemDto[]; total: number },
+      allPages: { items: BaseItemDto[]; total: number }[],
+    ) => {
+      const loaded = allPages.reduce((sum, p) => sum + p.items.length, 0);
+      return loaded >= lastPage.total || lastPage.items.length === 0 ? undefined : loaded;
+    },
+  });
 
-  return <ItemGridScreen title={name || '全部内容'} loadItems={loadItems} type="series" />;
+  return <ItemGridScreen title={name || '全部内容'} query={query} type="series" />;
 }

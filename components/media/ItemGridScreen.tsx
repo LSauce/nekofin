@@ -1,13 +1,15 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
+import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
-import { useQuery } from '@tanstack/react-query';
+import { InfiniteData, UseInfiniteQueryResult } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
+import React, { useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
-  Platform,
+  RefreshControl,
   StyleSheet,
   Text,
   TouchableOpacity,
@@ -17,27 +19,50 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 export type ItemGridScreenProps = {
   title: string;
-  loadItems: () => Promise<BaseItemDto[]>;
+  query: UseInfiniteQueryResult<
+    InfiniteData<BaseItemDto[] | { items: BaseItemDto[]; total: number }, unknown>,
+    unknown
+  >;
   type?: 'series' | 'episode';
 };
 
-export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) {
+export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
   const insets = useSafeAreaInsets();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { accentColor } = useAccentColor();
 
   const {
-    data: items = [],
+    data,
     isLoading,
     isError,
+    isRefetching,
     refetch,
-  } = useQuery<BaseItemDto[]>({
-    queryKey: ['items', title],
-    queryFn: loadItems,
-  });
+    fetchNextPage,
+    hasNextPage,
+    isFetchingNextPage,
+  } = query;
 
   const useThreeCols = type === 'series';
+
+  const items = useMemo(() => {
+    const pages = data?.pages ?? [];
+    const merged: BaseItemDto[] = [];
+    const seen = new Set<string | undefined>();
+    for (const page of pages as (BaseItemDto[] | { items: BaseItemDto[]; total: number })[]) {
+      const list = Array.isArray(page) ? page : page.items;
+      for (const it of list) {
+        const id = it.Id;
+        if (id && !seen.has(id)) {
+          merged.push(it);
+          seen.add(id);
+        }
+      }
+    }
+    return merged;
+  }, [data]);
+
+  const { refreshing, onRefresh } = useRefresh(refetch);
 
   const renderItem = ({ item }: { item: BaseItemDto }) => {
     return useThreeCols ? (
@@ -46,6 +71,25 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
       <MediaCard item={item} style={styles.gridItem} />
     );
   };
+
+  const keyExtractor = (item: BaseItemDto) => item.Id!;
+
+  const handleEndReached = async () => {
+    if (!hasNextPage || isFetchingNextPage) return;
+    await fetchNextPage();
+  };
+
+  const listFooter = useMemo(() => {
+    if (isFetchingNextPage) {
+      return (
+        <View style={styles.footerLoadingContainer}>
+          <ActivityIndicator size="small" color={accentColor} />
+        </View>
+      );
+    }
+    if (!hasNextPage) return <View style={{ height: 16 }} />;
+    return <View style={{ height: 16 }} />;
+  }, [isFetchingNextPage, hasNextPage, accentColor]);
 
   if (isLoading) {
     return (
@@ -83,13 +127,19 @@ export function ItemGridScreen({ title, loadItems, type }: ItemGridScreenProps) 
       <FlatList
         data={items}
         renderItem={renderItem}
-        keyExtractor={(item) => item.Id!}
+        keyExtractor={keyExtractor}
         numColumns={useThreeCols ? 3 : 2}
         key={useThreeCols ? '3-cols' : '2-cols'}
         contentContainerStyle={styles.listContainer}
         columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
+        refreshControl={
+          <RefreshControl refreshing={Boolean(refreshing || isRefetching)} onRefresh={onRefresh} />
+        }
+        onEndReached={handleEndReached}
+        onEndReachedThreshold={0.2}
+        ListFooterComponent={listFooter}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
             <Text style={[styles.emptyText, { color: textColor }]}>暂无内容</Text>
@@ -155,5 +205,9 @@ const styles = StyleSheet.create({
   emptyText: {
     fontSize: 16,
     opacity: 0.6,
+  },
+  footerLoadingContainer: {
+    paddingVertical: 12,
+    alignItems: 'center',
   },
 });

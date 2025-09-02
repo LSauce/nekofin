@@ -8,6 +8,7 @@ import {
   getResumeItems,
 } from '@/services/jellyfin';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 import { useMemo } from 'react';
 
@@ -46,31 +47,59 @@ export default function ViewAllScreen() {
     }
   };
 
-  const loadItems = useMemo(() => {
-    return async (): Promise<BaseItemDto[]> => {
-      if (!api || !currentServer) return [];
-      let response;
-      switch (type) {
-        case 'resume':
-          response = await getResumeItems(api, currentServer.userId, 100);
-          break;
-        case 'nextup':
-          response = await getNextUpItems(api, currentServer.userId, 100);
-          break;
-        case 'latest':
-          if (folderId) {
-            response = await getLatestItemsByFolder(api, currentServer.userId, folderId, 100);
-          } else {
-            response = await getLatestItems(api, currentServer.userId, 100);
-          }
-          break;
-        default:
-          throw new Error('Unknown type');
-      }
-      const data = response.data;
-      return Array.isArray(data) ? data : (data?.Items ?? []);
-    };
-  }, [api, currentServer, type, folderId]);
+  const PAGE_SIZE = 40;
 
-  return <ItemGridScreen title={getTitle()} loadItems={loadItems} type={getItemType()} />;
+  const query = useInfiniteQuery({
+    enabled: !!api && !!currentServer,
+    queryKey: ['viewall', type, currentServer?.id, folderId],
+    initialPageParam: 0,
+    queryFn: async () => {
+      if (!api || !currentServer) return { items: [], total: 0 };
+      switch (type) {
+        case 'resume': {
+          const res = await getResumeItems(api, currentServer.userId, PAGE_SIZE);
+          const d = res.data;
+          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const total = d?.TotalRecordCount ?? items.length;
+          return { items: items, total };
+        }
+        case 'nextup': {
+          const res = await getNextUpItems(api, currentServer.userId, PAGE_SIZE);
+          const d = res.data;
+          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const total = d?.TotalRecordCount ?? items.length;
+          return { items: items, total };
+        }
+        case 'latest': {
+          if (folderId) {
+            const res = await getLatestItemsByFolder(
+              api,
+              currentServer.userId,
+              folderId,
+              PAGE_SIZE,
+            );
+            const items = res.data;
+            const total = items.length;
+            return { items, total };
+          }
+          const res = await getLatestItems(api, currentServer.userId, PAGE_SIZE);
+          const d = res.data;
+          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const total = d?.TotalRecordCount ?? items.length;
+          return { items, total };
+        }
+        default:
+          return { items: [], total: 0 };
+      }
+    },
+    getNextPageParam: (
+      lastPage: { items: BaseItemDto[]; total: number },
+      allPages: { items: BaseItemDto[]; total: number }[],
+    ) => {
+      const loaded = allPages.reduce((sum, p) => sum + p.items.length, 0);
+      return loaded >= lastPage.total || lastPage.items.length === 0 ? undefined : loaded;
+    },
+  });
+
+  return <ItemGridScreen title={getTitle()} query={query} type={getItemType()} />;
 }
