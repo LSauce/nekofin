@@ -21,7 +21,7 @@
       "package": "com.lonzzi.nekofin",
       "adaptiveIcon": {
         "foregroundImage": "./assets/images/adaptive-icon.png",
-        "backgroundColor": "#ffffff"
+        "backgroundColor": "#001541"
       },
       "edgeToEdgeEnabled": true,
       "permissions": [
