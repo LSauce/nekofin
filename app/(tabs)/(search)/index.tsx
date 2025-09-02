@@ -110,6 +110,7 @@ export default function SearchScreen() {
               setKeyword('');
               setSelected('');
             },
+            hideWhenScrolling: false,
           },
         }}
       />
