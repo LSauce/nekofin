@@ -111,6 +111,7 @@ export default function SearchScreen() {
               setSelected('');
             },
             hideWhenScrolling: false,
+            cancelButtonText: '取消',
           },
         }}
       />
