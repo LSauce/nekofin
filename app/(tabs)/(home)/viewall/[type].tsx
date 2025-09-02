@@ -1,7 +1,6 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
-  createApiFromServerInfo,
   getLatestItems,
   getLatestItemsByFolder,
   getNextUpItems,
@@ -10,7 +9,6 @@ import {
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
-import { useMemo } from 'react';
 
 export default function ViewAllScreen() {
   const { type, folderId, folderName } = useLocalSearchParams<{
@@ -18,12 +16,7 @@ export default function ViewAllScreen() {
     folderId?: string;
     folderName?: string;
   }>();
-  const { currentServer } = useMediaServers();
-
-  const api = useMemo(() => {
-    if (!currentServer) return null;
-    return createApiFromServerInfo(currentServer);
-  }, [currentServer]);
+  const { currentServer, currentApi: api } = useMediaServers();
 
   const getTitle = () => {
     switch (type) {
