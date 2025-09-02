@@ -1,3 +1,4 @@
+import { GroupedStackRoutes } from '@/components/GroupedStackRoutes';
 import HeaderBackButton from '@/components/HeaderBackButton';
 import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
@@ -26,30 +27,7 @@ export default function HomeLayout() {
           },
         }}
       />
-      <Stack.Screen
-        name="series/[id]"
-        options={{
-          headerTitle: '',
-          headerTransparent: true,
-          headerBlurEffect: 'none',
-        }}
-      />
-      <Stack.Screen
-        name="season/[id]"
-        options={{
-          headerTitle: '',
-          headerTransparent: true,
-          headerBlurEffect: 'none',
-        }}
-      />
-      <Stack.Screen
-        name="movie/[id]"
-        options={{
-          headerTitle: '',
-          headerTransparent: true,
-          headerBlurEffect: 'none',
-        }}
-      />
+      {GroupedStackRoutes()}
       <Stack.Screen
         name="folder/[id]"
         options={{

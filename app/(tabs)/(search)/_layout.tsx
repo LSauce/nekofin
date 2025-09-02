@@ -1,3 +1,4 @@
+import { GroupedStackRoutes } from '@/components/GroupedStackRoutes';
 import HeaderBackButton from '@/components/HeaderBackButton';
 import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
@@ -26,6 +27,7 @@ export default function HomeLayout() {
           headerLargeTitleShadowVisible: false,
         }}
       />
+      {GroupedStackRoutes()}
     </Stack>
   );
 }

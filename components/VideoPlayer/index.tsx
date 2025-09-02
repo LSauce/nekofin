@@ -15,7 +15,7 @@ import * as NavigationBar from 'expo-navigation-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
 import * as StatusBar from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, Platform, StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
 import { usePlaybackSync } from '../../hooks/usePlaybackSync';
@@ -246,6 +246,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           }}
           onEncounteredError={(error) => {
             console.warn('Encountered error', error);
+
+            Alert.alert('播放失败', `请尝试重新播放: ${error.error}`);
           }}
         />
       )}

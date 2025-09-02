@@ -134,11 +134,9 @@ export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
         columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
-        refreshControl={
-          <RefreshControl refreshing={Boolean(refreshing || isRefetching)} onRefresh={onRefresh} />
-        }
+        refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         onEndReached={handleEndReached}
-        onEndReachedThreshold={0.2}
+        onEndReachedThreshold={0.4}
         ListFooterComponent={listFooter}
         ListEmptyComponent={
           <View style={styles.emptyContainer}>
