@@ -1,5 +1,5 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { getDeviceProfile } from '@/lib/Device';
+import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
 import { type DandanComment } from '@/services/dandanplay';
 import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
@@ -129,7 +129,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         api,
         itemId,
         userId: currentServer.userId,
-        deviceProfile: getDeviceProfile(),
+        deviceProfile: generateDeviceProfile(),
         startTimeTicks: itemDetail.data.UserData?.PlaybackPositionTicks,
       });
 

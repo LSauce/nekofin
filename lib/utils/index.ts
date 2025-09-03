@@ -1,7 +1,6 @@
 import { getCommentsByEpisodeId, searchAnimesByKeyword } from '@/services/dandanplay';
 import { Api } from '@jellyfin/sdk';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
-import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 import { getMediaInfoApi } from '@jellyfin/sdk/lib/utils/api';
 import { compareVersions } from 'compare-versions';
 import { Platform } from 'react-native';
@@ -50,7 +49,7 @@ export const getStreamInfo = async ({
   itemId: string;
   mediaSourceId?: string;
   userId: string;
-  deviceProfile?: DeviceProfile;
+  deviceProfile?: any;
   subtitleStreamIndex?: number;
   startTimeTicks?: number;
   maxStreamingBitrate?: number;
@@ -59,6 +58,8 @@ export const getStreamInfo = async ({
   if (!api || !userId || !itemId) {
     return null;
   }
+
+  console.log('deviceProfile', deviceProfile);
 
   const res = await getMediaInfoApi(api).getPlaybackInfo(
     {
@@ -94,9 +95,10 @@ export const getStreamInfo = async ({
   });
 
   const url = `${api.basePath}/Videos/${itemId}/stream?${searchParams.toString()}`;
+  const transcodingUrl = mediaSource?.TranscodingUrl ? `${api.basePath}${mediaSource?.TranscodingUrl}` : null;
 
   return {
-    url,
+    url: url,
   };
 };
 
