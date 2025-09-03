@@ -66,7 +66,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const duration = useMemo(() => {
-    return mediaInfo?.duration ?? 0;
+    return mediaInfo?.length ?? 0;
   }, [mediaInfo]);
 
   const formattedTitle = useMemo(() => {
