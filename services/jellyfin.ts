@@ -1,8 +1,9 @@
 import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
-import { BaseItemDto, BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
+import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
 import {
+  getFilterApi,
   getItemsApi,
   getLibraryApi,
   getMediaInfoApi,
@@ -75,15 +76,28 @@ export async function getMediaFolders(api: Api) {
   return await getLibraryApi(api).getMediaFolders();
 }
 
-export async function getLatestItems(api: Api, userId: string, limit: number = 100) {
+export async function getLatestItems(
+  api: Api,
+  userId: string,
+  limit: number = 100,
+  opts?: {
+    includeItemTypes?: BaseItemKind[];
+    sortBy?: ItemSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    year?: number;
+    tags?: string[];
+  },
+) {
   return await getItemsApi(api).getItems({
     userId,
     limit,
-    sortBy: ['DateCreated'],
-    sortOrder: ['Descending'],
-    includeItemTypes: ['Movie', 'Series', 'Episode'],
+    sortBy: opts?.sortBy ?? ['DateCreated'],
+    sortOrder: [opts?.sortOrder ?? 'Descending'],
+    includeItemTypes: opts?.includeItemTypes ?? ['Movie', 'Series', 'Episode'],
     recursive: true,
     filters: ['IsNotFolder'],
+    years: opts?.year ? [opts.year] : undefined,
+    tags: opts?.tags,
   });
 }
 
@@ -158,19 +172,31 @@ export async function getFavoriteItemsPaged(
   userId: string,
   startIndex: number = 0,
   limit: number = 40,
+  opts?: {
+    includeItemTypes?: BaseItemKind[];
+    sortBy?: ItemSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  },
 ) {
+  const filters: ('IsFavorite' | 'IsPlayed' | 'IsUnplayed')[] = ['IsFavorite'];
+  if (opts?.onlyUnplayed) filters.push('IsUnplayed');
   return await getItemsApi(api).getItems({
     userId,
     startIndex,
     limit,
-    sortBy: ['DateCreated'],
-    sortOrder: ['Descending'],
+    sortBy: opts?.sortBy ?? ['DateCreated'],
+    sortOrder: [opts?.sortOrder ?? 'Descending'],
     fields: ['PrimaryImageAspectRatio', 'Path'],
     imageTypeLimit: 1,
     enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
-    filters: ['IsFavorite'],
+    filters,
     recursive: true,
-    includeItemTypes: ['Movie', 'Series', 'Episode'],
+    includeItemTypes: opts?.includeItemTypes ?? ['Movie', 'Series', 'Episode'],
+    years: opts?.year ? [opts.year] : undefined,
+    tags: opts?.tags,
   });
 }
 
@@ -251,19 +277,31 @@ export async function getAllItemsByFolder(
   startIndex: number = 0,
   limit: number = 200,
   itemTypes: BaseItemKind[] = ['Movie', 'Series', 'Episode'],
+  opts?: {
+    sortBy?: ItemSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  },
 ) {
+  const filters: ('IsPlayed' | 'IsUnplayed')[] = [];
+  if (opts?.onlyUnplayed) filters.push('IsUnplayed');
   return await getItemsApi(api).getItems({
     userId,
     parentId: folderId,
     recursive: true,
     limit,
-    sortBy: ['DateCreated'],
-    sortOrder: ['Descending'],
+    sortBy: opts?.sortBy ?? ['DateCreated'],
+    sortOrder: [opts?.sortOrder ?? 'Descending'],
     fields: ['PrimaryImageAspectRatio', 'Path'],
     imageTypeLimit: 1,
     enableImageTypes: ['Primary', 'Backdrop', 'Thumb'],
     includeItemTypes: itemTypes,
     startIndex,
+    filters,
+    years: opts?.year ? [opts.year] : undefined,
+    tags: opts?.tags,
   });
 }
 
@@ -372,6 +410,30 @@ export async function getRecommendedSearchKeywords(api: Api, userId: string, lim
   const items = res.data?.Items ?? [];
   const titles = items.map((i) => i.Name).filter((v): v is string => Boolean(v));
   return Array.from(new Set(titles)).slice(0, limit);
+}
+
+export type AvailableFilters = {
+  years: number[];
+  tags: string[];
+  genres: string[];
+};
+
+export async function getAvailableFilters(
+  api: Api,
+  userId: string,
+  parentId?: string,
+): Promise<AvailableFilters> {
+  const res = await getFilterApi(api).getQueryFiltersLegacy({ userId, parentId });
+  const d = res.data as { Years?: number[]; Tags?: string[]; Genres?: string[] };
+  return {
+    years: Array.isArray(d?.Years)
+      ? d!.Years!.filter((x): x is number => typeof x === 'number')
+      : [],
+    tags: Array.isArray(d?.Tags) ? d!.Tags!.filter((x): x is string => typeof x === 'string') : [],
+    genres: Array.isArray(d?.Genres)
+      ? d!.Genres!.filter((x): x is string => typeof x === 'string')
+      : [],
+  };
 }
 
 export async function addFavoriteItem(api: Api, userId: string, itemId: string) {

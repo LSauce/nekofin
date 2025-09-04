@@ -1,4 +1,5 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getFavoriteItemsPaged } from '@/services/jellyfin';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
@@ -9,13 +10,22 @@ export default function FavoritesScreen() {
 
   const PAGE_SIZE = 40;
 
+  const { filters, setFilters } = useMediaFilters();
+
   const query = useInfiniteQuery({
     enabled: !!api && !!currentServer,
-    queryKey: ['favorites', currentServer?.id],
+    queryKey: ['favorites', currentServer?.id, filters],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       if (!api || !currentServer) return { items: [], total: 0 };
-      const res = await getFavoriteItemsPaged(api, currentServer.userId, pageParam, PAGE_SIZE);
+      const res = await getFavoriteItemsPaged(api, currentServer.userId, pageParam, PAGE_SIZE, {
+        includeItemTypes: filters.includeItemTypes,
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        onlyUnplayed: filters.onlyUnplayed,
+        year: filters.year,
+        tags: filters.tags,
+      });
       const items = res.data?.Items ?? [];
       const total = res.data?.TotalRecordCount ?? items.length;
       return { items, total };
@@ -29,5 +39,13 @@ export default function FavoritesScreen() {
     },
   });
 
-  return <ItemGridScreen title="我的收藏" query={query} type="series" />;
+  return (
+    <ItemGridScreen
+      title="我的收藏"
+      query={query}
+      type="series"
+      filters={filters}
+      onChangeFilters={setFilters}
+    />
+  );
 }

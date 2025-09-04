@@ -9,7 +9,7 @@ import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerCont
 import { createApiFromServerInfo } from '@/services/jellyfin';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { MenuAction, MenuView } from '@react-native-menu/menu';
+import { MenuView } from '@react-native-menu/menu';
 import { useRef, useState } from 'react';
 import { Platform, PlatformColor, StyleSheet, View, type ColorValue } from 'react-native';
 
@@ -114,7 +114,12 @@ export default function MediaScreen() {
         )}
       </View>
 
-      <BottomSheetBackdropModal ref={bottomSheetRef} onDismiss={() => setIsAddServerVisible(false)}>
+      <BottomSheetBackdropModal
+        ref={bottomSheetRef}
+        onDismiss={() => setIsAddServerVisible(false)}
+        snapPoints={['90%']}
+        enableDynamicSizing={false}
+      >
         {isAddServerVisible && <AddServerForm onClose={handleCloseAddServer} />}
       </BottomSheetBackdropModal>
     </PageScrollView>

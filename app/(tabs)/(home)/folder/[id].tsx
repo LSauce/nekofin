@@ -1,4 +1,5 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getAllItemsByFolder } from '@/services/jellyfin';
 import { BaseItemDto, BaseItemKind } from '@jellyfin/sdk/lib/generated-client/models';
@@ -16,9 +17,13 @@ export default function FolderScreen() {
 
   const PAGE_SIZE = 60;
 
+  const { filters, setFilters } = useMediaFilters({
+    includeItemTypes: itemTypes ? [itemTypes] : undefined,
+  });
+
   const query = useInfiniteQuery({
     enabled: !!api && !!currentServer && !!id,
-    queryKey: ['folder-items', currentServer?.id, id, itemTypes],
+    queryKey: ['folder-items', currentServer?.id, id, filters],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       if (!api || !currentServer || !id) return { items: [], total: 0 };
@@ -28,11 +33,18 @@ export default function FolderScreen() {
         id,
         pageParam,
         PAGE_SIZE,
-        itemTypes ? [itemTypes] : [],
+        filters.includeItemTypes ?? [],
+        {
+          sortBy: filters.sortBy,
+          sortOrder: filters.sortOrder,
+          onlyUnplayed: filters.onlyUnplayed,
+          year: filters.year,
+          tags: filters.tags,
+        },
       );
       const items = response.data.Items || [];
       const total = response.data.TotalRecordCount ?? items.length;
-      return { items: items as BaseItemDto[], total };
+      return { items: items, total };
     },
     getNextPageParam: (
       lastPage: { items: BaseItemDto[]; total: number },
@@ -43,5 +55,13 @@ export default function FolderScreen() {
     },
   });
 
-  return <ItemGridScreen title={name || '全部内容'} query={query} type="series" />;
+  return (
+    <ItemGridScreen
+      title={name || '全部内容'}
+      query={query}
+      type="series"
+      filters={filters}
+      onChangeFilters={setFilters}
+    />
+  );
 }

@@ -1,4 +1,5 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
   getLatestItems,
@@ -17,6 +18,7 @@ export default function ViewAllScreen() {
     folderName?: string;
   }>();
   const { currentServer, currentApi: api } = useMediaServers();
+  const { filters, setFilters } = useMediaFilters();
 
   const getTitle = () => {
     switch (type) {
@@ -44,7 +46,7 @@ export default function ViewAllScreen() {
 
   const query = useInfiniteQuery({
     enabled: !!api && !!currentServer,
-    queryKey: ['viewall', type, currentServer?.id, folderId],
+    queryKey: ['viewall', type, currentServer?.id, folderId, filters],
     initialPageParam: 0,
     queryFn: async () => {
       if (!api || !currentServer) return { items: [], total: 0 };
@@ -75,7 +77,13 @@ export default function ViewAllScreen() {
             const total = items.length;
             return { items, total };
           }
-          const res = await getLatestItems(api, currentServer.userId, PAGE_SIZE);
+          const res = await getLatestItems(api, currentServer.userId, PAGE_SIZE, {
+            includeItemTypes: filters.includeItemTypes,
+            sortBy: filters.sortBy,
+            sortOrder: filters.sortOrder,
+            year: filters.year,
+            tags: filters.tags,
+          });
           const d = res.data;
           const items = (Array.isArray(d) ? d : d?.Items) ?? [];
           const total = d?.TotalRecordCount ?? items.length;
@@ -94,5 +102,13 @@ export default function ViewAllScreen() {
     },
   });
 
-  return <ItemGridScreen title={getTitle()} query={query} type={getItemType()} />;
+  return (
+    <ItemGridScreen
+      title={getTitle()}
+      query={query}
+      type={getItemType()}
+      filters={filters}
+      onChangeFilters={setFilters}
+    />
+  );
 }
