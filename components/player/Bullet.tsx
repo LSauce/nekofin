@@ -127,10 +127,6 @@ export function Bullet({
           : data.mode === DANDAN_COMMENT_MODE.ScrollBottom
             ? -100
             : 0,
-      width:
-        data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom
-          ? ('100%' as `${number}%`)
-          : undefined,
       transform:
         data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
           ? [{ translateX }]
@@ -158,7 +154,7 @@ export function Bullet({
 
   return (
     <Animated.View
-      style={[style, isTopOrBottom ? styles.centerRow : null]}
+      style={[style, isTopOrBottom ? styles.centerRow : { width: '120%' }]}
       renderToHardwareTextureAndroid
       needsOffscreenAlphaCompositing={false}
     >

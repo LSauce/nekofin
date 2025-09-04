@@ -34,11 +34,14 @@ const StrokeText = ({ text, style, strokeColor = '#000', strokeWidth = 0.7 }: St
               top: o.y,
             },
           ]}
+          numberOfLines={1}
         >
           {text}
         </Text>
       ))}
-      <Text style={style}>{text}</Text>
+      <Text style={style} numberOfLines={1}>
+        {text}
+      </Text>
     </View>
   );
 };
