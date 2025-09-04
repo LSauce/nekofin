@@ -171,56 +171,6 @@ export function ItemGridScreen({
               contentContainerStyle={styles.filterRow}
             >
               <FilterButton
-                label="类型"
-                title="选择类型"
-                options={[
-                  {
-                    label: 'Movie',
-                    value: 'Movie',
-                    active:
-                      filters?.includeItemTypes?.[0] === 'Movie' &&
-                      (filters?.includeItemTypes?.length ?? 0) === 1,
-                  },
-                  {
-                    label: 'Series',
-                    value: 'Series',
-                    active:
-                      filters?.includeItemTypes?.[0] === 'Series' &&
-                      (filters?.includeItemTypes?.length ?? 0) === 1,
-                  },
-                  {
-                    label: 'Episode',
-                    value: 'Episode',
-                    active:
-                      filters?.includeItemTypes?.[0] === 'Episode' &&
-                      (filters?.includeItemTypes?.length ?? 0) === 1,
-                  },
-                  { label: '全部' },
-                ]}
-                onSelect={(v) => {
-                  if (!onChangeFilters) return;
-                  if (!v) {
-                    onChangeFilters({
-                      includeItemTypes: undefined,
-                      sortBy: filters?.sortBy,
-                      sortOrder: filters?.sortOrder,
-                      year: filters?.year,
-                      tags: filters?.tags,
-                      onlyUnplayed: filters?.onlyUnplayed,
-                    });
-                  } else {
-                    onChangeFilters({
-                      includeItemTypes: [v as BaseItemKind],
-                      sortBy: filters?.sortBy,
-                      sortOrder: filters?.sortOrder,
-                      year: filters?.year,
-                      tags: filters?.tags,
-                      onlyUnplayed: filters?.onlyUnplayed,
-                    });
-                  }
-                }}
-              />
-              <FilterButton
                 label="年份"
                 title="选择年份"
                 options={[
