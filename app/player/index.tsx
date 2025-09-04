@@ -1,4 +1,4 @@
-import { VideoPlayer } from '@/components/VideoPlayer';
+import { VideoPlayer } from '@/components/player';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function Player() {

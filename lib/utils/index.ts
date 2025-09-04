@@ -59,8 +59,6 @@ export const getStreamInfo = async ({
     return null;
   }
 
-  console.log('deviceProfile', deviceProfile);
-
   const res = await getMediaInfoApi(api).getPlaybackInfo(
     {
       itemId,
@@ -95,18 +93,14 @@ export const getStreamInfo = async ({
   });
 
   const url = `${api.basePath}/Videos/${itemId}/stream?${searchParams.toString()}`;
-  const transcodingUrl = mediaSource?.TranscodingUrl ? `${api.basePath}${mediaSource?.TranscodingUrl}` : null;
+  const transcodingUrl = mediaSource?.TranscodingUrl
+    ? `${api.basePath}${mediaSource?.TranscodingUrl}`
+    : null;
 
   return {
     url: url,
   };
 };
-
-export enum VideoPlayer {
-  // NATIVE, //todo: changes will make this a lot more easier to implement if we want. delete if not wanted
-  VLC_3 = 0,
-  VLC_4 = 1,
-}
 
 export const getDeviceId = () => {
   const deviceId = storage.getString('deviceId');

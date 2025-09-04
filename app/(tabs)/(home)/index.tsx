@@ -1,11 +1,13 @@
 import { Section } from '@/components/media/Section';
 import PageScrollView from '@/components/PageScrollView';
+import { ThemedText } from '@/components/ThemedText';
+import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
+import { UserViewSection } from '@/components/userview/UserViewSection';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { getImageInfo } from '@/lib/utils/image';
 import {
   createApiFromServerInfo,
   getLatestItemsByFolder,
@@ -18,15 +20,7 @@ import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo } from 'react';
-import {
-  FlatList,
-  Platform,
-  RefreshControl,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { Platform, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type HomeSection = {
@@ -175,154 +169,73 @@ export default function HomeScreen() {
 
   if (servers.length === 0) {
     return (
-      <View
-        style={{
-          flex: 1,
-          paddingTop: insets.top,
-          backgroundColor: '#fff',
-          justifyContent: 'center',
-          alignItems: 'center',
-        }}
-      >
-        <Text>No servers found</Text>
-        <TouchableOpacity onPress={() => router.push('/media')}>
-          <Text>Add server</Text>
+      <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top }]}>
+        <IconSymbol name="externaldrive.connected.to.line.below" size={48} color="#9AA0A6" />
+        <ThemedText style={styles.emptyTitle}>还没有服务器</ThemedText>
+        <ThemedText style={styles.emptySubtitle}>添加一个媒体服务器以开始使用</ThemedText>
+        <TouchableOpacity style={styles.primaryButton} onPress={() => router.push('/media')}>
+          <ThemedText style={styles.primaryButtonText}>添加服务器</ThemedText>
         </TouchableOpacity>
-      </View>
+      </ThemedView>
     );
   }
 
   return (
-    <>
-      <PageScrollView
-        showsVerticalScrollIndicator={false}
-        contentInsetAdjustmentBehavior="automatic"
-        style={{ flex: 1, backgroundColor }}
-        refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
-      >
-        {sectionsQuery.data?.map((section) => {
-          if (section.type === 'userview') {
-            return <UserViewSection key={section.key} userView={section.items} />;
-          }
-          if (section.type === 'resume') {
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/viewall/resume')}
-                items={section.items}
-                isLoading={sectionsQuery.isLoading}
-              />
-            );
-          }
-          if (section.type === 'nextup') {
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/viewall/nextup')}
-                items={section.items}
-                isLoading={sectionsQuery.isLoading}
-              />
-            );
-          }
-          // latest by folder
-          const folderId = section.key.replace('latest_', '');
+    <PageScrollView
+      showsVerticalScrollIndicator={false}
+      contentInsetAdjustmentBehavior="automatic"
+      style={{ flex: 1, backgroundColor }}
+      refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
+    >
+      {sectionsQuery.data?.map((section) => {
+        if (section.type === 'userview') {
+          return <UserViewSection key={section.key} userView={section.items} />;
+        }
+        if (section.type === 'resume') {
           return (
             <Section
               key={section.key}
               title={section.title}
-              onViewAll={() =>
-                router.push({
-                  pathname: '/viewall/[type]',
-                  params: {
-                    folderId,
-                    folderName: section.title.replace('最近添加的 ', ''),
-                    type: 'latest',
-                  },
-                })
-              }
+              onViewAll={() => router.push('/viewall/resume')}
               items={section.items}
               isLoading={sectionsQuery.isLoading}
-              type="series"
             />
           );
-        })}
-      </PageScrollView>
-    </>
-  );
-}
-
-function UserViewSection({ userView }: { userView: BaseItemDto[] }) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const userViewItems = userView || [];
-
-  if (userViewItems.length === 0) {
-    return (
-      <View style={styles.userViewSection}>
-        <Text style={styles.userViewTitle}>暂无内容</Text>
-      </View>
-    );
-  }
-
-  return (
-    <View style={[styles.userViewSection, { backgroundColor }]}>
-      <FlatList
-        data={userViewItems}
-        horizontal
-        keyExtractor={(item, index) => (item.Id ? String(item.Id) : String(index))}
-        showsHorizontalScrollIndicator={false}
-        contentContainerStyle={styles.userViewContainer}
-        renderItem={({ item, index }) => (
-          <UserViewCard item={item} key={item.Id || index} title={item.Name || '未知标题'} />
-        )}
-      />
-    </View>
-  );
-}
-
-function UserViewCard({ item, title }: { item: BaseItemDto; title: string }) {
-  const router = useRouter();
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-
-  const imageInfo = getImageInfo(item);
-
-  return (
-    <TouchableOpacity
-      style={[styles.userViewCard, { backgroundColor }]}
-      onPress={() => {
-        if (!item) return;
-        router.push({
-          pathname: '/folder/[id]',
-          params: {
-            id: item.Id!,
-            name: title,
-            itemTypes: item.CollectionType === 'movies' ? 'Movie' : 'Series',
-          },
-        });
-      }}
-    >
-      {imageInfo.url ? (
-        <Image
-          source={{ uri: imageInfo.url }}
-          placeholder={{
-            blurhash: imageInfo.blurhash,
-          }}
-          style={styles.cover}
-          contentFit="cover"
-        />
-      ) : (
-        <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-          <IconSymbol name="chevron.left.forwardslash.chevron.right" size={48} color="#ccc" />
-        </View>
-      )}
-      <View style={styles.userViewInfo}>
-        <Text style={[styles.userViewTitle, { color: textColor }]} numberOfLines={1}>
-          {title}
-        </Text>
-      </View>
-    </TouchableOpacity>
+        }
+        if (section.type === 'nextup') {
+          return (
+            <Section
+              key={section.key}
+              title={section.title}
+              onViewAll={() => router.push('/viewall/nextup')}
+              items={section.items}
+              isLoading={sectionsQuery.isLoading}
+            />
+          );
+        }
+        // latest by folder
+        const folderId = section.key.replace('latest_', '');
+        return (
+          <Section
+            key={section.key}
+            title={section.title}
+            onViewAll={() =>
+              router.push({
+                pathname: '/viewall/[type]',
+                params: {
+                  folderId,
+                  folderName: section.title.replace('最近添加的 ', ''),
+                  type: 'latest',
+                },
+              })
+            }
+            items={section.items}
+            isLoading={sectionsQuery.isLoading}
+            type="series"
+          />
+        );
+      })}
+    </PageScrollView>
   );
 }
 
@@ -355,36 +268,31 @@ const styles = StyleSheet.create({
     height: 34,
     borderRadius: 12,
   },
-  userViewSection: {
-    marginTop: 10,
-  },
-  userViewContainer: {
-    flexDirection: 'row',
+  emptyContainer: {
+    flex: 1,
+    justifyContent: 'center',
+    alignItems: 'center',
     gap: 12,
-    paddingHorizontal: 20,
   },
-  userViewCard: {
-    overflow: 'hidden',
-    backgroundColor: '#f7f7f7',
+  emptyTitle: {
+    fontSize: 18,
+    fontWeight: '700',
   },
-  userViewDuration: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
-  },
-  userViewInfo: {
-    padding: 8,
-  },
-  userViewTitle: {
+  emptySubtitle: {
     fontSize: 14,
-    fontWeight: 'bold',
-    marginBottom: 2,
-    textAlign: 'center',
+    opacity: 0.7,
+    marginBottom: 8,
   },
-  cover: {
-    width: 200,
-    aspectRatio: 16 / 9,
-    backgroundColor: '#eee',
+  primaryButton: {
+    backgroundColor: '#007AFF',
     borderRadius: 12,
+    paddingHorizontal: 20,
+    paddingVertical: 12,
+    marginTop: 8,
+  },
+  primaryButtonText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
   },
 });

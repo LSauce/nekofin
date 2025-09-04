@@ -19,6 +19,7 @@ const MAPPING = {
   'chevron.left.forwardslash.chevron.right': 'code',
   'chevron.right': 'chevron-right',
   'video.fill': 'movie',
+  'externaldrive.connected.to.line.below': 'dns',
 } as IconMapping;
 
 /**
