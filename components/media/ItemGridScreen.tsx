@@ -1,4 +1,5 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
+import { useGridLayout } from '@/hooks/useGridLayout';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
@@ -31,17 +32,10 @@ export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { accentColor } = useAccentColor();
+  const { numColumns, itemWidth, gap } = useGridLayout(type);
 
-  const {
-    data,
-    isLoading,
-    isError,
-    isRefetching,
-    refetch,
-    fetchNextPage,
-    hasNextPage,
-    isFetchingNextPage,
-  } = query;
+  const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
+    query;
 
   const useThreeCols = type === 'series';
 
@@ -49,7 +43,7 @@ export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
     const pages = data?.pages ?? [];
     const merged: BaseItemDto[] = [];
     const seen = new Set<string | undefined>();
-    for (const page of pages as (BaseItemDto[] | { items: BaseItemDto[]; total: number })[]) {
+    for (const page of pages) {
       const list = Array.isArray(page) ? page : page.items;
       for (const it of list) {
         const id = it.Id;
@@ -65,10 +59,12 @@ export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
   const { refreshing, onRefresh } = useRefresh(refetch);
 
   const renderItem = ({ item }: { item: BaseItemDto }) => {
+    const itemStyle = { width: itemWidth };
+
     return useThreeCols ? (
-      <SeriesCard item={item} style={useThreeCols ? styles.gridItemThird : styles.gridItem} />
+      <SeriesCard item={item} style={itemStyle} />
     ) : (
-      <MediaCard item={item} style={styles.gridItem} />
+      <MediaCard item={item} style={itemStyle} />
     );
   };
 
@@ -128,10 +124,10 @@ export function ItemGridScreen({ title, query, type }: ItemGridScreenProps) {
         data={items}
         renderItem={renderItem}
         keyExtractor={keyExtractor}
-        numColumns={useThreeCols ? 3 : 2}
-        key={useThreeCols ? '3-cols' : '2-cols'}
+        numColumns={numColumns}
+        key={`${numColumns}-cols`}
         contentContainerStyle={styles.listContainer}
-        columnWrapperStyle={useThreeCols ? styles.rowLeft : styles.row}
+        columnWrapperStyle={numColumns > 1 ? { columnGap: gap } : undefined}
         showsVerticalScrollIndicator={false}
         contentInsetAdjustmentBehavior="automatic"
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
@@ -156,18 +152,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 20,
     paddingVertical: 20,
     rowGap: 16,
-  },
-  row: {
-    columnGap: 16,
-  },
-  rowLeft: {
-    columnGap: 12,
-  },
-  gridItem: {
-    width: '48%',
-  },
-  gridItemThird: {
-    width: '31%',
   },
   loadingContainer: {
     flex: 1,
