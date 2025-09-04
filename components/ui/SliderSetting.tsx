@@ -99,8 +99,7 @@ export const SliderSetting: React.FC<SliderSettingProps> = ({
 const styles = StyleSheet.create({
   container: {
     paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 16,
+    paddingVertical: 14,
   },
   rowContainer: {
     paddingHorizontal: 0,

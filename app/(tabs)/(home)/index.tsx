@@ -31,10 +31,7 @@ type HomeSection = {
 };
 
 function useHomeSections(currentServer: MediaServerInfo | null) {
-  const api = useMemo(() => {
-    if (!currentServer) return null;
-    return createApiFromServerInfo(currentServer);
-  }, [currentServer]);
+  const { currentApi: api } = useMediaServers();
 
   const query = useQueryWithFocus({
     refetchOnScreenFocus: true,

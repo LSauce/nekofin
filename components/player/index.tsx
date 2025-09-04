@@ -35,11 +35,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [itemDetail, setItemDetail] = useState<BaseItemDto | null>(null);
   const [comments, setComments] = useState<DandanComment[]>([]);
 
-  const { currentServer } = useMediaServers();
-  const api = useMemo(() => {
-    if (!currentServer) return null;
-    return createApiFromServerInfo(currentServer);
-  }, [currentServer]);
+  const { currentServer, currentApi: api } = useMediaServers();
 
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
