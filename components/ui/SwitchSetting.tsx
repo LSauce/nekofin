@@ -1,13 +1,14 @@
-import { useSettingsColors } from '@/hooks/useSettingsColors';
+import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import React from 'react';
-import { StyleSheet, Switch, Text, View } from 'react-native';
+import { Switch, View } from 'react-native';
+
+import { SettingsRow } from './SettingsRow';
 
 export interface SwitchSettingProps {
   title: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
   subtitle?: string;
-  isLast?: boolean;
 }
 
 export const SwitchSetting: React.FC<SwitchSettingProps> = ({
@@ -15,53 +16,26 @@ export const SwitchSetting: React.FC<SwitchSettingProps> = ({
   value,
   onValueChange,
   subtitle,
-  isLast = false,
 }) => {
-  const { textColor, secondaryTextColor, separatorColor } = useSettingsColors();
-
   return (
-    <View>
-      <View
-        style={[
-          styles.switchItem,
-          !isLast && {
-            borderBottomWidth: StyleSheet.hairlineWidth,
-            borderBottomColor: separatorColor,
-          },
-        ]}
-      >
-        <View style={styles.switchTextContainer}>
-          <Text style={[styles.settingTitle, { color: textColor }]}>{title}</Text>
-          {subtitle && (
-            <Text style={[styles.settingSubtitle, { color: secondaryTextColor }]}>{subtitle}</Text>
-          )}
+    <SettingsRow
+      title={title}
+      subtitle={subtitle}
+      showArrow={false}
+      rightComponent={
+        <View
+          style={{
+            alignItems: 'center',
+            justifyContent: 'center',
+            height: 24,
+            paddingRight: isGreaterThanOrEqual26 ? 12 : 0,
+          }}
+        >
+          <Switch value={value} onValueChange={onValueChange} />
         </View>
-        <Switch value={value} onValueChange={onValueChange} />
-      </View>
-    </View>
+      }
+    />
   );
 };
-
-const styles = StyleSheet.create({
-  switchItem: {
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-    paddingHorizontal: 16,
-    paddingVertical: 14,
-  },
-  switchTextContainer: {
-    flex: 1,
-    marginRight: 12,
-  },
-  settingTitle: {
-    fontSize: 16,
-    fontWeight: '500',
-  },
-  settingSubtitle: {
-    fontSize: 14,
-    marginTop: 2,
-  },
-});
 
 export default SwitchSetting;

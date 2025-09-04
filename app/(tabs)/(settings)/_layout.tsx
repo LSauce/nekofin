@@ -32,6 +32,12 @@ export default function HomeLayout() {
           headerTitle: '媒体',
         }}
       />
+      <Stack.Screen
+        name="danmaku"
+        options={{
+          headerTitle: '弹幕设置',
+        }}
+      />
     </Stack>
   );
 }

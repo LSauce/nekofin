@@ -33,11 +33,7 @@ export default function SettingsScreen() {
       </Section>
 
       <Section title="播放">
-        <SettingItem
-          title="弹幕设置"
-          icon="chat"
-          onPress={() => router.push('/danmaku-settings')}
-        />
+        <SettingItem title="弹幕设置" icon="chat" onPress={() => router.push('/danmaku')} />
       </Section>
 
       <Section title="关于">

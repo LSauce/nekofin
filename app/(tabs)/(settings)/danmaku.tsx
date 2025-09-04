@@ -3,7 +3,7 @@ import { Section } from '@/components/ui/Section';
 import { SliderSetting } from '@/components/ui/SliderSetting';
 import { SwitchSetting } from '@/components/ui/SwitchSetting';
 import { defaultSettings, useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { Alert, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 export default function DanmakuSettingsScreen() {
   const { settings, setSettings } = useDanmakuSettings();
@@ -11,6 +11,14 @@ export default function DanmakuSettingsScreen() {
   const updateSetting = <K extends keyof typeof settings>(key: K, value: (typeof settings)[K]) => {
     setSettings({ ...settings, [key]: value });
   };
+
+  const FONT_SIZE_MIN = 12;
+  const FONT_SIZE_MAX = 36;
+  const FONT_SIZE_RANGE = FONT_SIZE_MAX - FONT_SIZE_MIN;
+
+  const mapFontSizeToSlider = (fontSize: number) => (fontSize - FONT_SIZE_MIN) / FONT_SIZE_RANGE;
+  const mapSliderToFontSize = (sliderValue: number) =>
+    Math.round(FONT_SIZE_MIN + sliderValue * FONT_SIZE_RANGE);
 
   const toggleFilter = (bit: number) => {
     const newFilter = settings.danmakuFilter ^ bit;
@@ -24,6 +32,7 @@ export default function DanmakuSettingsScreen() {
 
   const handleResetToDefault = () => {
     setSettings(defaultSettings);
+    Alert.alert('恢复默认设置', '所有设置已恢复为默认值');
   };
 
   return (
@@ -35,17 +44,19 @@ export default function DanmakuSettingsScreen() {
           value={settings.opacity}
           min={0.1}
           max={1.0}
-          onValueChange={(value) => updateSetting('opacity', value)}
+          step={0.05}
+          onSlidingComplete={(value) => updateSetting('opacity', value)}
           formatValue={(value) => `${Math.round(value * 100)}%`}
         />
         <SliderSetting
           title="字体大小"
           subtitle="弹幕文字的大小"
-          value={settings.fontSize}
-          min={12}
-          max={36}
-          onValueChange={(value) => updateSetting('fontSize', value)}
-          formatValue={(value) => `${value}px`}
+          value={mapFontSizeToSlider(settings.fontSize)}
+          min={0}
+          max={1}
+          step={1 / FONT_SIZE_RANGE}
+          onSlidingComplete={(value) => updateSetting('fontSize', mapSliderToFontSize(value))}
+          formatValue={(value) => `${mapSliderToFontSize(value)}px`}
         />
         <SliderSetting
           title="显示区域"
@@ -53,17 +64,9 @@ export default function DanmakuSettingsScreen() {
           value={settings.heightRatio}
           min={0.3}
           max={1.0}
-          onValueChange={(value) => updateSetting('heightRatio', value)}
+          step={0.05}
+          onSlidingComplete={(value) => updateSetting('heightRatio', value)}
           formatValue={(value) => `${Math.round(value * 100)}%`}
-        />
-        <SliderSetting
-          title="时间偏移"
-          subtitle="弹幕显示时间的调整"
-          value={settings.curEpOffset}
-          min={-10}
-          max={10}
-          onValueChange={(value) => updateSetting('curEpOffset', value)}
-          formatValue={(value) => `${value > 0 ? '+' : ''}${value}s`}
         />
       </Section>
 
@@ -87,7 +90,6 @@ export default function DanmakuSettingsScreen() {
           title="其他来源弹幕"
           value={(settings.danmakuFilter & 8) !== 8}
           onValueChange={() => toggleFilter(8)}
-          isLast
         />
       </Section>
 
@@ -106,7 +108,6 @@ export default function DanmakuSettingsScreen() {
           title="滚动弹幕"
           value={(settings.danmakuModeFilter & 4) !== 4}
           onValueChange={() => toggleModeFilter(4)}
-          isLast
         />
       </Section>
 

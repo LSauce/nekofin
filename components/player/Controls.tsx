@@ -242,12 +242,12 @@ export function Controls({
             isAnchoredToRight
             onPressAction={({ nativeEvent }) => {
               const key = nativeEvent.event;
-              if (key === 'danmaku-settings') {
+              if (key === 'danmaku') {
                 handleDanmakuSettingsPress();
               }
               setMenuOpen(false);
             }}
-            actions={[{ id: 'danmaku-settings', title: '弹幕设置' }]}
+            actions={[{ id: 'danmaku', title: '弹幕设置' }]}
           >
             <TouchableOpacity
               style={styles.danmakuButtonTouchable}

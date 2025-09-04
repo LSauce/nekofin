@@ -1,13 +1,20 @@
-import { useThemeColor } from '@/hooks/useThemeColor';
+import { getSystemColor } from '@/constants/SystemColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+
+import { useColorScheme } from './useColorScheme';
 
 export function useSettingsColors() {
   const { accentColor } = useAccentColor();
+  const theme = useColorScheme() ?? 'light';
 
-  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const secondaryTextColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#151718' }, 'background');
-  const separatorColor = useThemeColor({ light: '#C6C6C8', dark: '#38383A' }, 'background');
+  const textColor = getSystemColor('label', theme);
+  const secondaryTextColor = getSystemColor('secondaryLabel', theme);
+  const backgroundColor = getSystemColor('systemBackground', theme);
+  const separatorColor = getSystemColor('systemGray4', theme);
+  const secondarySystemGroupedBackground = getSystemColor(
+    'secondarySystemGroupedBackground',
+    theme,
+  );
 
   return {
     textColor,
@@ -15,5 +22,6 @@ export function useSettingsColors() {
     backgroundColor,
     accentColor,
     separatorColor,
+    secondarySystemGroupedBackground,
   };
 }

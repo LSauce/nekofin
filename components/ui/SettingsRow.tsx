@@ -34,11 +34,16 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   onMenuAction,
   shouldOpenOnLongPress = false,
 }) => {
-  const { textColor, secondaryTextColor, backgroundColor, accentColor } = useSettingsColors();
+  const { textColor, secondaryTextColor, secondarySystemGroupedBackground, accentColor } =
+    useSettingsColors();
 
   const RowContent = (
     <TouchableOpacity
-      style={[styles.settingItem, { backgroundColor }, containerStyle]}
+      style={[
+        styles.settingItem,
+        { backgroundColor: secondarySystemGroupedBackground },
+        containerStyle,
+      ]}
       onPress={onPress}
       disabled={!onPress}
     >

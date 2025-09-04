@@ -82,13 +82,6 @@ export default function RootLayout() {
                         autoHideHomeIndicator: true,
                       }}
                     />
-                    <Stack.Screen
-                      name="danmaku-settings"
-                      options={{
-                        title: '弹幕设置',
-                        headerShown: true,
-                      }}
-                    />
                     <Stack.Screen name="+not-found" />
                   </Stack>
                   <StatusBar style="auto" />

@@ -7,7 +7,6 @@ type SectionProps = ViewProps & {
   titleColor?: string;
   children: React.ReactNode;
   showSeparators?: boolean;
-  separatorColor?: string;
   separatorInsetLeft?: number;
 };
 
@@ -15,7 +14,6 @@ export function Section({
   title,
   titleColor,
   showSeparators = true,
-  separatorColor,
   separatorInsetLeft = 16 + 24 + 12,
   style,
   children,
@@ -23,9 +21,7 @@ export function Section({
 }: SectionProps) {
   const childArray = React.Children.toArray(children).filter(Boolean);
 
-  const { textColor, backgroundColor, separatorColor: defaultSeparatorColor } = useSettingsColors();
-
-  const finalSeparatorColor = separatorColor || defaultSeparatorColor;
+  const { textColor, secondarySystemGroupedBackground, separatorColor } = useSettingsColors();
 
   return (
     <View style={[styles.section, style]} {...rest}>
@@ -34,7 +30,7 @@ export function Section({
       >
         {title}
       </Text>
-      <View style={[styles.groupContainer, { backgroundColor }]}>
+      <View style={[styles.groupContainer, { backgroundColor: secondarySystemGroupedBackground }]}>
         {childArray.map((child, index) => {
           const key =
             React.isValidElement(child) && child.key != null ? String(child.key) : String(index);
@@ -46,7 +42,7 @@ export function Section({
                   style={[
                     styles.separator,
                     separatorInsetLeft ? { marginLeft: separatorInsetLeft } : null,
-                    { backgroundColor: finalSeparatorColor },
+                    { backgroundColor: separatorColor },
                   ]}
                 />
               ) : null}
