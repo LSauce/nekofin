@@ -1,5 +1,6 @@
 import { useSettingsColors } from '@/hooks/useSettingsColors';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import { MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
 import React from 'react';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
@@ -13,6 +14,10 @@ export interface SettingsRowProps {
   showArrow?: boolean;
   rightComponent?: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
+  menuTitle?: string;
+  menuActions?: { id: string; title: string }[];
+  onMenuAction?: (actionId: string) => void;
+  shouldOpenOnLongPress?: boolean;
 }
 
 export const SettingsRow: React.FC<SettingsRowProps> = ({
@@ -24,10 +29,14 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   showArrow = true,
   rightComponent,
   containerStyle,
+  menuTitle,
+  menuActions,
+  onMenuAction,
+  shouldOpenOnLongPress = false,
 }) => {
   const { textColor, secondaryTextColor, backgroundColor, accentColor } = useSettingsColors();
 
-  return (
+  const RowContent = (
     <TouchableOpacity
       style={[styles.settingItem, { backgroundColor }, containerStyle]}
       onPress={onPress}
@@ -54,6 +63,21 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       </View>
     </TouchableOpacity>
   );
+
+  if (menuActions && menuActions.length > 0) {
+    return (
+      <MenuView
+        title={menuTitle ?? ''}
+        actions={menuActions}
+        shouldOpenOnLongPress={shouldOpenOnLongPress}
+        onPressAction={({ nativeEvent }) => onMenuAction?.(nativeEvent.event)}
+      >
+        {RowContent}
+      </MenuView>
+    );
+  }
+
+  return RowContent;
 };
 
 const styles = StyleSheet.create({

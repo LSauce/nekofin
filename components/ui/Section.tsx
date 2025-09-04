@@ -35,20 +35,24 @@ export function Section({
         {title}
       </Text>
       <View style={[styles.groupContainer, { backgroundColor }]}>
-        {childArray.map((child, index) => (
-          <React.Fragment key={index}>
-            {child}
-            {showSeparators && index < childArray.length - 1 ? (
-              <View
-                style={[
-                  styles.separator,
-                  separatorInsetLeft ? { marginLeft: separatorInsetLeft } : null,
-                  { backgroundColor: finalSeparatorColor },
-                ]}
-              />
-            ) : null}
-          </React.Fragment>
-        ))}
+        {childArray.map((child, index) => {
+          const key =
+            React.isValidElement(child) && child.key != null ? String(child.key) : String(index);
+          return (
+            <React.Fragment key={key}>
+              {child}
+              {showSeparators && index < childArray.length - 1 ? (
+                <View
+                  style={[
+                    styles.separator,
+                    separatorInsetLeft ? { marginLeft: separatorInsetLeft } : null,
+                    { backgroundColor: finalSeparatorColor },
+                  ]}
+                />
+              ) : null}
+            </React.Fragment>
+          );
+        })}
       </View>
     </View>
   );

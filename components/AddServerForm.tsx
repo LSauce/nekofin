@@ -1,3 +1,4 @@
+import { useSettingsColors } from '@/hooks/useSettingsColors';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { BottomSheetScrollView, BottomSheetTextInput } from '@gorhom/bottom-sheet';
 import { zodResolver } from '@hookform/resolvers/zod';
@@ -15,11 +16,10 @@ interface AddServerFormProps {
 const serverTypes = [
   { key: 'jellyfin', label: 'Jellyfin' },
   { key: 'emby', label: 'Emby' },
-  { key: 'plex', label: 'Plex' },
-] as const;
+];
 
 const addServerSchema = z.object({
-  serverType: z.enum(['jellyfin', 'emby', 'plex']),
+  serverType: z.enum(['jellyfin', 'emby']),
   address: z.url('请输入有效的URL').min(1, '请输入服务器地址'),
   username: z.string().min(1, '请输入用户名'),
   password: z.string().min(1, '请输入密码'),
@@ -30,6 +30,8 @@ type AddServerFormData = z.infer<typeof addServerSchema>;
 export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
   const { authenticateAndAddServer } = useMediaServers();
   const [isLoading, setIsLoading] = useState(false);
+  const { textColor, secondaryTextColor, backgroundColor, accentColor, separatorColor } =
+    useSettingsColors();
 
   const {
     control,
@@ -49,6 +51,10 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
   const onSubmit = async (data: AddServerFormData) => {
     setIsLoading(true);
     try {
+      if (data.serverType === 'emby') {
+        Alert.alert('提示', 'Emby 添加即将支持');
+        return;
+      }
       await authenticateAndAddServer(data.address.trim(), data.username.trim(), data.password);
 
       Alert.alert('成功', '服务器添加成功', [{ text: '确定', onPress: onClose }]);
@@ -78,22 +84,26 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           name="serverType"
           render={({ field: { onChange, value } }) => (
             <View style={styles.typeContainer}>
-              {serverTypes.map((type) => (
-                <TouchableOpacity
-                  key={type.key}
-                  style={[styles.typeButton, value === type.key && styles.typeButtonActive]}
-                  onPress={() => onChange(type.key)}
-                >
-                  <ThemedText
+              {serverTypes.map((type) => {
+                const isActive = value === type.key;
+                return (
+                  <TouchableOpacity
+                    key={type.key}
                     style={[
-                      styles.typeButtonText,
-                      value === type.key && styles.typeButtonTextActive,
+                      styles.typeButton,
+                      { borderColor: separatorColor },
+                      isActive && { backgroundColor: accentColor, borderColor: accentColor },
                     ]}
+                    onPress={() => onChange(type.key)}
                   >
-                    {type.label}
-                  </ThemedText>
-                </TouchableOpacity>
-              ))}
+                    <ThemedText
+                      style={[styles.typeButtonText, isActive && styles.typeButtonTextActive]}
+                    >
+                      {type.label}
+                    </ThemedText>
+                  </TouchableOpacity>
+                );
+              })}
             </View>
           )}
         />
@@ -109,17 +119,22 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           name="address"
           render={({ field: { onChange, onBlur, value } }) => (
             <BottomSheetTextInput
-              style={[styles.input, errors.address && styles.inputError]}
+              style={[
+                styles.input,
+                { color: textColor, borderColor: separatorColor, backgroundColor },
+                errors.address && styles.inputError,
+              ]}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="例如: http://192.168.1.100:8096"
-              placeholderTextColor="#999"
+              placeholderTextColor={secondaryTextColor}
               autoCapitalize="none"
               autoCorrect={false}
               keyboardType="url"
               autoComplete="url"
               textContentType="URL"
+              allowFontScaling={false}
             />
           )}
         />
@@ -135,16 +150,21 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           name="username"
           render={({ field: { onChange, onBlur, value } }) => (
             <BottomSheetTextInput
-              style={[styles.input, errors.username && styles.inputError]}
+              style={[
+                styles.input,
+                { color: textColor, borderColor: separatorColor, backgroundColor },
+                errors.username && styles.inputError,
+              ]}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="输入用户名"
-              placeholderTextColor="#999"
+              placeholderTextColor={secondaryTextColor}
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="username"
               textContentType="username"
+              allowFontScaling={false}
             />
           )}
         />
@@ -160,17 +180,22 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
           name="password"
           render={({ field: { onChange, onBlur, value } }) => (
             <BottomSheetTextInput
-              style={[styles.input, errors.password && styles.inputError]}
+              style={[
+                styles.input,
+                { color: textColor, borderColor: separatorColor, backgroundColor },
+                errors.password && styles.inputError,
+              ]}
               value={value}
               onChangeText={onChange}
               onBlur={onBlur}
               placeholder="输入密码"
-              placeholderTextColor="#999"
+              placeholderTextColor={secondaryTextColor}
               secureTextEntry
               autoCapitalize="none"
               autoCorrect={false}
               autoComplete="password"
               textContentType="password"
+              allowFontScaling={false}
             />
           )}
         />
@@ -181,15 +206,17 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
 
       <View style={styles.buttonContainer}>
         <TouchableOpacity
-          style={[styles.button, styles.cancelButton]}
+          style={[styles.button, { backgroundColor }]}
           onPress={onClose}
           disabled={isLoading}
         >
-          <ThemedText style={styles.cancelButtonText}>取消</ThemedText>
+          <ThemedText style={[styles.cancelButtonText, { color: secondaryTextColor }]}>
+            取消
+          </ThemedText>
         </TouchableOpacity>
 
         <TouchableOpacity
-          style={[styles.button, styles.submitButton, isLoading && styles.submitButtonDisabled]}
+          style={[styles.button, { backgroundColor: isLoading ? '#ccc' : accentColor }]}
           onPress={handleSubmit(onSubmit)}
           disabled={isLoading}
         >
@@ -208,7 +235,7 @@ const styles = StyleSheet.create({
     padding: 20,
   },
   contentContainer: {
-    paddingBottom: 24,
+    paddingBottom: 60,
   },
   title: {
     marginBottom: 24,
@@ -232,12 +259,7 @@ const styles = StyleSheet.create({
     paddingHorizontal: 16,
     borderRadius: 8,
     borderWidth: 1,
-    borderColor: '#ddd',
     alignItems: 'center',
-  },
-  typeButtonActive: {
-    backgroundColor: '#007AFF',
-    borderColor: '#007AFF',
   },
   typeButtonText: {
     fontSize: 14,
@@ -274,19 +296,9 @@ const styles = StyleSheet.create({
     borderRadius: 8,
     alignItems: 'center',
   },
-  cancelButton: {
-    backgroundColor: '#f2f2f2',
-  },
-  submitButton: {
-    backgroundColor: '#007AFF',
-  },
-  submitButtonDisabled: {
-    backgroundColor: '#ccc',
-  },
   cancelButtonText: {
     fontSize: 16,
     fontWeight: '600',
-    color: '#666',
   },
   submitButtonText: {
     fontSize: 16,

@@ -14,15 +14,15 @@ type FilterSheetProps = {
   title?: string;
   options: FilterOption[];
   onSelect: (value?: string) => void;
-  ref: React.RefObject<GorhomBottomSheetModal | null>;
+  ref?: React.RefObject<GorhomBottomSheetModal | null>;
 };
 
 export const FilterSheet = ({ title, options, onSelect, ref }: FilterSheetProps) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   return (
-    <BottomSheetBackdropModal ref={ref}>
-      <BottomSheetScrollView style={{ paddingBottom: 24 }}>
+    <BottomSheetBackdropModal ref={ref} snapPoints={['50%', '90%']}>
+      <BottomSheetScrollView contentContainerStyle={{ paddingBottom: 24 }}>
         {title ? (
           <View style={{ paddingHorizontal: 16, paddingTop: 8, paddingBottom: 12 }}>
             <Text style={{ fontSize: 16, fontWeight: '600', color: textColor }}>{title}</Text>
@@ -42,8 +42,6 @@ export const FilterSheet = ({ title, options, onSelect, ref }: FilterSheetProps)
     </BottomSheetBackdropModal>
   );
 };
-
-FilterSheet.displayName = 'FilterSheet';
 
 function SheetOption({
   label,

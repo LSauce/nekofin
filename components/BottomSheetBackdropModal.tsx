@@ -10,8 +10,9 @@ export const BottomSheetBackdropModal = ({
   ref,
   backgroundStyle,
   ...props
-}: BottomSheetModalProps & { ref: React.RefObject<GorhomBottomSheetModal | null> }) => {
+}: BottomSheetModalProps & { ref?: React.RefObject<GorhomBottomSheetModal | null> }) => {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const handleIndicatorColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   return (
     <GorhomBottomSheetModal
@@ -29,6 +30,7 @@ export const BottomSheetBackdropModal = ({
       )}
       enableDynamicSizing={true}
       backgroundStyle={[{ backgroundColor }, backgroundStyle]}
+      handleIndicatorStyle={[{ backgroundColor: handleIndicatorColor }]}
       {...props}
     >
       {children}
