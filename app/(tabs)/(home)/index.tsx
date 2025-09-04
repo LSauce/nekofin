@@ -100,7 +100,8 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
 }
 
 export default function HomeScreen() {
-  const { servers, currentServer, setCurrentServer, refreshServerInfo } = useMediaServers();
+  const { servers, currentServer, setCurrentServer, refreshServerInfo, isInitialized } =
+    useMediaServers();
   const navigation = useNavigation();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -164,7 +165,7 @@ export default function HomeScreen() {
     });
   }, [currentServer?.userAvatar, navigation, servers, currentServer?.id, handleServerSelect]);
 
-  if (servers.length === 0) {
+  if (servers.length === 0 && isInitialized) {
     return (
       <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top }]}>
         <IconSymbol name="externaldrive.connected.to.line.below" size={48} color="#9AA0A6" />
