@@ -6,7 +6,7 @@ import StrokeText from '../StrokeText';
 import { ActiveBullet } from './DanmakuTypes';
 
 const STROKE_COLOR = '#000';
-const STROKE_WIDTH = 0.6;
+const STROKE_WIDTH = 0.65;
 
 export function Bullet({
   width,
