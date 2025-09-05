@@ -7,10 +7,7 @@
     "development": {
       "developmentClient": true,
       "distribution": "internal",
-      "environment": "development",
-      "android": {
-        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
-      }
+      "environment": "development"
     },
     "preview": {
       "distribution": "internal",
@@ -20,8 +17,7 @@
       "autoIncrement": true,
       "environment": "production",
       "android": {
-        "buildType": "apk",
-        "gradleCommand": ":app:assembleRelease -PreactNativeArchitectures=arm64-v8a"
+        "buildType": "apk"
       }
     }
   },
