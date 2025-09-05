@@ -154,7 +154,7 @@ export function Bullet({
 
   return (
     <Animated.View
-      style={[style, isTopOrBottom ? styles.centerRow : { width: '120%' }]}
+      style={[style, isTopOrBottom ? styles.centerRow : { width: '500%' }]}
       renderToHardwareTextureAndroid
       needsOffscreenAlphaCompositing={false}
     >

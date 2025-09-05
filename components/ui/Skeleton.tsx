@@ -307,7 +307,7 @@ const styles = StyleSheet.create({
   },
   detailHeader: {
     width: '100%',
-    height: 600,
+    height: 520,
   },
   detailContent: {
     top: -160,

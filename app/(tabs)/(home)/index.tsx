@@ -126,43 +126,51 @@ export default function HomeScreen() {
 
   useEffect(() => {
     navigation.setOptions({
-      headerRight: () => (
-        <View style={styles.headerButtons}>
-          <MenuView
-            isAnchoredToRight
-            title="服务器列表"
-            onPressAction={({ nativeEvent }) => {
-              const serverId = nativeEvent.event;
-              if (serverId && serverId !== 'current') {
-                handleServerSelect(serverId);
-              }
-            }}
-            actions={[
-              ...(servers.map((server) => ({
-                id: server.id,
-                title: server.name,
-                state:
-                  currentServer?.id === server.id
-                    ? 'on'
-                    : Platform.select({
-                        ios: 'off',
-                        android: 'mixed',
-                      }),
-              })) as MenuAction[]),
-            ]}
-          >
-            <TouchableOpacity style={styles.serverButton}>
-              <Image
-                source={{ uri: currentServer?.userAvatar }}
-                style={styles.serverButtonAvatar}
-                contentFit="cover"
-              />
-            </TouchableOpacity>
-          </MenuView>
-        </View>
-      ),
+      headerRight: () =>
+        servers && servers.length > 1 ? (
+          <View style={styles.headerButtons}>
+            <MenuView
+              isAnchoredToRight
+              title="服务器列表"
+              onPressAction={({ nativeEvent }) => {
+                const serverId = nativeEvent.event;
+                if (serverId && serverId !== 'current') {
+                  handleServerSelect(serverId);
+                }
+              }}
+              actions={[
+                ...(servers.map((server) => ({
+                  id: server.id,
+                  title: server.name,
+                  state:
+                    currentServer?.id === server.id
+                      ? 'on'
+                      : Platform.select({
+                          ios: 'off',
+                          android: 'mixed',
+                        }),
+                })) as MenuAction[]),
+              ]}
+            >
+              <TouchableOpacity style={styles.serverButton}>
+                <Image
+                  source={{ uri: currentServer?.userAvatar }}
+                  style={styles.serverButtonAvatar}
+                  contentFit="cover"
+                />
+              </TouchableOpacity>
+            </MenuView>
+          </View>
+        ) : undefined,
     });
-  }, [currentServer?.userAvatar, navigation, servers, currentServer?.id, handleServerSelect]);
+  }, [
+    currentServer?.userAvatar,
+    navigation,
+    servers,
+    currentServer?.id,
+    handleServerSelect,
+    currentServer,
+  ]);
 
   if (servers.length === 0 && isInitialized) {
     return (

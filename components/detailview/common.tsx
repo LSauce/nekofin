@@ -74,11 +74,13 @@ export const ItemOverview = ({ item }: { item: BaseItemDto }) => {
   return (
     <>
       <View style={detailViewStyles.overviewContainer}>
+        <Text style={[{ position: 'absolute', opacity: 0 }]} onTextLayout={handleTextLayout}>
+          {overview}
+        </Text>
         <Text
           style={[detailViewStyles.overview, { color: textColor }]}
           numberOfLines={4}
           ellipsizeMode="head"
-          onTextLayout={handleTextLayout}
         >
           {overview}
         </Text>
