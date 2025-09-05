@@ -16,12 +16,12 @@ import { MovieModeContent } from './movie';
 import { SeasonModeContent } from './season';
 import { SeriesModeContent } from './series';
 
-export type SeriesDetailViewProps = {
+export type DetailViewProps = {
   itemId: string;
   mode: 'series' | 'season' | 'movie';
 };
 
-export default function SeriesDetailView({ itemId, mode }: SeriesDetailViewProps) {
+export default function DetailView({ itemId, mode }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer, currentApi } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
