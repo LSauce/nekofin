@@ -1,23 +1,23 @@
-import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
-import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
-import { StatusBar } from 'expo-status-bar';
-
-import 'react-native-reanimated';
-
 import HeaderBackButton from '@/components/HeaderBackButton';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
+import { usePlayerScreenOrientation } from '@/hooks/usePlayerScreenOrientation';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
 import { MediaServerProvider } from '@/lib/contexts/MediaServerContext';
 import { ThemeColorProvider } from '@/lib/contexts/ThemeColorContext';
 import { storage } from '@/lib/storage';
 import { BottomSheetModalProvider } from '@gorhom/bottom-sheet';
+import { DarkTheme, DefaultTheme, ThemeProvider } from '@react-navigation/native';
 import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persister';
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
+import { useFonts } from 'expo-font';
+import { Stack } from 'expo-router';
+import { StatusBar } from 'expo-status-bar';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
+
+import 'react-native-reanimated';
 
 const queryClient = new QueryClient({
   defaultOptions: {
@@ -45,6 +45,8 @@ export default function RootLayout() {
   const [loaded] = useFonts({
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
+
+  usePlayerScreenOrientation();
 
   if (!loaded) {
     // Async font loading only occurs in development.
@@ -75,11 +77,9 @@ export default function RootLayout() {
                   >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
                     <Stack.Screen
-                      name="player/index"
+                      name="player"
                       options={{
                         headerShown: false,
-                        presentation: 'fullScreenModal',
-                        autoHideHomeIndicator: true,
                       }}
                     />
                     <Stack.Screen name="+not-found" />

@@ -2,7 +2,6 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
 import { getEpisodesBySeason, getItemDetail } from '@/services/jellyfin';
-import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -13,8 +12,8 @@ import {
   type Tracks,
 } from 'expo-libvlc-player';
 import * as NavigationBar from 'expo-navigation-bar';
+import { useRouter } from 'expo-router';
 import * as ScreenOrientation from 'expo-screen-orientation';
-import * as StatusBar from 'expo-status-bar';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, Platform, StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
@@ -33,6 +32,7 @@ const LoadingIndicator = () => {
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const { currentServer, currentApi: api } = useMediaServers();
+  const router = useRouter();
 
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -42,19 +42,18 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
   const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>(undefined);
-  const [currentItemId, setCurrentItemId] = useState(itemId);
 
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
 
   const { data: itemDetail } = useQuery({
-    queryKey: ['itemDetail', currentItemId, currentServer?.userId],
+    queryKey: ['itemDetail', itemId, currentServer?.userId],
     queryFn: async () => {
       if (!api || !currentServer) return null;
-      const response = await getItemDetail(api, currentItemId, currentServer.userId);
+      const response = await getItemDetail(api, itemId, currentServer.userId);
       return response.data;
     },
-    enabled: !!api && !!currentItemId && !!currentServer,
+    enabled: !!api && !!itemId && !!currentServer,
   });
 
   const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
@@ -89,12 +88,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   });
 
   const { data: streamInfo } = useQuery({
-    queryKey: ['streamInfo', currentItemId, currentServer?.userId],
+    queryKey: ['streamInfo', itemId, currentServer?.userId],
     queryFn: async () => {
       if (!api || !currentServer || !itemDetail) return null;
       return await getStreamInfo({
         api,
-        itemId: currentItemId,
+        itemId: itemId,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile(),
         startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks,
@@ -140,10 +139,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [itemDetail]);
 
   const currentEpisodeIndex = useMemo(() => {
-    if (!currentItemId || !episodes.length) return -1;
-    const index = episodes.findIndex((episode) => episode.Id === currentItemId);
+    if (!itemId || !episodes.length) return -1;
+    const index = episodes.findIndex((episode) => episode.Id === itemId);
     return index;
-  }, [currentItemId, episodes]);
+  }, [itemId, episodes]);
 
   const hasPreviousEpisode = useMemo(() => {
     return currentEpisodeIndex > 0;
@@ -170,40 +169,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       currentTime.value = startTimeMs;
     }
   }, [itemDetail, currentTime]);
-
-  useEffect(() => {
-    setCurrentItemId(itemId);
-  }, [itemId]);
-
-  useFocusEffect(
-    useCallback(() => {
-      StatusBar.setStatusBarHidden(true, 'none');
-      (async () => {
-        try {
-          if (Platform.OS === 'android') {
-            NavigationBar.setVisibilityAsync('hidden');
-          }
-          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-        } catch (e) {
-          console.warn('Failed to lock orientation', e);
-        }
-      })();
-
-      return () => {
-        StatusBar.setStatusBarHidden(false);
-        (async () => {
-          try {
-            if (Platform.OS === 'android') {
-              NavigationBar.setVisibilityAsync('visible');
-            }
-            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-          } catch (e) {
-            console.warn('Failed to unlock orientation', e);
-          }
-        })();
-      };
-    }, []),
-  );
 
   useEffect(() => {
     (async () => {
@@ -270,30 +235,27 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }));
   }, []);
 
-  const resetPlayerState = useCallback(() => {
-    setIsPlaying(false);
-    setIsBuffering(true);
-    setIsLoaded(false);
-    setIsStopped(false);
-    setSeekTime(0);
-    setInitialTime(-1);
-    setMediaInfo(null);
-    currentTime.value = 0;
-  }, [currentTime]);
-
   const handlePreviousEpisode = useCallback(() => {
     if (previousEpisode?.Id) {
-      setCurrentItemId(previousEpisode.Id);
-      resetPlayerState();
+      router.replace({
+        pathname: '/player',
+        params: {
+          itemId: previousEpisode.Id,
+        },
+      });
     }
-  }, [previousEpisode, resetPlayerState]);
+  }, [previousEpisode, router]);
 
   const handleNextEpisode = useCallback(() => {
     if (nextEpisode?.Id) {
-      setCurrentItemId(nextEpisode.Id);
-      resetPlayerState();
+      router.replace({
+        pathname: '/player',
+        params: {
+          itemId: nextEpisode.Id,
+        },
+      });
     }
-  }, [nextEpisode, resetPlayerState]);
+  }, [nextEpisode, router]);
 
   return (
     <View style={styles.container}>

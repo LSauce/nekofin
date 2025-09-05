@@ -125,12 +125,9 @@ export const getCommentsByItem = async (item: BaseItemDto, originalTitle?: strin
   if (animes.length === 0) {
     return [];
   }
-  console.log(item.OriginalTitle, seriesName, animes);
   const anime = animes[seasonNumber - 1];
-  console.log(anime);
   if (anime && episodeNumber) {
     const comments = await getCommentsByEpisodeId(anime.episodes[episodeNumber - 1].episodeId);
-    console.log(comments.slice(0, 5));
     return comments;
   }
 };
