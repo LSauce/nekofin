@@ -3,7 +3,7 @@ import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren, ReactElement } from 'react';
-import { Easing, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Easing, ScrollViewProps, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { easeGradient } from 'react-native-easing-gradient';
 import Animated, {
   interpolate,
@@ -22,6 +22,7 @@ type Props = PropsWithChildren<{
   containerStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   showsVerticalScrollIndicator?: boolean;
+  refreshControl?: ScrollViewProps['refreshControl'];
 }>;
 
 export default function ParallaxScrollView({
@@ -33,6 +34,7 @@ export default function ParallaxScrollView({
   containerStyle,
   contentStyle,
   showsVerticalScrollIndicator = true,
+  refreshControl,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -73,6 +75,7 @@ export default function ParallaxScrollView({
   return (
     <ThemedView style={[styles.container, containerStyle]}>
       <Animated.ScrollView
+        refreshControl={refreshControl}
         ref={scrollRef}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}

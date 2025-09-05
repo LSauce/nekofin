@@ -1,5 +1,6 @@
 import { MediaCard, SeriesCard } from '@/components/media/Card';
 import PageScrollView from '@/components/PageScrollView';
+import { SkeletonHorizontalSection } from '@/components/ui/Skeleton';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
@@ -8,14 +9,7 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import React, { RefObject, useMemo, useRef, useState } from 'react';
-import {
-  ActivityIndicator,
-  FlatList,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { SearchBarCommands } from 'react-native-screens';
 
 export default function SearchScreen() {
@@ -31,7 +25,7 @@ export default function SearchScreen() {
 
   const canQuery = Boolean(currentApi && currentServer?.userId);
 
-  const { data: suggestions = [], isLoading: loadingSuggest } = useQuery<string[]>({
+  const { data: suggestions = [] } = useQuery<string[]>({
     enabled: canQuery,
     queryKey: ['recommend-keywords', currentServer?.id],
     queryFn: async () => {
@@ -136,12 +130,8 @@ export default function SearchScreen() {
         </View>
       )}
 
-      {effectiveKeyword.length > 0 && (
-        <View style={styles.resultsHeader}>
-          {(loadingResults || loadingSuggest) && (
-            <ActivityIndicator size="small" color={accentColor} />
-          )}
-        </View>
+      {effectiveKeyword.length > 0 && loadingResults && (
+        <SkeletonHorizontalSection title="加载中" />
       )}
 
       {effectiveKeyword.length > 0 && groupedResults.length === 0 && !loadingResults && (
@@ -190,34 +180,6 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
   },
-  input: {
-    borderWidth: 1,
-    borderRadius: 10,
-    paddingHorizontal: 12,
-    paddingVertical: 10,
-    fontSize: 16,
-  },
-  hintsContainer: {
-    paddingHorizontal: 12,
-    paddingBottom: 8,
-  },
-  hintsContent: {
-    gap: 8,
-  },
-  hintChip: {
-    paddingHorizontal: 12,
-    paddingVertical: 6,
-    borderRadius: 14,
-    borderWidth: 1,
-  },
-  hintText: {
-    fontSize: 14,
-  },
-  suggestContainer: {
-    paddingHorizontal: 16,
-    paddingTop: 8,
-    paddingBottom: 4,
-  },
   suggestContainerCentered: {
     paddingHorizontal: 16,
     paddingTop: 8,
@@ -233,11 +195,6 @@ const styles = StyleSheet.create({
     marginBottom: 8,
     paddingHorizontal: 16,
   },
-  suggestChips: {
-    flexDirection: 'row',
-    flexWrap: 'wrap',
-    gap: 8,
-  },
   suggestColumn: {
     flexDirection: 'column',
     gap: 8,
@@ -248,34 +205,12 @@ const styles = StyleSheet.create({
     fontSize: 14,
     textAlign: 'center',
   },
-  resultsHeader: {
-    paddingHorizontal: 16,
-    paddingVertical: 8,
-    flexDirection: 'row',
-    alignItems: 'center',
-    gap: 8,
-  },
-  resultsTitle: {
-    fontSize: 16,
-    fontWeight: '600',
-  },
   groupSection: {
     paddingTop: 8,
-  },
-  listContainer: {
-    paddingHorizontal: 16,
-    paddingVertical: 16,
-    rowGap: 16,
   },
   horizontalListContainer: {
     paddingHorizontal: 16,
     paddingVertical: 12,
-  },
-  row: {
-    columnGap: 16,
-  },
-  gridItem: {
-    width: '48%',
   },
   emptyContainer: {
     alignItems: 'center',

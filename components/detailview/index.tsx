@@ -1,5 +1,6 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { useDetailBundle } from '@/hooks/useDetailBundle';
+import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { getImageInfo } from '@/lib/utils/image';
@@ -8,7 +9,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
@@ -29,7 +30,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
-  const { data: bundle, isLoading } = useDetailBundle(mode, itemId);
+  const { data: bundle, isLoading, refetch } = useDetailBundle(mode, itemId);
 
   const item = bundle?.item;
   const seasons = bundle?.seasons ?? [];
@@ -38,12 +39,12 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
   const similarShows = bundle?.similarShows ?? [];
   const similarMovies = bundle?.similarMovies ?? [];
 
+  const { refreshing, onRefresh } = useRefresh(refetch, [itemId]);
+
   useEffect(() => {
     if (!item) return;
     setIsFavorite(!!item.UserData?.IsFavorite);
   }, [item]);
-
-  const isLoadingCombined = isLoading;
 
   useEffect(() => {
     navigation.setOptions({
@@ -83,7 +84,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
     textColor,
   ]);
 
-  if (isLoadingCombined || !item) {
+  if (isLoading || !item) {
     return (
       <View style={[detailViewStyles.container, { backgroundColor }]}>
         <SkeletonDetailHeader />
@@ -103,6 +104,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
       enableMaskView
       headerHeight={400}
       showsVerticalScrollIndicator={false}
+      refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
       headerImage={
         headerImageUrl ? (

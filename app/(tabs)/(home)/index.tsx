@@ -114,7 +114,7 @@ export default function HomeScreen() {
     if (!currentServer) return Promise.resolve();
     await refreshServerInfo(currentServer.id);
     await sectionsQuery.refetch();
-  });
+  }, ['homeSections', currentServer?.id]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {
@@ -182,7 +182,11 @@ export default function HomeScreen() {
       showsVerticalScrollIndicator={false}
       contentInsetAdjustmentBehavior="automatic"
       style={{ flex: 1, backgroundColor }}
-      refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
+      refreshControl={
+        sectionsQuery.isLoading ? undefined : (
+          <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />
+        )
+      }
     >
       {sectionsQuery.isLoading ? (
         <>
