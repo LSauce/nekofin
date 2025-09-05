@@ -30,6 +30,10 @@ type ControlsProps = {
   selectedTracks?: Tracks;
   onAudioTrackChange?: (trackIndex: number) => void;
   onSubtitleTrackChange?: (trackIndex: number) => void;
+  hasPreviousEpisode?: boolean;
+  hasNextEpisode?: boolean;
+  onPreviousEpisode?: () => void;
+  onNextEpisode?: () => void;
 };
 
 export function Controls({
@@ -44,6 +48,10 @@ export function Controls({
   selectedTracks,
   onAudioTrackChange,
   onSubtitleTrackChange,
+  hasPreviousEpisode,
+  hasNextEpisode,
+  onPreviousEpisode,
+  onNextEpisode,
 }: ControlsProps) {
   const currentTimeMs = useCurrentTime({ time: currentTime });
   const router = useRouter();
@@ -51,7 +59,6 @@ export function Controls({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [settingsVisible, setSettingsVisible] = useState(false);
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -181,10 +188,6 @@ export function Controls({
     showControlsWithTimeout();
   };
 
-  const handleDanmakuSettingsPress = () => {
-    setSettingsVisible(true);
-  };
-
   const handleAudioTrackSelect = (trackIndex: number) => {
     onAudioTrackChange?.(trackIndex);
   };
@@ -260,15 +263,16 @@ export function Controls({
             isAnchoredToRight
             onPressAction={({ nativeEvent }) => {
               const key = nativeEvent.event;
-              if (key === 'danmaku') {
-                handleDanmakuSettingsPress();
-              } else if (key.startsWith('audio_')) {
+              if (key.startsWith('audio_')) {
                 const trackIndex = parseInt(key.replace('audio_', ''));
                 handleAudioTrackSelect(trackIndex);
               } else if (key.startsWith('subtitle_')) {
                 const trackIndex = parseInt(key.replace('subtitle_', ''));
                 handleSubtitleTrackSelect(trackIndex);
               }
+              setMenuOpen(false);
+            }}
+            onCloseMenu={() => {
               setMenuOpen(false);
             }}
             actions={[
@@ -342,6 +346,18 @@ export function Controls({
         />
         <View style={styles.progressContainer}>
           <View style={styles.controlsRow}>
+            <TouchableOpacity
+              style={[styles.episodeButton, !hasPreviousEpisode && styles.disabledButton]}
+              onPress={hasPreviousEpisode ? onPreviousEpisode : undefined}
+              disabled={!hasPreviousEpisode}
+            >
+              <AntDesign
+                name="stepbackward"
+                size={20}
+                color={hasPreviousEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
+              />
+            </TouchableOpacity>
+
             <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
@@ -352,6 +368,18 @@ export function Controls({
                   color="white"
                 />
               )}
+            </TouchableOpacity>
+
+            <TouchableOpacity
+              style={[styles.episodeButton, !hasNextEpisode && styles.disabledButton]}
+              onPress={hasNextEpisode ? onNextEpisode : undefined}
+              disabled={!hasNextEpisode}
+            >
+              <AntDesign
+                name="stepforward"
+                size={20}
+                color={hasNextEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
+              />
             </TouchableOpacity>
           </View>
           <View style={styles.timeContainer}>
@@ -504,8 +532,10 @@ const styles = StyleSheet.create({
   },
   controlsRow: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
+    justifyContent: 'center',
     alignItems: 'center',
+    gap: 12,
+    paddingLeft: 16,
   },
   timeContainer: {
     minWidth: 60,
@@ -527,6 +557,16 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 20,
     fontWeight: 'bold',
+  },
+  episodeButton: {
+    width: 20,
+    height: 20,
+    borderRadius: 20,
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  disabledButton: {
+    opacity: 0.5,
   },
   touchOverlay: {
     position: 'absolute',

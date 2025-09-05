@@ -1,7 +1,8 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
-import { getItemDetail, getItemMediaSources } from '@/services/jellyfin';
+import { getEpisodesBySeason, getItemDetail } from '@/services/jellyfin';
+import { useFocusEffect } from '@react-navigation/native';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -40,22 +41,20 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
-  const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>({
-    audio: 4,
-    subtitle: -1,
-  });
+  const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>(undefined);
+  const [currentItemId, setCurrentItemId] = useState(itemId);
 
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
 
   const { data: itemDetail } = useQuery({
-    queryKey: ['itemDetail', itemId, currentServer?.userId],
+    queryKey: ['itemDetail', currentItemId, currentServer?.userId],
     queryFn: async () => {
       if (!api || !currentServer) return null;
-      const response = await getItemDetail(api, itemId, currentServer.userId);
+      const response = await getItemDetail(api, currentItemId, currentServer.userId);
       return response.data;
     },
-    enabled: !!api && !!itemId && !!currentServer,
+    enabled: !!api && !!currentItemId && !!currentServer,
   });
 
   const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
@@ -90,18 +89,28 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   });
 
   const { data: streamInfo } = useQuery({
-    queryKey: ['streamInfo', itemId, currentServer?.userId],
+    queryKey: ['streamInfo', currentItemId, currentServer?.userId],
     queryFn: async () => {
       if (!api || !currentServer || !itemDetail) return null;
       return await getStreamInfo({
         api,
-        itemId,
+        itemId: currentItemId,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile(),
         startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks,
       });
     },
     enabled: !!api && !!currentServer && !!itemDetail,
+  });
+
+  const { data: episodes = [] } = useQuery({
+    queryKey: ['episodes', itemDetail?.SeasonId, currentServer?.userId],
+    queryFn: async () => {
+      if (!api || !currentServer || !itemDetail?.SeasonId) return [];
+      const response = await getEpisodesBySeason(api, itemDetail.SeasonId, currentServer.userId);
+      return response.data.Items ?? [];
+    },
+    enabled: !!api && !!currentServer && !!itemDetail?.SeasonId,
   });
 
   const showLoading = useMemo(() => {
@@ -130,6 +139,30 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     return episodeName;
   }, [itemDetail]);
 
+  const currentEpisodeIndex = useMemo(() => {
+    if (!currentItemId || !episodes.length) return -1;
+    const index = episodes.findIndex((episode) => episode.Id === currentItemId);
+    return index;
+  }, [currentItemId, episodes]);
+
+  const hasPreviousEpisode = useMemo(() => {
+    return currentEpisodeIndex > 0;
+  }, [currentEpisodeIndex]);
+
+  const hasNextEpisode = useMemo(() => {
+    return currentEpisodeIndex >= 0 && currentEpisodeIndex < episodes.length - 1;
+  }, [currentEpisodeIndex, episodes.length]);
+
+  const previousEpisode = useMemo(() => {
+    if (!hasPreviousEpisode) return null;
+    return episodes[currentEpisodeIndex - 1];
+  }, [hasPreviousEpisode, episodes, currentEpisodeIndex]);
+
+  const nextEpisode = useMemo(() => {
+    if (!hasNextEpisode) return null;
+    return episodes[currentEpisodeIndex + 1];
+  }, [hasNextEpisode, episodes, currentEpisodeIndex]);
+
   useEffect(() => {
     if (itemDetail?.UserData?.PlaybackPositionTicks !== undefined) {
       const startTimeMs = Math.round(itemDetail.UserData.PlaybackPositionTicks / 10000);
@@ -139,32 +172,38 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [itemDetail, currentTime]);
 
   useEffect(() => {
-    StatusBar.setStatusBarHidden(true, 'none');
-    (async () => {
-      try {
-        if (Platform.OS === 'android') {
-          NavigationBar.setVisibilityAsync('hidden');
-        }
-        await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
-      } catch (e) {
-        console.warn('Failed to lock orientation', e);
-      }
-    })();
+    setCurrentItemId(itemId);
+  }, [itemId]);
 
-    return () => {
-      StatusBar.setStatusBarHidden(false);
+  useFocusEffect(
+    useCallback(() => {
+      StatusBar.setStatusBarHidden(true, 'none');
       (async () => {
         try {
           if (Platform.OS === 'android') {
-            NavigationBar.setVisibilityAsync('visible');
+            NavigationBar.setVisibilityAsync('hidden');
           }
-          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+          await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
         } catch (e) {
-          console.warn('Failed to unlock orientation', e);
+          console.warn('Failed to lock orientation', e);
         }
       })();
-    };
-  }, []);
+
+      return () => {
+        StatusBar.setStatusBarHidden(false);
+        (async () => {
+          try {
+            if (Platform.OS === 'android') {
+              NavigationBar.setVisibilityAsync('visible');
+            }
+            await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+          } catch (e) {
+            console.warn('Failed to unlock orientation', e);
+          }
+        })();
+      };
+    }, []),
+  );
 
   useEffect(() => {
     (async () => {
@@ -231,6 +270,31 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }));
   }, []);
 
+  const resetPlayerState = useCallback(() => {
+    setIsPlaying(false);
+    setIsBuffering(true);
+    setIsLoaded(false);
+    setIsStopped(false);
+    setSeekTime(0);
+    setInitialTime(-1);
+    setMediaInfo(null);
+    currentTime.value = 0;
+  }, [currentTime]);
+
+  const handlePreviousEpisode = useCallback(() => {
+    if (previousEpisode?.Id) {
+      setCurrentItemId(previousEpisode.Id);
+      resetPlayerState();
+    }
+  }, [previousEpisode, resetPlayerState]);
+
+  const handleNextEpisode = useCallback(() => {
+    if (nextEpisode?.Id) {
+      setCurrentItemId(nextEpisode.Id);
+      resetPlayerState();
+    }
+  }, [nextEpisode, resetPlayerState]);
+
   return (
     <View style={styles.container}>
       {streamInfo?.url && initialTime >= 0 && (
@@ -261,6 +325,17 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             setIsLoaded(true);
             setMediaInfo(mediaInfo);
           }}
+          onEndReached={() => {
+            setIsPlaying(false);
+            setIsStopped(true);
+            syncPlaybackProgress(currentTime.value, true);
+
+            if (hasNextEpisode) {
+              setTimeout(() => {
+                handleNextEpisode();
+              }, 1000);
+            }
+          }}
           onEncounteredError={(error) => {
             console.warn('Encountered error', error);
 
@@ -270,7 +345,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       )}
       {showLoading && <LoadingIndicator />}
 
-      {comments.length > 0 && (
+      {comments.length > 0 && initialTime >= 0 && (
         <DanmakuLayer
           currentTime={currentTime}
           isPlaying={!showLoading && !isStopped && isPlaying}
@@ -291,6 +366,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         selectedTracks={selectedTracks}
         onAudioTrackChange={handleAudioTrackChange}
         onSubtitleTrackChange={handleSubtitleTrackChange}
+        hasPreviousEpisode={hasPreviousEpisode}
+        hasNextEpisode={hasNextEpisode}
+        onPreviousEpisode={handlePreviousEpisode}
+        onNextEpisode={handleNextEpisode}
       />
     </View>
   );
@@ -300,6 +379,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
+    alignItems: 'center',
+    justifyContent: 'center',
   },
   titleContainer: {
     position: 'absolute',
@@ -322,9 +403,8 @@ const styles = StyleSheet.create({
   },
   video: {
     flex: 1,
-    width: '100%',
-    height: '100%',
     backgroundColor: '#000',
+    aspectRatio: 16 / 9,
   },
   backButton: {
     position: 'absolute',
