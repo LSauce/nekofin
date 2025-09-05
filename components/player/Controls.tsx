@@ -6,7 +6,14 @@ import { BlurView } from 'expo-blur';
 import { MediaTracks, Tracks } from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
-import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import {
+  ActivityIndicator,
+  Dimensions,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+} from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
@@ -17,6 +24,18 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+
+const formatTime = (time: number) => {
+  const hours = Math.floor(time / 3600000);
+  const minutes = Math.floor((time % 3600000) / 60000);
+  const seconds = Math.floor((time % 60000) / 1000);
+
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+};
 
 type ControlsProps = {
   title: string;
@@ -59,6 +78,7 @@ export function Controls({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const [isGestureSeekingActive, setIsGestureSeekingActive] = useState(false);
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -66,27 +86,43 @@ export function Controls({
   const minimumValue = useSharedValue(0);
   const maximumValue = useSharedValue(1);
 
+  const gestureSeekPreview = useSharedValue(0);
+
   const audioTracks =
     mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
   const subtitleTracks =
     mediaTracks?.subtitle.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
 
-  const formatTime = (time: number) => {
-    const hours = Math.floor(time / 3600000);
-    const minutes = Math.floor((time % 3600000) / 60000);
-    const seconds = Math.floor((time % 60000) / 1000);
-
-    if (hours > 0) {
-      return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    } else {
-      return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-    }
-  };
-
   const fadeAnimatedStyle = useAnimatedStyle(() => {
     return {
       opacity: fadeAnim.value,
     };
+  });
+
+  const [previewTimeDisplay, setPreviewTimeDisplay] = useState('00:00');
+
+  const seekPreviewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isGestureSeekingActive ? 1 : 0, { duration: 150 }),
+    };
+  });
+
+  useDerivedValue(() => {
+    if (isGestureSeekingActive) {
+      const time = gestureSeekPreview.value;
+      const hours = Math.floor(time / 3600000);
+      const minutes = Math.floor((time % 3600000) / 60000);
+      const seconds = Math.floor((time % 60000) / 1000);
+
+      let formattedTime: string;
+      if (hours > 0) {
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      runOnJS(setPreviewTimeDisplay)(formattedTime);
+    }
   });
 
   const showControlsWithTimeout = () => {
@@ -99,7 +135,7 @@ export function Controls({
 
     if (!menuOpen) {
       controlsTimeout.current = setTimeout(() => {
-        if (!isDragging && !menuOpen) {
+        if (!isDragging && !menuOpen && !isGestureSeekingActive) {
           fadeAnim.value = withTiming(0, { duration: 300 }, () => {
             runOnJS(setShowControls)(false);
           });
@@ -118,13 +154,13 @@ export function Controls({
     }
 
     controlsTimeout.current = setTimeout(() => {
-      if (!isDragging && !menuOpen) {
+      if (!isDragging && !menuOpen && !isGestureSeekingActive) {
         fadeAnim.value = withTiming(0, { duration: 300 }, () => {
           runOnJS(setShowControls)(false);
         });
       }
     }, 3000);
-  }, [fadeAnim, isDragging, menuOpen]);
+  }, [fadeAnim, isDragging, menuOpen, isGestureSeekingActive]);
 
   useEffect(() => {
     // hide controls when first loaded
@@ -150,12 +186,15 @@ export function Controls({
     }
   });
 
-  const handleSeek = (position: number) => {
-    if (!duration) return;
-    const clampedTime = Math.max(0, Math.min(position, duration));
-    const newPosition = duration > 0 ? clampedTime / duration : 0;
-    onSeek(newPosition);
-  };
+  const handleSeek = useCallback(
+    (position: number) => {
+      if (!duration) return;
+      const clampedTime = Math.max(0, Math.min(position, duration));
+      const newPosition = duration > 0 ? clampedTime / duration : 0;
+      onSeek(newPosition);
+    },
+    [duration, onSeek],
+  );
 
   const handleSliderChange = (value: number) => {
     if (!duration) return;
@@ -213,6 +252,66 @@ export function Controls({
     handlePlayPause();
   };
 
+  const screenWidth = Dimensions.get('window').width;
+
+  const gestureSeekStartTime = useSharedValue(0);
+  const gestureSeekOffset = useSharedValue(0);
+
+  const handleGestureSeekStart = useCallback(() => {
+    setIsGestureSeekingActive(true);
+    setShowControls(true);
+  }, []);
+
+  const handleGestureSeekEnd = useCallback(
+    (finalTime: number) => {
+      handleSeek(finalTime);
+      setIsGestureSeekingActive(false);
+      hideControlsWithDelay();
+    },
+    [handleSeek, hideControlsWithDelay],
+  );
+
+  const panGesture = Gesture.Pan()
+    .minDistance(50)
+    .activeOffsetX([-30, 30])
+    .failOffsetY([-30, 30])
+    .maxPointers(1)
+    .onBegin(() => {
+      gestureSeekStartTime.value = currentTime.value;
+      gestureSeekOffset.value = 0;
+      gestureSeekPreview.value = currentTime.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      if (!duration) return;
+
+      const deltaX = event.translationX;
+      const deltaY = event.translationY;
+
+      if (Math.abs(deltaX) <= Math.abs(deltaY) * 2) {
+        return;
+      }
+
+      if (!isGestureSeekingActive) {
+        runOnJS(handleGestureSeekStart)();
+      }
+
+      const progressRatio = deltaX / screenWidth;
+      const timeChange = progressRatio * 90000;
+
+      gestureSeekOffset.value = timeChange;
+      const newTime = Math.max(0, Math.min(duration, gestureSeekStartTime.value + timeChange));
+
+      gestureSeekPreview.value = newTime;
+    })
+    .onEnd(() => {
+      'worklet';
+      if (!duration) return;
+
+      const finalTime = gestureSeekPreview.value;
+      runOnJS(handleGestureSeekEnd)(finalTime);
+    });
+
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .maxDuration(300)
@@ -225,13 +324,14 @@ export function Controls({
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
     .maxDuration(300)
+    .maxDelay(200)
     .onEnd((_event, success) => {
       if (success) {
         runOnJS(handleDoubleTap)();
       }
     });
 
-  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture);
+  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture, panGesture);
 
   useEffect(() => {
     return () => {
@@ -351,14 +451,14 @@ export function Controls({
               onPress={hasPreviousEpisode ? onPreviousEpisode : undefined}
               disabled={!hasPreviousEpisode}
             >
-              <AntDesign
-                name="stepbackward"
-                size={20}
+              <Entypo
+                name="controller-jump-to-start"
+                size={24}
                 color={hasPreviousEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
               />
             </TouchableOpacity>
 
-            <TouchableOpacity style={styles.playPauseButton} onPress={handlePlayPause}>
+            <TouchableOpacity style={styles.episodeButton} onPress={handlePlayPause}>
               {isLoading ? (
                 <ActivityIndicator size="small" color="#fff" />
               ) : (
@@ -375,9 +475,9 @@ export function Controls({
               onPress={hasNextEpisode ? onNextEpisode : undefined}
               disabled={!hasNextEpisode}
             >
-              <AntDesign
-                name="stepforward"
-                size={20}
+              <Entypo
+                name="controller-next"
+                size={24}
                 color={hasNextEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
               />
             </TouchableOpacity>
@@ -410,6 +510,11 @@ export function Controls({
             <Text style={styles.timeText}>{formatTime(duration)}</Text>
           </View>
         </View>
+      </Animated.View>
+      <Animated.View style={[styles.seekPreviewContainer, seekPreviewAnimatedStyle]}>
+        <BlurView tint="dark" intensity={100} style={styles.seekPreviewBlur}>
+          <Text style={styles.seekPreviewText}>{previewTimeDisplay}</Text>
+        </BlurView>
       </Animated.View>
       <GestureDetector gesture={composed}>
         <Animated.View style={styles.touchOverlay} />
@@ -546,22 +651,9 @@ const styles = StyleSheet.create({
     fontSize: 14,
     fontWeight: '500',
   },
-  playPauseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playPauseText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
   episodeButton: {
-    width: 20,
-    height: 20,
-    borderRadius: 20,
+    width: 32,
+    height: 32,
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -592,5 +684,26 @@ const styles = StyleSheet.create({
     color: '#fff',
     fontSize: 14,
     fontWeight: '500',
+  },
+  seekPreviewContainer: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -60 }, { translateY: -25 }],
+    zIndex: 15,
+  },
+  seekPreviewBlur: {
+    borderRadius: 12,
+    overflow: 'hidden',
+    paddingHorizontal: 16,
+    paddingVertical: 8,
+    minWidth: 120,
+    alignItems: 'center',
+  },
+  seekPreviewText: {
+    color: '#fff',
+    fontSize: 16,
+    fontWeight: '600',
+    textAlign: 'center',
   },
 });
