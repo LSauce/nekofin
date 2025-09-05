@@ -7,8 +7,7 @@ import { StyleSheet, useWindowDimensions, View } from 'react-native';
 import { SharedValue } from 'react-native-reanimated';
 
 import { Bullet } from './Bullet';
-import { DanmakuSettingsType } from './DanmakuSettings';
-import { ActiveBullet } from './DanmakuTypes';
+import { ActiveBullet, DanmakuSettingsType } from './DanmakuTypes';
 
 type DanmakuLayerProps = {
   currentTime: SharedValue<number>;

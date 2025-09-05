@@ -1,9 +1,9 @@
 import { useCurrentTime } from '@/hooks/useCurrentTime';
-import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
+import { MediaTracks, Tracks } from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
@@ -18,8 +18,6 @@ import Animated, {
   withTiming,
 } from 'react-native-reanimated';
 
-import { DanmakuSettings } from './DanmakuSettings';
-
 type ControlsProps = {
   title: string;
   isPlaying: boolean;
@@ -28,6 +26,10 @@ type ControlsProps = {
   currentTime: SharedValue<number>;
   onSeek: (position: number) => void;
   onPlayPause: () => void;
+  mediaTracks?: MediaTracks;
+  selectedTracks?: Tracks;
+  onAudioTrackChange?: (trackIndex: number) => void;
+  onSubtitleTrackChange?: (trackIndex: number) => void;
 };
 
 export function Controls({
@@ -38,10 +40,13 @@ export function Controls({
   onSeek,
   title,
   onPlayPause,
+  mediaTracks,
+  selectedTracks,
+  onAudioTrackChange,
+  onSubtitleTrackChange,
 }: ControlsProps) {
   const currentTimeMs = useCurrentTime({ time: currentTime });
   const router = useRouter();
-  const { settings: danmakuSettings, setSettings: setDanmakuSettings } = useDanmakuSettings();
 
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -53,6 +58,11 @@ export function Controls({
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const minimumValue = useSharedValue(0);
   const maximumValue = useSharedValue(1);
+
+  const audioTracks =
+    mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
+  const subtitleTracks =
+    mediaTracks?.subtitle.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
 
   const formatTime = (time: number) => {
     const hours = Math.floor(time / 3600000);
@@ -175,6 +185,14 @@ export function Controls({
     setSettingsVisible(true);
   };
 
+  const handleAudioTrackSelect = (trackIndex: number) => {
+    onAudioTrackChange?.(trackIndex);
+  };
+
+  const handleSubtitleTrackSelect = (trackIndex: number) => {
+    onSubtitleTrackChange?.(trackIndex);
+  };
+
   const handleSingleTap = () => {
     if (menuOpen) {
       return;
@@ -244,10 +262,55 @@ export function Controls({
               const key = nativeEvent.event;
               if (key === 'danmaku') {
                 handleDanmakuSettingsPress();
+              } else if (key.startsWith('audio_')) {
+                const trackIndex = parseInt(key.replace('audio_', ''));
+                handleAudioTrackSelect(trackIndex);
+              } else if (key.startsWith('subtitle_')) {
+                const trackIndex = parseInt(key.replace('subtitle_', ''));
+                handleSubtitleTrackSelect(trackIndex);
               }
               setMenuOpen(false);
             }}
-            actions={[{ id: 'danmaku', title: '弹幕设置' }]}
+            actions={[
+              ...(audioTracks.length > 0
+                ? [
+                    {
+                      id: 'audio',
+                      title: '音轨选择',
+                      subactions: audioTracks.map((track) => ({
+                        id: `audio_${track.id}`,
+                        title: track.name,
+                        state:
+                          selectedTracks?.audio === track.id ? ('on' as const) : ('off' as const),
+                      })),
+                    },
+                  ]
+                : []),
+              ...(subtitleTracks.length > 0
+                ? [
+                    {
+                      id: 'subtitle',
+                      title: '字幕选择',
+                      subactions: [
+                        {
+                          id: 'subtitle_-1',
+                          title: '关闭字幕',
+                          state:
+                            selectedTracks?.subtitle === -1 ? ('on' as const) : ('off' as const),
+                        },
+                        ...subtitleTracks.map((track) => ({
+                          id: `subtitle_${track.id}`,
+                          title: track.name,
+                          state:
+                            selectedTracks?.subtitle === track.id
+                              ? ('on' as const)
+                              : ('off' as const),
+                        })),
+                      ],
+                    },
+                  ]
+                : []),
+            ]}
           >
             <TouchableOpacity
               style={styles.danmakuButtonTouchable}
@@ -313,7 +376,6 @@ export function Controls({
                 maximumTrackTintColor: 'rgba(255, 255, 255, 0.3)',
               }}
               disableTapEvent={false}
-              disableTrackFollow
             />
           </View>
           <View style={styles.timeContainer}>
@@ -324,13 +386,6 @@ export function Controls({
       <GestureDetector gesture={composed}>
         <Animated.View style={styles.touchOverlay} />
       </GestureDetector>
-
-      <DanmakuSettings
-        visible={settingsVisible}
-        settings={danmakuSettings}
-        onSettingsChange={setDanmakuSettings}
-        onClose={() => setSettingsVisible(false)}
-      />
     </Fragment>
   );
 }

@@ -1,15 +1,15 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
-import { type DandanComment } from '@/services/dandanplay';
-import { createApiFromServerInfo, getItemDetail } from '@/services/jellyfin';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
+import { getItemDetail, getItemMediaSources } from '@/services/jellyfin';
+import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
   LibVlcPlayerView,
   LibVlcPlayerViewRef,
   Position,
   type MediaInfo,
+  type Tracks,
 } from 'expo-libvlc-player';
 import * as NavigationBar from 'expo-navigation-bar';
 import * as ScreenOrientation from 'expo-screen-orientation';
@@ -31,21 +31,7 @@ const LoadingIndicator = () => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
-  const [videoSource, setVideoSource] = useState<string | null>(null);
-  const [itemDetail, setItemDetail] = useState<BaseItemDto | null>(null);
-  const [comments, setComments] = useState<DandanComment[]>([]);
-
   const { currentServer, currentApi: api } = useMediaServers();
-
-  const player = useRef<LibVlcPlayerViewRef>(null);
-  const currentTime = useSharedValue(0);
-
-  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
-    api,
-    currentServer,
-    itemDetail,
-    currentTime,
-  });
 
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -54,10 +40,73 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
+  const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>({
+    audio: 4,
+    subtitle: -1,
+  });
+
+  const player = useRef<LibVlcPlayerViewRef>(null);
+  const currentTime = useSharedValue(0);
+
+  const { data: itemDetail } = useQuery({
+    queryKey: ['itemDetail', itemId, currentServer?.userId],
+    queryFn: async () => {
+      if (!api || !currentServer) return null;
+      const response = await getItemDetail(api, itemId, currentServer.userId);
+      return response.data;
+    },
+    enabled: !!api && !!itemId && !!currentServer,
+  });
+
+  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
+    api,
+    currentServer,
+    itemDetail: itemDetail ?? null,
+    currentTime,
+  });
+
+  const { data: seriesInfo } = useQuery({
+    queryKey: ['seriesInfo', itemDetail?.SeriesId, currentServer?.userId],
+    queryFn: async () => {
+      if (!api || !currentServer || !itemDetail?.SeriesId) return null;
+      const response = await getItemDetail(api, itemDetail.SeriesId, currentServer.userId);
+      return response.data;
+    },
+    enabled: !!api && !!itemDetail?.SeriesId && !!currentServer,
+  });
+
+  const { data: comments = [] } = useQuery({
+    queryKey: ['comments', itemDetail?.Id, seriesInfo?.OriginalTitle],
+    queryFn: async () => {
+      if (!itemDetail || !seriesInfo?.OriginalTitle) return [];
+      try {
+        return await getCommentsByItem(itemDetail, seriesInfo.OriginalTitle);
+      } catch (error) {
+        console.warn('Failed to load danmaku comments:', error);
+        return [];
+      }
+    },
+    enabled: !!itemDetail && !!seriesInfo?.OriginalTitle,
+  });
+
+  const { data: streamInfo } = useQuery({
+    queryKey: ['streamInfo', itemId, currentServer?.userId],
+    queryFn: async () => {
+      if (!api || !currentServer || !itemDetail) return null;
+      return await getStreamInfo({
+        api,
+        itemId,
+        userId: currentServer.userId,
+        deviceProfile: generateDeviceProfile(),
+        startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks,
+      });
+    },
+    enabled: !!api && !!currentServer && !!itemDetail,
+  });
 
   const showLoading = useMemo(() => {
-    return isBuffering || !videoSource || !isLoaded;
-  }, [isBuffering, videoSource, isLoaded]);
+    return isBuffering || !streamInfo?.url || !isLoaded;
+  }, [isBuffering, streamInfo?.url, isLoaded]);
 
   const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
@@ -82,9 +131,20 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [itemDetail]);
 
   useEffect(() => {
+    if (itemDetail?.UserData?.PlaybackPositionTicks !== undefined) {
+      const startTimeMs = Math.round(itemDetail.UserData.PlaybackPositionTicks / 10000);
+      setInitialTime(startTimeMs);
+      currentTime.value = startTimeMs;
+    }
+  }, [itemDetail, currentTime]);
+
+  useEffect(() => {
     StatusBar.setStatusBarHidden(true, 'none');
     (async () => {
       try {
+        if (Platform.OS === 'android') {
+          NavigationBar.setVisibilityAsync('hidden');
+        }
         await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
       } catch (e) {
         console.warn('Failed to lock orientation', e);
@@ -95,6 +155,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       StatusBar.setStatusBarHidden(false);
       (async () => {
         try {
+          if (Platform.OS === 'android') {
+            NavigationBar.setVisibilityAsync('visible');
+          }
           await ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
         } catch (e) {
           console.warn('Failed to unlock orientation', e);
@@ -102,45 +165,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       })();
     };
   }, []);
-
-  useEffect(() => {
-    if (!api || !itemId || !currentServer) return;
-
-    (async () => {
-      const itemDetail = await getItemDetail(api, itemId, currentServer.userId);
-      const seriesInfo = await getItemDetail(
-        api,
-        itemDetail.data.SeriesId ?? '',
-        currentServer.userId,
-      );
-      setItemDetail(itemDetail.data);
-
-      if (itemDetail.data.UserData?.PlaybackPositionTicks !== undefined) {
-        const startTimeMs = Math.round(itemDetail.data.UserData.PlaybackPositionTicks / 10000);
-        setInitialTime(startTimeMs);
-        currentTime.value = startTimeMs;
-      }
-
-      const streamInfo = await getStreamInfo({
-        api,
-        itemId,
-        userId: currentServer.userId,
-        deviceProfile: generateDeviceProfile(),
-        startTimeTicks: itemDetail.data.UserData?.PlaybackPositionTicks,
-      });
-
-      if (streamInfo) {
-        setVideoSource(streamInfo.url);
-      }
-
-      try {
-        const comments = await getCommentsByItem(itemDetail.data, seriesInfo.data.OriginalTitle);
-        setComments(comments ?? []);
-      } catch (error) {
-        console.warn('Failed to load danmaku comments:', error);
-      }
-    })();
-  }, [api, itemId, currentServer, currentTime]);
 
   useEffect(() => {
     (async () => {
@@ -151,23 +175,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       }
     })();
   }, [isPlaying]);
-
-  useEffect(() => {
-    if (Platform.OS === 'android') {
-      NavigationBar.setVisibilityAsync('hidden');
-      return () => {
-        NavigationBar.setVisibilityAsync('visible');
-      };
-    }
-  }, []);
-
-  useEffect(() => {
-    return () => {
-      if (bufferingTimeoutRef.current) {
-        clearTimeout(bufferingTimeoutRef.current);
-      }
-    };
-  }, []);
 
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -210,20 +217,34 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     [currentTime, duration, isPlaying, syncPlaybackProgress],
   );
 
+  const handleAudioTrackChange = useCallback((trackIndex: number) => {
+    setSelectedTracks((prev) => ({
+      ...prev,
+      audio: trackIndex,
+    }));
+  }, []);
+
+  const handleSubtitleTrackChange = useCallback((trackIndex: number) => {
+    setSelectedTracks((prev) => ({
+      ...prev,
+      subtitle: trackIndex >= 0 ? trackIndex : undefined,
+    }));
+  }, []);
+
   return (
     <View style={styles.container}>
-      {videoSource && initialTime >= 0 && (
+      {streamInfo?.url && initialTime >= 0 && (
         <LibVlcPlayerView
           ref={player}
           style={styles.video}
-          source={videoSource}
+          source={streamInfo.url}
           options={['network-caching=1000']}
           autoplay={true}
           time={initialTime}
+          tracks={selectedTracks}
           onBuffering={handleBuffering}
           onPlaying={() => {
             setIsBuffering(false);
-            // setIsPlaying(true);
             setIsStopped(false);
 
             syncPlaybackStart(currentTime.value);
@@ -266,6 +287,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onSeek={handleSeek}
         title={formattedTitle}
         onPlayPause={handlePlayPause}
+        mediaTracks={mediaInfo?.tracks}
+        selectedTracks={selectedTracks}
+        onAudioTrackChange={handleAudioTrackChange}
+        onSubtitleTrackChange={handleSubtitleTrackChange}
       />
     </View>
   );
