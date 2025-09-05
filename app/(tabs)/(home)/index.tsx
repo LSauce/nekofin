@@ -9,7 +9,6 @@ import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
-  createApiFromServerInfo,
   getLatestItemsByFolder,
   getNextUpItems,
   getResumeItems,
@@ -19,7 +18,7 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect, useMemo } from 'react';
+import { useCallback, useEffect } from 'react';
 import { Platform, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -185,54 +184,81 @@ export default function HomeScreen() {
       style={{ flex: 1, backgroundColor }}
       refreshControl={<RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />}
     >
-      {sectionsQuery.data?.map((section) => {
-        if (section.type === 'userview') {
-          return <UserViewSection key={section.key} userView={section.items} />;
-        }
-        if (section.type === 'resume') {
-          return (
-            <Section
-              key={section.key}
-              title={section.title}
-              onViewAll={() => router.push('/viewall/resume')}
-              items={section.items}
-              isLoading={sectionsQuery.isLoading}
-            />
-          );
-        }
-        if (section.type === 'nextup') {
-          return (
-            <Section
-              key={section.key}
-              title={section.title}
-              onViewAll={() => router.push('/viewall/nextup')}
-              items={section.items}
-              isLoading={sectionsQuery.isLoading}
-            />
-          );
-        }
-        // latest by folder
-        const folderId = section.key.replace('latest_', '');
-        return (
+      {sectionsQuery.isLoading ? (
+        <>
+          <UserViewSection userView={[]} isLoading={true} />
           <Section
-            key={section.key}
-            title={section.title}
-            onViewAll={() =>
-              router.push({
-                pathname: '/viewall/[type]',
-                params: {
-                  folderId,
-                  folderName: section.title.replace('最近添加的 ', ''),
-                  type: 'latest',
-                },
-              })
-            }
-            items={section.items}
-            isLoading={sectionsQuery.isLoading}
+            key="skeleton-resume"
+            title=""
+            onViewAll={() => {}}
+            items={[]}
+            isLoading={true}
+          />
+          <Section
+            key="skeleton-nextup"
+            title=""
+            onViewAll={() => {}}
+            items={[]}
+            isLoading={true}
+          />
+          <Section
+            key="skeleton-latest"
+            title=""
+            onViewAll={() => {}}
+            items={[]}
+            isLoading={true}
             type="series"
           />
-        );
-      })}
+        </>
+      ) : (
+        sectionsQuery.data?.map((section) => {
+          if (section.type === 'userview') {
+            return <UserViewSection key={section.key} userView={section.items} />;
+          }
+          if (section.type === 'resume') {
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() => router.push('/viewall/resume')}
+                items={section.items}
+                isLoading={false}
+              />
+            );
+          }
+          if (section.type === 'nextup') {
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() => router.push('/viewall/nextup')}
+                items={section.items}
+                isLoading={false}
+              />
+            );
+          }
+          const folderId = section.key.replace('latest_', '');
+          return (
+            <Section
+              key={section.key}
+              title={section.title}
+              onViewAll={() =>
+                router.push({
+                  pathname: '/viewall/[type]',
+                  params: {
+                    folderId,
+                    folderName: section.title.replace('最近添加的 ', ''),
+                    type: 'latest',
+                  },
+                })
+              }
+              items={section.items}
+              isLoading={false}
+              type="series"
+            />
+          );
+        })
+      )}
     </PageScrollView>
   );
 }

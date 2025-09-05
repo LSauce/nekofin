@@ -2,11 +2,33 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
+import { SkeletonUserViewCard } from '../ui/Skeleton';
 import { UserViewCard } from './UserViewCard';
 
-export const UserViewSection = ({ userView }: { userView: BaseItemDto[] }) => {
+export const UserViewSection = ({
+  userView,
+  isLoading,
+}: {
+  userView: BaseItemDto[];
+  isLoading?: boolean;
+}) => {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const userViewItems = userView || [];
+
+  if (isLoading) {
+    return (
+      <View style={[styles.userViewSection, { backgroundColor }]}>
+        <FlatList
+          data={Array.from({ length: 3 })}
+          horizontal
+          keyExtractor={(_, index) => `skeleton-${index}`}
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.userViewContainer}
+          renderItem={() => <SkeletonUserViewCard />}
+        />
+      </View>
+    );
+  }
 
   if (userViewItems.length === 0) {
     return (

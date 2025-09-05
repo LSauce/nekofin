@@ -1,4 +1,4 @@
-import SeriesDetailView from '@/components/media/SeriesDetailView';
+import SeriesDetailView from '@/components/detailview';
 import { useLocalSearchParams } from 'expo-router';
 
 export default function MovieDetailPage() {

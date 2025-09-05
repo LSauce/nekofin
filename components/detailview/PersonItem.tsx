@@ -1,8 +1,9 @@
 import { getImageInfo } from '@/lib/utils/image';
 import { BaseItemPerson } from '@jellyfin/sdk/lib/generated-client/models/base-item-person';
 import { Image } from 'expo-image';
-import { StyleSheet, Text, View } from 'react-native';
+import { StyleSheet, View } from 'react-native';
 
+import { ThemedText } from '../ThemedText';
 import { IconSymbol } from '../ui/IconSymbol';
 
 export const PersonItem = ({ item }: { item: BaseItemPerson }) => {
@@ -27,13 +28,13 @@ export const PersonItem = ({ item }: { item: BaseItemPerson }) => {
           <IconSymbol name="person.crop.rectangle" size={36} color="#bbb" />
         </View>
       )}
-      <Text style={styles.personName} numberOfLines={1}>
+      <ThemedText style={styles.personName} numberOfLines={1}>
         {item.Name}
-      </Text>
+      </ThemedText>
       {!!item.Role && (
-        <Text style={styles.personRole} numberOfLines={1}>
+        <ThemedText style={styles.personRole} numberOfLines={1}>
           {item.Role}
-        </Text>
+        </ThemedText>
       )}
     </View>
   );

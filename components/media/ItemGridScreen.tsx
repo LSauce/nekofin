@@ -6,7 +6,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { getAvailableFilters } from '@/services/jellyfin';
-import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { BaseItemDto, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
 import { useNavigation } from 'expo-router';
 import React, { useEffect, useMemo } from 'react';
@@ -22,7 +22,9 @@ import {
 } from 'react-native';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
+import PageScrollView from '../PageScrollView';
 import { FilterButton } from '../ui/FilterButton';
+import { SkeletonItemGrid } from '../ui/Skeleton';
 
 export type ItemGridScreenProps = {
   title: string;
@@ -120,11 +122,9 @@ export function ItemGridScreen({
 
   if (isLoading) {
     return (
-      <View style={[styles.container, { backgroundColor, paddingTop: insets.top }]}>
-        <View style={styles.loadingContainer}>
-          <ActivityIndicator size="large" color={accentColor} />
-        </View>
-      </View>
+      <PageScrollView style={[styles.container, { backgroundColor }]}>
+        <SkeletonItemGrid type={type} numColumns={numColumns} itemWidth={itemWidth} gap={gap} />
+      </PageScrollView>
     );
   }
 

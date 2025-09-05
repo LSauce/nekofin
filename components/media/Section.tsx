@@ -3,6 +3,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
+import { SkeletonCard, SkeletonSectionHeader } from '../ui/Skeleton';
 import { MediaCard, SeriesCard } from './Card';
 
 export function Section({
@@ -23,19 +24,27 @@ export function Section({
 
   return (
     <View style={[styles.section, { backgroundColor }]}>
-      <View style={styles.sectionHeader}>
-        <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
-        <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
-          <Text style={styles.viewAllText}>查看所有</Text>
-          <MaterialIcons name="keyboard-arrow-right" size={20} color={styles.viewAllText.color} />
-        </TouchableOpacity>
-      </View>
-      {isLoading && (
-        <View style={styles.loadingContainer}>
-          <Text style={styles.loadingText}>加载中...</Text>
+      {isLoading ? (
+        <SkeletonSectionHeader />
+      ) : (
+        <View style={styles.sectionHeader}>
+          <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
+          <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
+            <Text style={styles.viewAllText}>查看所有</Text>
+            <MaterialIcons name="keyboard-arrow-right" size={20} color={styles.viewAllText.color} />
+          </TouchableOpacity>
         </View>
       )}
-      {!isLoading && items.length > 0 ? (
+      {isLoading ? (
+        <FlatList
+          data={Array.from({ length: 5 })}
+          horizontal
+          showsHorizontalScrollIndicator={false}
+          contentContainerStyle={styles.sectionListContent}
+          renderItem={() => <SkeletonCard type={type} />}
+          keyExtractor={(_, index) => `skeleton-${index}`}
+        />
+      ) : items.length > 0 ? (
         <FlatList
           data={items}
           horizontal
@@ -47,11 +56,9 @@ export function Section({
           keyExtractor={(item) => item.Id!}
         />
       ) : (
-        !isLoading && (
-          <View style={styles.emptyContainer}>
-            <Text style={styles.emptyText}>暂无内容</Text>
-          </View>
-        )
+        <View style={styles.emptyContainer}>
+          <Text style={styles.emptyText}>暂无内容</Text>
+        </View>
       )}
     </View>
   );
