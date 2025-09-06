@@ -84,6 +84,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       }
     },
     enabled: !!itemDetail && !!seriesInfo?.OriginalTitle,
+    staleTime: 1000 * 60 * 5,
   });
 
   const { data: streamInfo } = useQuery({
@@ -344,8 +345,8 @@ const styles = StyleSheet.create({
   container: {
     flex: 1,
     backgroundColor: '#000',
-    alignItems: 'center',
-    justifyContent: 'center',
+    height: '100%',
+    width: '100%',
   },
   titleContainer: {
     position: 'absolute',
@@ -367,9 +368,8 @@ const styles = StyleSheet.create({
     elevation: 5,
   },
   video: {
-    flex: 1,
-    backgroundColor: '#000',
-    aspectRatio: 16 / 9,
+    height: '100%',
+    width: '100%',
   },
   backButton: {
     position: 'absolute',
