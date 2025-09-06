@@ -11,11 +11,9 @@ import {
   type MediaInfo,
   type Tracks,
 } from 'expo-libvlc-player';
-import * as NavigationBar from 'expo-navigation-bar';
 import { useRouter } from 'expo-router';
-import * as ScreenOrientation from 'expo-screen-orientation';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, Platform, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
 import { usePlaybackSync } from '../../hooks/usePlaybackSync';
@@ -42,6 +40,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
   const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>(undefined);
+  const [isBackground, setIsBackground] = useState(false);
 
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
@@ -269,6 +268,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           time={initialTime}
           tracks={selectedTracks}
           onBuffering={handleBuffering}
+          onBackground={() => {
+            setIsBackground(true);
+          }}
+          playInBackground
           onPlaying={() => {
             setIsBuffering(false);
             setIsStopped(false);
