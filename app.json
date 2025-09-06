@@ -9,6 +9,7 @@
     "userInterfaceStyle": "automatic",
     "newArchEnabled": false,
     "ios": {
+      "requireFullScreen": true,
       "supportsTablet": true,
       "bundleIdentifier": "com.lonzzi.nekofin",
       "infoPlist": {
