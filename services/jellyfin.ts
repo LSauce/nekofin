@@ -1,4 +1,3 @@
-import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
 import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
@@ -15,6 +14,8 @@ import {
   getUserLibraryApi,
   getUserViewsApi,
 } from '@jellyfin/sdk/lib/utils/api';
+
+import { MediaServerInfo } from './media/types';
 
 let jellyfin: Jellyfin | null = null;
 let apiInstance: Api | null = null;
@@ -233,6 +234,7 @@ export async function authenticateAndSaveServer(
       username: authResult.data.User.Name || username,
       userAvatar: `${normalizedAddress}/Users/${authResult.data.User.Id}/Images/Primary?quality=90`,
       accessToken: authResult.data.AccessToken,
+      type: 'jellyfin',
     };
 
     await addServer(serverInfo);

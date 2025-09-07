@@ -1,9 +1,9 @@
-import { MediaServerInfo } from '@/lib/contexts/MediaServerContext';
 import {
   reportPlaybackProgress,
   reportPlaybackStart,
   reportPlaybackStop,
 } from '@/services/jellyfin';
+import { MediaServerInfo } from '@/services/media/types';
 import { Api } from '@jellyfin/sdk';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
 import { useCallback, useEffect, useRef } from 'react';

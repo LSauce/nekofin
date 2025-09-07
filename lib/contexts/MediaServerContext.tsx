@@ -3,21 +3,11 @@ import {
   createApiFromServerInfo,
   setGlobalApiInstance,
 } from '@/services/jellyfin';
+import { MediaServerInfo } from '@/services/media/types';
 import { Api } from '@jellyfin/sdk';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { storage } from '../storage';
-
-export interface MediaServerInfo {
-  id: string;
-  address: string;
-  name: string;
-  userId: string;
-  username: string;
-  userAvatar: string;
-  accessToken: string;
-  createdAt: number;
-}
 
 interface MediaServerContextType {
   servers: MediaServerInfo[];

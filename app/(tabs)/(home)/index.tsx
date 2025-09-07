@@ -7,13 +7,14 @@ import { UserViewSection } from '@/components/userview/UserViewSection';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { MediaServerInfo, useMediaServers } from '@/lib/contexts/MediaServerContext';
+import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import {
   getLatestItemsByFolder,
   getNextUpItems,
   getResumeItems,
   getUserView,
 } from '@/services/jellyfin';
+import { MediaServerInfo } from '@/services/media/types';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
