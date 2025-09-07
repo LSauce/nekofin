@@ -1,6 +1,6 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getStreamInfo } from '@/lib/utils';
+import { getCommentsByItem, getDeviceId, getStreamInfo } from '@/lib/utils';
 import { getEpisodesBySeason, getItemDetail } from '@/services/jellyfin';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -93,10 +93,11 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       if (!api || !currentServer || !itemDetail) return null;
       return await getStreamInfo({
         api,
-        itemId: itemId,
+        item: itemDetail,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile(),
-        startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks,
+        startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks || 0,
+        deviceId: getDeviceId(),
       });
     },
     enabled: !!api && !!currentServer && !!itemDetail,
@@ -309,6 +310,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           }}
         />
       )}
+
       {showLoading && <LoadingIndicator />}
 
       {comments.length > 0 && initialTime >= 0 && (

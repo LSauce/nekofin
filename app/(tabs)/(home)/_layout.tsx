@@ -1,12 +1,10 @@
 import { GroupedStackRoutes } from '@/components/GroupedStackRoutes';
 import HeaderBackButton from '@/components/HeaderBackButton';
-import { usePlayerScreenOrientation } from '@/hooks/usePlayerScreenOrientation';
 import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
 export default function HomeLayout() {
-  usePlayerScreenOrientation();
   const backgroundColor = useColorScheme() === 'dark' ? 'black' : 'white';
 
   return (

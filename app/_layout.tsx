@@ -1,7 +1,6 @@
 import HeaderBackButton from '@/components/HeaderBackButton';
 import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { usePlayerScreenOrientation } from '@/hooks/usePlayerScreenOrientation';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
 import { MediaServerProvider } from '@/lib/contexts/MediaServerContext';
 import { ThemeColorProvider } from '@/lib/contexts/ThemeColorContext';
@@ -46,8 +45,6 @@ export default function RootLayout() {
     SpaceMono: require('../assets/fonts/SpaceMono-Regular.ttf'),
   });
 
-  usePlayerScreenOrientation();
-
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
@@ -80,6 +77,7 @@ export default function RootLayout() {
                       name="player"
                       options={{
                         headerShown: false,
+                        orientation: 'landscape',
                       }}
                     />
                     <Stack.Screen name="+not-found" />
