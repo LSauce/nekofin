@@ -13,13 +13,14 @@ import { RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
+import { EpisodeModeContent } from './episode';
 import { MovieModeContent } from './movie';
 import { SeasonModeContent } from './season';
 import { SeriesModeContent } from './series';
 
 export type DetailViewProps = {
   itemId: string;
-  mode: 'series' | 'season' | 'movie';
+  mode: 'series' | 'season' | 'movie' | 'episode';
 };
 
 export default function DetailView({ itemId, mode }: DetailViewProps) {
@@ -99,6 +100,39 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
   const logoImageInfo = getImageInfo(item, { preferLogo: true, width: 400 });
   const logoImageUrl = logoImageInfo.url;
 
+  const renderModeContent = () => {
+    const modeComponents = {
+      series: (
+        <SeriesModeContent
+          seasons={seasons}
+          nextUpItems={nextUpItems}
+          people={(item?.People ?? []).slice(0, 20)}
+          similarItems={similarShows}
+          item={item}
+        />
+      ),
+      season: <SeasonModeContent episodes={episodes} item={item} />,
+      movie: (
+        <MovieModeContent
+          people={(item?.People ?? []).slice(0, 20)}
+          similarItems={similarMovies}
+          item={item}
+        />
+      ),
+      episode: (
+        <EpisodeModeContent
+          seasons={seasons}
+          episodes={episodes}
+          item={item}
+          people={(item?.People ?? []).slice(0, 20)}
+          similarItems={similarMovies}
+        />
+      ),
+    };
+
+    return modeComponents[mode];
+  };
+
   return (
     <ParallaxScrollView
       enableMaskView
@@ -127,25 +161,11 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
             contentFit="contain"
           />
         )}
-        <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.Name}</Text>
-
-        {mode === 'series' ? (
-          <SeriesModeContent
-            seasons={seasons}
-            nextUpItems={nextUpItems}
-            people={(item?.People ?? []).slice(0, 20)}
-            similarItems={similarShows}
-            item={item}
-          />
-        ) : mode === 'season' ? (
-          <SeasonModeContent episodes={episodes} item={item} />
-        ) : (
-          <MovieModeContent
-            people={(item?.People ?? []).slice(0, 20)}
-            similarItems={similarMovies}
-            item={item}
-          />
+        {mode !== 'episode' && (
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.Name}</Text>
         )}
+
+        {renderModeContent()}
       </View>
     </ParallaxScrollView>
   );

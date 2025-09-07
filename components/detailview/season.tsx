@@ -7,7 +7,7 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text, TouchableOpacity, View } from 'react-native';
 
-import { MediaCard } from '../media/Card';
+import { EpisodeCard } from '../media/Card';
 import { ThemedText } from '../ThemedText';
 import { detailViewStyles, ItemOverview } from './common';
 
@@ -37,7 +37,7 @@ export const SeasonModeContent = ({
                 alignItems: 'center',
               }}
             >
-              <MediaCard
+              <EpisodeCard
                 key={item.Id}
                 item={item}
                 style={{ width: 140, marginRight: 0 }}

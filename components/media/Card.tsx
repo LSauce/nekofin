@@ -31,16 +31,18 @@ export const getSubtitle = (item: BaseItemDto) => {
   return item.Name;
 };
 
-export function MediaCard({
+export function EpisodeCard({
   item,
   style,
   hideText,
   imgType = 'Thumb',
+  onPress,
 }: {
   item: BaseItemDto;
   style?: StyleProp<ViewStyle>;
   hideText?: boolean;
   imgType?: ImageType;
+  onPress?: () => void;
 }) {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
@@ -70,9 +72,9 @@ export function MediaCard({
     }
 
     router.push({
-      pathname: '/player',
+      pathname: '/episode/[id]',
       params: {
-        itemId: item.Id,
+        id: item.Id,
       },
     });
   };
@@ -87,7 +89,7 @@ export function MediaCard({
   return (
     <TouchableOpacity
       style={[styles.card, { width: 200, backgroundColor }, style]}
-      onPress={handlePress}
+      onPress={onPress || handlePress}
     >
       {imageUrl ? (
         <View style={styles.coverContainer}>

@@ -1,48 +1,108 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { BaseItemDto, BaseItemPerson } from '@jellyfin/sdk/lib/generated-client';
-import { FlatList, Text, View } from 'react-native';
+import { useRouter } from 'expo-router';
+import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 import { EpisodeCard, SeriesCard } from '../media/Card';
-import { detailViewStyles, ItemInfoList, ItemMeta, ItemOverview } from './common';
+import { ThemedText } from '../ThemedText';
+import { detailViewStyles, ItemOverview } from './common';
 import { PersonItem } from './PersonItem';
 
-export const SeriesModeContent = ({
+export const EpisodeModeContent = ({
   seasons,
-  nextUpItems,
+  episodes = [],
   people,
   similarItems,
   item,
 }: {
   seasons: BaseItemDto[];
-  nextUpItems: BaseItemDto[];
+  episodes?: BaseItemDto[];
   people: BaseItemPerson[];
   similarItems: BaseItemDto[];
   item: BaseItemDto;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+  const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const router = useRouter();
+  const { accentColor } = useAccentColor();
+
+  const [selectedEpisode, setSelectedEpisode] = useState<BaseItemDto>(item ?? episodes[0]);
+  const flatListRef = useRef<FlatList<BaseItemDto>>(null);
+
+  const initialIndex = useMemo(() => {
+    return episodes.findIndex((e) => e.Id === selectedEpisode.Id);
+  }, [episodes, selectedEpisode]);
+
+  const scrollToIndex = useCallback((index: number) => {
+    if (flatListRef.current) {
+      flatListRef.current.scrollToIndex({ index, animated: true, viewOffset: 20 });
+    }
+  }, []);
+
+  useEffect(() => {
+    scrollToIndex(initialIndex);
+  }, [initialIndex, scrollToIndex]);
+
   return (
     <>
-      <ItemMeta item={item} />
-      <ItemOverview item={item} />
-      <ItemInfoList item={item} />
+      <View style={{ gap: 8 }}>
+        <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>
+          {selectedEpisode.Name}
+        </ThemedText>
+        <ThemedText style={{ fontSize: 14, color: subtitleColor }}>
+          {`${selectedEpisode.SeasonName} 第${selectedEpisode.IndexNumber}集`}
+        </ThemedText>
+      </View>
 
-      {nextUpItems.length > 0 && (
+      {!!selectedEpisode?.Id && (
+        <TouchableOpacity
+          onPress={() => {
+            router.push({ pathname: '/player', params: { itemId: selectedEpisode.Id! } });
+          }}
+          style={[detailViewStyles.playButton, { backgroundColor: accentColor }]}
+        >
+          <Text style={detailViewStyles.playButtonText}>播放</Text>
+        </TouchableOpacity>
+      )}
+
+      <ItemOverview item={selectedEpisode} />
+
+      {episodes && episodes.length > 0 && (
         <View style={detailViewStyles.sectionBlock}>
-          <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>接下来</Text>
+          <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>
+            更多来自 {selectedEpisode.SeasonName}
+          </Text>
           <FlatList
+            ref={flatListRef}
             horizontal
-            data={nextUpItems}
+            data={episodes}
             style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => (
-              <EpisodeCard item={item} style={detailViewStyles.horizontalCard} imgType="Primary" />
-            )}
+            onScrollToIndexFailed={() => {
+              setTimeout(() => {
+                scrollToIndex(initialIndex);
+              }, 50);
+            }}
+            renderItem={({ item: ep }) => {
+              const isSelected = ep.Id === selectedEpisode.Id;
+              return (
+                <EpisodeCard
+                  item={ep}
+                  style={[detailViewStyles.horizontalCard, { opacity: isSelected ? 1 : 0.8 }]}
+                  imgType="Primary"
+                  onPress={() => {
+                    setSelectedEpisode(ep);
+                  }}
+                />
+              );
+            }}
             keyExtractor={(item) => item.Id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
         </View>
       )}
-
       {seasons && seasons.length > 0 && (
         <View style={detailViewStyles.sectionBlock}>
           <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>季度</Text>

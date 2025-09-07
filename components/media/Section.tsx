@@ -4,7 +4,7 @@ import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonCard, SkeletonSectionHeader } from '../ui/Skeleton';
-import { MediaCard, SeriesCard } from './Card';
+import { EpisodeCard, SeriesCard } from './Card';
 
 export function Section({
   title,
@@ -51,7 +51,7 @@ export function Section({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.sectionListContent}
           renderItem={({ item }) =>
-            type === 'episode' ? <MediaCard item={item} /> : <SeriesCard item={item} />
+            type === 'episode' ? <EpisodeCard item={item} /> : <SeriesCard item={item} />
           }
           keyExtractor={(item) => item.Id!}
         />

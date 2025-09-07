@@ -169,7 +169,7 @@ export function SkeletonDetailHeader() {
 export function SkeletonDetailContent({
   mode = 'series',
 }: {
-  mode?: 'series' | 'season' | 'movie';
+  mode?: 'series' | 'season' | 'movie' | 'episode';
 }) {
   return (
     <View style={styles.detailContent}>
@@ -190,16 +190,17 @@ export function SkeletonDetailContent({
         <Skeleton width="75%" height={14} borderRadius={4} />
       </View>
 
-      {mode === 'movie' && (
-        <Skeleton width={120} height={44} borderRadius={8} style={styles.detailPlayButton} />
-      )}
+      {mode === 'movie' ||
+        (mode === 'episode' && (
+          <Skeleton width={120} height={44} borderRadius={8} style={styles.detailPlayButton} />
+        ))}
 
       <SkeletonHorizontalSection title="接下来" />
       <SkeletonHorizontalSection title="季度" />
       <SkeletonHorizontalSection title="演职人员" />
       <SkeletonHorizontalSection title="更多类似的" />
 
-      {mode === 'season' && <SkeletonEpisodeList />}
+      {mode === 'season' || (mode === 'episode' && <SkeletonEpisodeList />)}
     </View>
   );
 }

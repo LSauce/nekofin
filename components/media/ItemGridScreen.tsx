@@ -1,4 +1,4 @@
-import { MediaCard, SeriesCard } from '@/components/media/Card';
+import { EpisodeCard, SeriesCard } from '@/components/media/Card';
 import { useGridLayout } from '@/hooks/useGridLayout';
 import { MediaFilters } from '@/hooks/useMediaFilters';
 import useRefresh from '@/hooks/useRefresh';
@@ -117,13 +117,13 @@ export function ItemGridScreen({
       const itemStyle = { width: itemWidth };
 
       if (item.Type === 'Episode') {
-        return <MediaCard item={item} style={itemStyle} />;
+        return <EpisodeCard item={item} style={itemStyle} />;
       }
 
       return useThreeCols ? (
         <SeriesCard item={item} style={itemStyle} />
       ) : (
-        <MediaCard item={item} style={itemStyle} />
+        <EpisodeCard item={item} style={itemStyle} />
       );
     },
     [itemWidth, useThreeCols],
@@ -316,12 +316,12 @@ export function ItemGridScreen({
             renderItem={({ item }) => {
               const itemStyle = { width: groupItemWidth };
               if (item.Type === 'Episode') {
-                return <MediaCard item={item} style={itemStyle} />;
+                return <EpisodeCard item={item} style={itemStyle} />;
               }
               return useThreeCols ? (
                 <SeriesCard item={item} style={itemStyle} />
               ) : (
-                <MediaCard item={item} style={itemStyle} />
+                <EpisodeCard item={item} style={itemStyle} />
               );
             }}
             keyExtractor={keyExtractor}

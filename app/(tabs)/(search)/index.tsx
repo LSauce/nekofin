@@ -1,4 +1,4 @@
-import { MediaCard, SeriesCard } from '@/components/media/Card';
+import { EpisodeCard, SeriesCard } from '@/components/media/Card';
 import PageScrollView from '@/components/PageScrollView';
 import { SkeletonHorizontalSection } from '@/components/ui/Skeleton';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -83,7 +83,7 @@ export default function SearchScreen() {
     if (item.Type === 'Series') {
       return <SeriesCard item={item} />;
     }
-    return <MediaCard item={item} />;
+    return <EpisodeCard item={item} />;
   };
 
   return (

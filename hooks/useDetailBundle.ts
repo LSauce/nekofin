@@ -20,7 +20,7 @@ export type DetailBundle = {
   similarMovies?: BaseItemDto[];
 } | null;
 
-export function useDetailBundle(mode: 'series' | 'season' | 'movie', itemId: string) {
+export function useDetailBundle(mode: 'series' | 'season' | 'movie' | 'episode', itemId: string) {
   const { currentServer, currentApi } = useMediaServers();
 
   const query = useQueryWithFocus<DetailBundle>({
@@ -51,6 +51,28 @@ export function useDetailBundle(mode: 'series' | 'season' | 'movie', itemId: str
         return {
           item: baseItem,
           episodes: episodesRes.data.Items ?? [],
+        };
+      }
+
+      if (mode === 'episode') {
+        const seriesId = baseItem.SeriesId;
+        const seasonId = baseItem.ParentId;
+
+        const emptyItems = { data: { Items: [] } } as { data: { Items?: BaseItemDto[] } };
+
+        const [similarMoviesRes, seasonsRes, episodesRes] = await Promise.all([
+          getSimilarMovies(currentApi, itemId, userId, 30),
+          seriesId ? getSeasonsBySeries(currentApi, seriesId, userId) : Promise.resolve(emptyItems),
+          seasonId
+            ? getEpisodesBySeason(currentApi, seasonId, userId)
+            : Promise.resolve(emptyItems),
+        ]);
+
+        return {
+          item: baseItem,
+          seasons: seasonsRes.data.Items ?? [],
+          episodes: episodesRes.data.Items ?? [],
+          similarMovies: similarMoviesRes.data.Items ?? [],
         };
       }
 

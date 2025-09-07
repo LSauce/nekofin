@@ -54,12 +54,14 @@ const styles = StyleSheet.create({
   },
   personName: {
     fontSize: 14,
+    lineHeight: 16,
     fontWeight: '600',
     marginTop: 8,
     maxWidth: 120,
   },
   personRole: {
     fontSize: 12,
+    lineHeight: 14,
     opacity: 0.7,
     maxWidth: 120,
     marginTop: 2,

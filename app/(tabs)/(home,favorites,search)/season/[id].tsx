@@ -4,5 +4,5 @@ import { useLocalSearchParams } from 'expo-router';
 export default function SeasonDetailPage() {
   const { id } = useLocalSearchParams<{ id: string }>();
 
-  return <DetailView itemId={id!} mode="season" />;
+  return <DetailView itemId={id} mode="season" />;
 }
