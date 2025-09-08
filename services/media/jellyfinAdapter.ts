@@ -38,10 +38,17 @@ import {
   searchItems,
   setGlobalApiInstance,
 } from '@/services/media/jellyfin';
-import type { Api } from '@jellyfin/sdk';
+import type { Api, RecommendedServerInfo } from '@jellyfin/sdk';
 import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 
-import type { MediaAdapter, MediaItem, MediaItemType, MediaServerInfo, MediaSortBy } from './types';
+import {
+  MediaAdapter,
+  type MediaItem,
+  type MediaItemType,
+  type MediaServerInfo,
+  type MediaSortBy,
+} from './types';
 
 function convertBaseItemDtoToMediaItem(item: BaseItemDto): MediaItem {
   return {
@@ -96,26 +103,26 @@ function convertItemTypesToJellyfin(itemTypes: MediaItemType[]): BaseItemKind[] 
   return itemTypes.map((it) => it as BaseItemKind);
 }
 
-export const jellyfinAdapter: MediaAdapter = {
-  getApiInstance,
-  setGlobalApiInstance,
+class JellyfinAdapter implements MediaAdapter {
+  getApiInstance = getApiInstance;
+  setGlobalApiInstance = setGlobalApiInstance;
 
-  async discoverServers({ host }) {
+  async discoverServers({ host }: { host: string }) {
     const jf = getJellyfinInstance();
     return await jf.discovery.getRecommendedServerCandidates(host);
-  },
+  }
 
-  findBestServer({ servers }) {
+  findBestServer({ servers }: { servers: RecommendedServerInfo[] }) {
     const best = findBestServer(servers);
     return best ?? null;
-  },
+  }
 
   createApi({ address }: { address: string }) {
     return createApi(address);
-  },
+  }
   createApiFromServerInfo({ serverInfo }: { serverInfo: MediaServerInfo }): Api {
     return createApiFromServerInfo(serverInfo);
-  },
+  }
 
   async getSystemInfo() {
     const api = getApiInstance();
@@ -125,7 +132,7 @@ export const jellyfinAdapter: MediaAdapter = {
       version: result.data?.Version,
       operatingSystem: result.data?.OperatingSystem,
     };
-  },
+  }
 
   async getPublicUsers() {
     const api = getApiInstance();
@@ -140,16 +147,35 @@ export const jellyfinAdapter: MediaAdapter = {
           : undefined,
       })) || []
     );
-  },
+  }
 
-  async login({ username, password }) {
+  login({ username, password }: { username: string; password: string }) {
     const api = getApiInstance();
     return jfLogin(api, username, password);
-  },
-  authenticateAndSaveServer: (params) =>
-    authenticateAndSaveServer(params.address, params.username, params.password, params.addServer),
+  }
+  authenticateAndSaveServer(params: {
+    address: string;
+    username: string;
+    password: string;
+    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
+  }) {
+    return authenticateAndSaveServer(
+      params.address,
+      params.username,
+      params.password,
+      params.addServer,
+    );
+  }
 
-  async getLatestItems(params) {
+  async getLatestItems(params: {
+    userId: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    year?: number;
+    tags?: string[];
+  }) {
     const api = getApiInstance();
     const result = await getLatestItems(api, params.userId, params.limit, {
       includeItemTypes: params?.includeItemTypes
@@ -165,9 +191,17 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async getLatestItemsByFolder({ userId, folderId, limit }) {
+  async getLatestItemsByFolder({
+    userId,
+    folderId,
+    limit,
+  }: {
+    userId: string;
+    folderId: string;
+    limit?: number;
+  }) {
     const api = getApiInstance();
     const result = await getLatestItemsByFolder(api, userId, folderId, limit);
     return {
@@ -175,9 +209,9 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async getNextUpItems({ userId, limit }) {
+  async getNextUpItems({ userId, limit }: { userId: string; limit?: number }) {
     const api = getApiInstance();
     const result = await getNextUpItems(api, userId, limit);
     return {
@@ -186,9 +220,17 @@ export const jellyfinAdapter: MediaAdapter = {
         TotalRecordCount: result.data?.TotalRecordCount,
       },
     };
-  },
+  }
 
-  async getNextUpItemsByFolder({ userId, folderId, limit }) {
+  async getNextUpItemsByFolder({
+    userId,
+    folderId,
+    limit,
+  }: {
+    userId: string;
+    folderId: string;
+    limit?: number;
+  }) {
     const api = getApiInstance();
     const result = await getNextUpItemsByFolder(api, userId, folderId, limit);
     return {
@@ -197,9 +239,9 @@ export const jellyfinAdapter: MediaAdapter = {
         TotalRecordCount: result.data?.TotalRecordCount,
       },
     };
-  },
+  }
 
-  async getResumeItems({ userId, limit }) {
+  async getResumeItems({ userId, limit }: { userId: string; limit?: number }) {
     const api = getApiInstance();
     const result = await import('@/services/media/jellyfin').then((m) =>
       m.getResumeItems(api, userId, limit),
@@ -210,9 +252,9 @@ export const jellyfinAdapter: MediaAdapter = {
         TotalRecordCount: result.data?.TotalRecordCount,
       },
     };
-  },
+  }
 
-  async getFavoriteItems({ userId, limit }) {
+  async getFavoriteItems({ userId, limit }: { userId: string; limit?: number }) {
     const api = getApiInstance();
     const result = await getFavoriteItems(api, userId, limit);
     return {
@@ -220,7 +262,7 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
   async getFavoriteItemsPaged({
     userId,
@@ -232,6 +274,16 @@ export const jellyfinAdapter: MediaAdapter = {
     onlyUnplayed,
     year,
     tags,
+  }: {
+    userId: string;
+    startIndex?: number;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
   }) {
     const api = getApiInstance();
     const result = await getFavoriteItemsPaged(api, userId, startIndex, limit, {
@@ -248,14 +300,14 @@ export const jellyfinAdapter: MediaAdapter = {
         TotalRecordCount: result.data?.TotalRecordCount,
       },
     };
-  },
+  }
 
   async logout() {
     const api = getApiInstance();
     await logout(api);
-  },
+  }
 
-  async getUserInfo({ userId }) {
+  async getUserInfo({ userId }: { userId: string }) {
     const api = getApiInstance();
     const result = await getUserInfo(api, userId);
     return {
@@ -266,15 +318,15 @@ export const jellyfinAdapter: MediaAdapter = {
         ? `${api.basePath}/Users/${userId}/Images/Primary?quality=90`
         : undefined,
     };
-  },
+  }
 
-  async getItemDetail({ itemId, userId }) {
+  async getItemDetail({ itemId, userId }: { itemId: string; userId: string }) {
     const api = getApiInstance();
     const result = await getItemDetail(api, itemId, userId);
     return convertBaseItemDtoToMediaItem(result.data!);
-  },
+  }
 
-  async getItemMediaSources({ itemId }) {
+  async getItemMediaSources({ itemId }: { itemId: string }) {
     const api = getApiInstance();
     const result = await getItemMediaSources(api, itemId);
     return {
@@ -299,13 +351,13 @@ export const jellyfinAdapter: MediaAdapter = {
             })) || [],
         })) || [],
     };
-  },
+  }
 
-  async getUserView({ userId }) {
+  async getUserView({ userId }: { userId: string }) {
     const api = getApiInstance();
     const result = await getUserView(api, userId);
     return result.data?.Items?.map(convertBaseItemDtoToMediaItem) || [];
-  },
+  }
 
   async getAllItemsByFolder({
     userId,
@@ -318,6 +370,17 @@ export const jellyfinAdapter: MediaAdapter = {
     onlyUnplayed,
     year,
     tags,
+  }: {
+    userId: string;
+    folderId: string;
+    startIndex?: number;
+    limit?: number;
+    itemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: 'Ascending' | 'Descending';
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
   }) {
     const api = getApiInstance();
     const result = await getAllItemsByFolder(
@@ -341,9 +404,9 @@ export const jellyfinAdapter: MediaAdapter = {
         TotalRecordCount: result.data?.TotalRecordCount,
       },
     };
-  },
+  }
 
-  async getSeasonsBySeries({ seriesId, userId }) {
+  async getSeasonsBySeries({ seriesId, userId }: { seriesId: string; userId: string }) {
     const api = getApiInstance();
     const result = await getSeasonsBySeries(api, seriesId, userId);
     return {
@@ -351,9 +414,9 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async getEpisodesBySeason({ seasonId, userId }) {
+  async getEpisodesBySeason({ seasonId, userId }: { seasonId: string; userId: string }) {
     const api = getApiInstance();
     const result = await getEpisodesBySeason(api, seasonId, userId);
     return {
@@ -361,9 +424,17 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async getSimilarShows({ itemId, userId, limit }) {
+  async getSimilarShows({
+    itemId,
+    userId,
+    limit,
+  }: {
+    itemId: string;
+    userId: string;
+    limit?: number;
+  }) {
     const api = getApiInstance();
     const result = await getSimilarShows(api, itemId, userId, limit);
     return {
@@ -371,9 +442,17 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async getSimilarMovies({ itemId, userId, limit }) {
+  async getSimilarMovies({
+    itemId,
+    userId,
+    limit,
+  }: {
+    itemId: string;
+    userId: string;
+    limit?: number;
+  }) {
     const api = getApiInstance();
     const result = await getSimilarMovies(api, itemId, userId, limit);
     return {
@@ -381,9 +460,19 @@ export const jellyfinAdapter: MediaAdapter = {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
       },
     };
-  },
+  }
 
-  async searchItems({ userId, searchTerm, limit, includeItemTypes }) {
+  async searchItems({
+    userId,
+    searchTerm,
+    limit,
+    includeItemTypes,
+  }: {
+    userId: string;
+    searchTerm: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+  }) {
     const api = getApiInstance();
     const result = await searchItems(
       api,
@@ -393,21 +482,34 @@ export const jellyfinAdapter: MediaAdapter = {
       includeItemTypes ? convertItemTypesToJellyfin(includeItemTypes) : undefined,
     );
     return result.map(convertBaseItemDtoToMediaItem);
-  },
+  }
 
-  async getRecommendedSearchKeywords({ userId, limit }) {
+  async getRecommendedSearchKeywords({ userId, limit }: { userId: string; limit?: number }) {
     const api = getApiInstance();
     return getRecommendedSearchKeywords(api, userId, limit);
-  },
-  async getAvailableFilters({ userId, parentId }) {
+  }
+  async getAvailableFilters({ userId, parentId }: { userId: string; parentId?: string }) {
     const api = getApiInstance();
     const result = await getAvailableFilters(api, userId, parentId);
     return result;
-  },
-  getImageInfo({ item, opts }) {
-    const baseItem = item.raw ?? item;
+  }
+  getImageInfo({
+    item,
+    opts,
+  }: {
+    item: MediaItem | import('./types').MediaPerson;
+    opts?: {
+      width?: number;
+      height?: number;
+      preferBackdrop?: boolean;
+      preferLogo?: boolean;
+      preferThumb?: boolean;
+      preferBanner?: boolean;
+    };
+  }) {
+    const baseItem = (item as MediaItem).raw ?? item;
     return getImageInfo(baseItem as BaseItemDto, opts);
-  },
+  }
   async getStreamInfo({
     item,
     userId,
@@ -420,11 +522,23 @@ export const jellyfinAdapter: MediaAdapter = {
     height,
     mediaSourceId,
     deviceId,
+  }: {
+    item: MediaItem | null | undefined;
+    userId: string | null | undefined;
+    startTimeTicks: number;
+    maxStreamingBitrate?: number;
+    playSessionId?: string | null;
+    deviceProfile: DeviceProfile;
+    audioStreamIndex?: number;
+    subtitleStreamIndex?: number;
+    height?: number;
+    mediaSourceId?: string | null;
+    deviceId?: string | null;
   }) {
     const api = getApiInstance();
     return getStreamInfo({
       api,
-      item: item?.raw as BaseItemDto,
+      item: (item as MediaItem | null | undefined)?.raw as BaseItemDto,
       userId,
       startTimeTicks,
       maxStreamingBitrate,
@@ -436,38 +550,56 @@ export const jellyfinAdapter: MediaAdapter = {
       mediaSourceId,
       deviceId,
     });
-  },
+  }
 
-  async addFavoriteItem({ userId, itemId }) {
+  async addFavoriteItem({ userId, itemId }: { userId: string; itemId: string }) {
     const api = getApiInstance();
     await addFavoriteItem(api, userId, itemId);
-  },
+  }
 
-  async removeFavoriteItem({ userId, itemId }) {
+  async removeFavoriteItem({ userId, itemId }: { userId: string; itemId: string }) {
     const api = getApiInstance();
     await removeFavoriteItem(api, userId, itemId);
-  },
+  }
 
-  async markItemPlayed({ userId, itemId, datePlayed }) {
+  async markItemPlayed({
+    userId,
+    itemId,
+    datePlayed,
+  }: {
+    userId: string;
+    itemId: string;
+    datePlayed?: string;
+  }) {
     const api = getApiInstance();
     await markItemPlayed(api, userId, itemId, datePlayed);
-  },
+  }
 
-  async markItemUnplayed({ userId, itemId }) {
+  async markItemUnplayed({ userId, itemId }: { userId: string; itemId: string }) {
     const api = getApiInstance();
     await markItemUnplayed(api, userId, itemId);
-  },
+  }
 
-  async reportPlaybackProgress({ itemId, positionTicks, isPaused }) {
+  async reportPlaybackProgress({
+    itemId,
+    positionTicks,
+    isPaused,
+  }: {
+    itemId: string;
+    positionTicks: number;
+    isPaused?: boolean;
+  }) {
     const api = getApiInstance();
-    await reportPlaybackProgress(api, itemId, positionTicks, isPaused);
-  },
-  async reportPlaybackStart({ itemId, positionTicks }) {
+    await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false);
+  }
+  async reportPlaybackStart({ itemId, positionTicks }: { itemId: string; positionTicks?: number }) {
     const api = getApiInstance();
-    await reportPlaybackStart(api, itemId, positionTicks);
-  },
-  async reportPlaybackStop({ itemId, positionTicks }) {
+    await reportPlaybackStart(api, itemId, positionTicks ?? 0);
+  }
+  async reportPlaybackStop({ itemId, positionTicks }: { itemId: string; positionTicks: number }) {
     const api = getApiInstance();
     await reportPlaybackStop(api, itemId, positionTicks);
-  },
-};
+  }
+}
+
+export const jellyfinAdapter = new JellyfinAdapter();

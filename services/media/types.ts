@@ -1,6 +1,7 @@
 import { ImageUrlInfo } from '@/lib/utils/image';
 import { RecommendedServerInfo } from '@jellyfin/sdk';
 import { BaseItemPersonImageBlurHashes } from '@jellyfin/sdk/lib/generated-client/models/base-item-person-image-blur-hashes';
+import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 
 import { StreamInfo } from './jellyfin';
 
@@ -135,27 +136,29 @@ export interface MediaServerInfo {
   type: MediaServerType;
 }
 
-export interface MediaAdapter {
-  getApiInstance(): unknown | null;
-  setGlobalApiInstance(api: unknown | null): void;
+export abstract class MediaAdapter {
+  abstract getApiInstance(): unknown | null;
+  abstract setGlobalApiInstance(api: unknown | null): void;
 
-  discoverServers(params: { host: string }): Promise<RecommendedServerInfo[]>;
-  findBestServer(params: { servers: RecommendedServerInfo[] }): RecommendedServerInfo | null;
+  abstract discoverServers(params: { host: string }): Promise<RecommendedServerInfo[]>;
+  abstract findBestServer(params: {
+    servers: RecommendedServerInfo[];
+  }): RecommendedServerInfo | null;
 
-  createApi(params: { address: string }): unknown;
-  createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): unknown;
+  abstract createApi(params: { address: string }): unknown;
+  abstract createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): unknown;
 
-  getSystemInfo(): Promise<MediaSystemInfo>;
-  getPublicUsers(): Promise<MediaUser[]>;
-  login(params: { username: string; password: string }): Promise<unknown>;
-  authenticateAndSaveServer(params: {
+  abstract getSystemInfo(): Promise<MediaSystemInfo>;
+  abstract getPublicUsers(): Promise<MediaUser[]>;
+  abstract login(params: { username: string; password: string }): Promise<unknown>;
+  abstract authenticateAndSaveServer(params: {
     address: string;
     username: string;
     password: string;
     addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
   }): Promise<unknown>;
 
-  getLatestItems(params: {
+  abstract getLatestItems(params: {
     userId: string;
     limit?: number;
     includeItemTypes?: MediaItemType[];
@@ -164,22 +167,30 @@ export interface MediaAdapter {
     year?: number;
     tags?: string[];
   }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getLatestItemsByFolder(params: { userId: string; folderId: string; limit?: number }): Promise<{
+  abstract getLatestItemsByFolder(params: {
+    userId: string;
+    folderId: string;
+    limit?: number;
+  }): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  getNextUpItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getNextUpItems(params: { userId: string; limit?: number }): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  getNextUpItemsByFolder(params: { userId: string; folderId: string; limit?: number }): Promise<{
+  abstract getNextUpItemsByFolder(params: {
+    userId: string;
+    folderId: string;
+    limit?: number;
+  }): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  getResumeItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getResumeItems(params: { userId: string; limit?: number }): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  getFavoriteItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getFavoriteItems(params: { userId: string; limit?: number }): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  getFavoriteItemsPaged(params: {
+  abstract getFavoriteItemsPaged(params: {
     userId: string;
     startIndex?: number;
     limit?: number;
@@ -190,12 +201,12 @@ export interface MediaAdapter {
     year?: number;
     tags?: string[];
   }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  logout(): Promise<void>;
-  getUserInfo(params: { userId: string }): Promise<MediaUser>;
-  getItemDetail(params: { itemId: string; userId: string }): Promise<MediaItem>;
-  getItemMediaSources(params: { itemId: string }): Promise<MediaPlaybackInfo>;
-  getUserView(params: { userId: string }): Promise<MediaItem[]>;
-  getAllItemsByFolder(params: {
+  abstract logout(): Promise<void>;
+  abstract getUserInfo(params: { userId: string }): Promise<MediaUser>;
+  abstract getItemDetail(params: { itemId: string; userId: string }): Promise<MediaItem>;
+  abstract getItemMediaSources(params: { itemId: string }): Promise<MediaPlaybackInfo>;
+  abstract getUserView(params: { userId: string }): Promise<MediaItem[]>;
+  abstract getAllItemsByFolder(params: {
     userId: string;
     folderId: string;
     startIndex?: number;
@@ -207,27 +218,33 @@ export interface MediaAdapter {
     year?: number;
     tags?: string[];
   }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getSeasonsBySeries(params: { seriesId: string; userId: string }): Promise<{
+  abstract getSeasonsBySeries(params: { seriesId: string; userId: string }): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  getEpisodesBySeason(params: { seasonId: string; userId: string }): Promise<{
+  abstract getEpisodesBySeason(params: { seasonId: string; userId: string }): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  getSimilarShows(params: { itemId: string; userId: string; limit?: number }): Promise<{
+  abstract getSimilarShows(params: { itemId: string; userId: string; limit?: number }): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  getSimilarMovies(params: { itemId: string; userId: string; limit?: number }): Promise<{
+  abstract getSimilarMovies(params: { itemId: string; userId: string; limit?: number }): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  searchItems(params: {
+  abstract searchItems(params: {
     userId: string;
     searchTerm: string;
     limit?: number;
     includeItemTypes?: MediaItemType[];
   }): Promise<MediaItem[]>;
-  getRecommendedSearchKeywords(params: { userId: string; limit?: number }): Promise<string[]>;
-  getAvailableFilters(params: { userId: string; parentId?: string }): Promise<MediaFilters>;
-  getImageInfo(params: {
+  abstract getRecommendedSearchKeywords(params: {
+    userId: string;
+    limit?: number;
+  }): Promise<string[]>;
+  abstract getAvailableFilters(params: {
+    userId: string;
+    parentId?: string;
+  }): Promise<MediaFilters>;
+  abstract getImageInfo(params: {
     item: MediaItem | MediaPerson;
     opts?: {
       width?: number;
@@ -238,7 +255,7 @@ export interface MediaAdapter {
       preferBanner?: boolean;
     };
   }): ImageUrlInfo;
-  getStreamInfo(params: {
+  abstract getStreamInfo(params: {
     item: MediaItem | null | undefined;
     userId: string | null | undefined;
     startTimeTicks: number;
@@ -252,15 +269,19 @@ export interface MediaAdapter {
     deviceId?: string | null;
   }): Promise<StreamInfo | null>;
 
-  addFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
-  removeFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
-  markItemPlayed(params: { userId: string; itemId: string; datePlayed?: string }): Promise<void>;
-  markItemUnplayed(params: { userId: string; itemId: string }): Promise<void>;
-  reportPlaybackProgress(params: {
+  abstract addFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
+  abstract removeFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
+  abstract markItemPlayed(params: {
+    userId: string;
+    itemId: string;
+    datePlayed?: string;
+  }): Promise<void>;
+  abstract markItemUnplayed(params: { userId: string; itemId: string }): Promise<void>;
+  abstract reportPlaybackProgress(params: {
     itemId: string;
     positionTicks: number;
     isPaused?: boolean;
   }): Promise<void>;
-  reportPlaybackStart(params: { itemId: string; positionTicks?: number }): Promise<void>;
-  reportPlaybackStop(params: { itemId: string; positionTicks: number }): Promise<void>;
+  abstract reportPlaybackStart(params: { itemId: string; positionTicks?: number }): Promise<void>;
+  abstract reportPlaybackStop(params: { itemId: string; positionTicks: number }): Promise<void>;
 }
