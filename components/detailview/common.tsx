@@ -175,6 +175,7 @@ export const detailViewStyles = StyleSheet.create({
     top: -160,
     padding: 20,
     gap: 8,
+    marginBottom: -160,
   },
   logo: {
     top: -20,

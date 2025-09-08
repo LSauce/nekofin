@@ -44,7 +44,6 @@ export function EpisodeCard({
   imgType?: ImageType;
   onPress?: () => void;
 }) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const router = useRouter();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
@@ -87,10 +86,7 @@ export function EpisodeCard({
   const isPlayed = item.UserData?.Played === true;
 
   return (
-    <TouchableOpacity
-      style={[styles.card, { width: 200, backgroundColor }, style]}
-      onPress={onPress || handlePress}
-    >
+    <TouchableOpacity style={[styles.card, { width: 200 }, style]} onPress={onPress || handlePress}>
       {imageUrl ? (
         <View style={styles.coverContainer}>
           <Image
@@ -153,7 +149,6 @@ export function SeriesCard({
   imgType?: ImageType;
   hideSubtitle?: boolean;
 }) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
@@ -170,7 +165,7 @@ export function SeriesCard({
 
   return (
     <TouchableOpacity
-      style={[styles.card, { width: 120, backgroundColor }, style]}
+      style={[styles.card, { width: 120 }, style]}
       onPress={() => {
         const type = item.Type;
 
