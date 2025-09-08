@@ -1,11 +1,11 @@
 import { EpisodeCard, SeriesCard } from '@/components/media/Card';
 import { useGridLayout } from '@/hooks/useGridLayout';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { MediaFilters } from '@/hooks/useMediaFilters';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { getAvailableFilters } from '@/services/jellyfin';
 import { MediaItem, MediaSortBy } from '@/services/media/types';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
 import { useNavigation } from 'expo-router';
@@ -52,7 +52,8 @@ export function ItemGridScreen({
   const episodeLayout = useGridLayout('episode');
 
   const navigation = useNavigation();
-  const { currentServer, currentApi: api } = useMediaServers();
+  const { currentServer } = useMediaServers();
+  const mediaAdapter = useMediaAdapter();
 
   const { data, isLoading, isError, refetch, fetchNextPage, hasNextPage, isFetchingNextPage } =
     query;
@@ -103,10 +104,10 @@ export function ItemGridScreen({
   const { refreshing, onRefresh } = useRefresh(refetch);
 
   const { data: availableFilters } = useQuery({
-    enabled: !!api && !!currentServer && !!onChangeFilters,
+    enabled: !!currentServer && !!onChangeFilters,
     queryKey: ['available-filters', currentServer?.id],
     queryFn: async () => {
-      const res = await getAvailableFilters(api!, currentServer!.userId);
+      const res = await mediaAdapter.getAvailableFilters({ userId: currentServer!.userId });
       return res;
     },
     staleTime: 10 * 60 * 1000,

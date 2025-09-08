@@ -1,5 +1,5 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { createApiFromServerInfo } from '@/services/jellyfin';
+import { createApiFromServerInfo } from '@/services/media/jellyfin';
 import { MediaServerInfo } from '@/services/media/types';
 import React from 'react';
 import { FlatList, StyleSheet, TouchableOpacity, View } from 'react-native';

@@ -1,8 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getDeviceId, getStreamInfo } from '@/lib/utils';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { getCommentsByItem, getDeviceId } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -30,7 +29,7 @@ const LoadingIndicator = () => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
-  const { currentServer, currentApi } = useMediaServers();
+  const { currentServer } = useMediaServers();
   const router = useRouter();
   const mediaAdapter = useMediaAdapter();
 
@@ -81,7 +80,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryFn: async () => {
       if (!itemDetail || !seriesInfo?.originalTitle) return [];
       try {
-        return await getCommentsByItem(itemDetail.raw as BaseItemDto, seriesInfo.originalTitle);
+        return await getCommentsByItem(itemDetail, seriesInfo.originalTitle);
       } catch (error) {
         console.warn('Failed to load danmaku comments:', error);
         return [];
@@ -95,16 +94,15 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryKey: ['streamInfo', itemId, currentServer?.userId],
     queryFn: async () => {
       if (!currentServer || !itemDetail) return null;
-      return await getStreamInfo({
-        api: currentApi,
-        item: itemDetail.raw as BaseItemDto,
+      return await mediaAdapter.getStreamInfo({
+        item: itemDetail,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile(),
         startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
         deviceId: getDeviceId(),
       });
     },
-    enabled: !!currentApi && !!currentServer && !!itemDetail,
+    enabled: !!currentServer && !!itemDetail,
   });
 
   const { data: episodes = [] } = useQuery({

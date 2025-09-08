@@ -95,6 +95,12 @@ export const embyAdapter: MediaAdapter = {
   async getAvailableFilters() {
     throw new Error('Emby adapter not implemented');
   },
+  getImageInfo() {
+    throw new Error('Emby adapter not implemented');
+  },
+  getStreamInfo() {
+    throw new Error('Emby adapter not implemented');
+  },
 
   async addFavoriteItem() {
     throw new Error('Emby adapter not implemented');
@@ -115,10 +121,6 @@ export const embyAdapter: MediaAdapter = {
     throw new Error('Emby adapter not implemented');
   },
   async reportPlaybackStop() {
-    throw new Error('Emby adapter not implemented');
-  },
-
-  getImageInfo() {
     throw new Error('Emby adapter not implemented');
   },
 };

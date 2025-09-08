@@ -23,6 +23,7 @@ import {
   getSeasonsBySeries,
   getSimilarMovies,
   getSimilarShows,
+  getStreamInfo,
   getSystemInfo,
   getUserInfo,
   getUserView,
@@ -36,7 +37,7 @@ import {
   reportPlaybackStop,
   searchItems,
   setGlobalApiInstance,
-} from '@/services/jellyfin';
+} from '@/services/media/jellyfin';
 import type { Api } from '@jellyfin/sdk';
 import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
 
@@ -200,7 +201,7 @@ export const jellyfinAdapter: MediaAdapter = {
 
   async getResumeItems({ userId, limit }) {
     const api = getApiInstance();
-    const result = await import('@/services/jellyfin').then((m) =>
+    const result = await import('@/services/media/jellyfin').then((m) =>
       m.getResumeItems(api, userId, limit),
     );
     return {
@@ -403,6 +404,39 @@ export const jellyfinAdapter: MediaAdapter = {
     const result = await getAvailableFilters(api, userId, parentId);
     return result;
   },
+  getImageInfo({ item, opts }) {
+    const baseItem = item.raw ?? item;
+    return getImageInfo(baseItem as BaseItemDto, opts);
+  },
+  async getStreamInfo({
+    item,
+    userId,
+    startTimeTicks,
+    maxStreamingBitrate,
+    playSessionId,
+    deviceProfile,
+    audioStreamIndex,
+    subtitleStreamIndex,
+    height,
+    mediaSourceId,
+    deviceId,
+  }) {
+    const api = getApiInstance();
+    return getStreamInfo({
+      api,
+      item: item?.raw as BaseItemDto,
+      userId,
+      startTimeTicks,
+      maxStreamingBitrate,
+      playSessionId,
+      deviceProfile,
+      audioStreamIndex,
+      subtitleStreamIndex,
+      height,
+      mediaSourceId,
+      deviceId,
+    });
+  },
 
   async addFavoriteItem({ userId, itemId }) {
     const api = getApiInstance();
@@ -435,10 +469,5 @@ export const jellyfinAdapter: MediaAdapter = {
   async reportPlaybackStop({ itemId, positionTicks }) {
     const api = getApiInstance();
     await reportPlaybackStop(api, itemId, positionTicks);
-  },
-
-  getImageInfo({ item, opts }) {
-    const baseItem = item.raw ?? item;
-    return getImageInfo(baseItem as BaseItemDto, opts);
   },
 };

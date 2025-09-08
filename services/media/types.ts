@@ -2,6 +2,8 @@ import { ImageUrlInfo } from '@/lib/utils/image';
 import { RecommendedServerInfo } from '@jellyfin/sdk';
 import { BaseItemPersonImageBlurHashes } from '@jellyfin/sdk/lib/generated-client/models/base-item-person-image-blur-hashes';
 
+import { StreamInfo } from './jellyfin';
+
 export type MediaServerType = 'jellyfin' | 'emby';
 
 export type MediaItemType = 'Movie' | 'Series' | 'Season' | 'Episode' | 'MusicVideo' | 'Other';
@@ -107,6 +109,12 @@ export interface MediaStream {
   width?: number | null;
   height?: number | null;
   bitRate?: number | null;
+}
+
+export interface MediaStreamInfo {
+  url: string | null;
+  sessionId: string | null;
+  mediaSource: MediaSource | undefined;
 }
 
 export interface MediaFilters {
@@ -219,6 +227,30 @@ export interface MediaAdapter {
   }): Promise<MediaItem[]>;
   getRecommendedSearchKeywords(params: { userId: string; limit?: number }): Promise<string[]>;
   getAvailableFilters(params: { userId: string; parentId?: string }): Promise<MediaFilters>;
+  getImageInfo(params: {
+    item: MediaItem | MediaPerson;
+    opts?: {
+      width?: number;
+      height?: number;
+      preferBackdrop?: boolean;
+      preferLogo?: boolean;
+      preferThumb?: boolean;
+      preferBanner?: boolean;
+    };
+  }): ImageUrlInfo;
+  getStreamInfo(params: {
+    item: MediaItem | null | undefined;
+    userId: string | null | undefined;
+    startTimeTicks: number;
+    maxStreamingBitrate?: number;
+    playSessionId?: string | null;
+    deviceProfile: any;
+    audioStreamIndex?: number;
+    subtitleStreamIndex?: number;
+    height?: number;
+    mediaSourceId?: string | null;
+    deviceId?: string | null;
+  }): Promise<StreamInfo | null>;
 
   addFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
   removeFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
@@ -231,16 +263,4 @@ export interface MediaAdapter {
   }): Promise<void>;
   reportPlaybackStart(params: { itemId: string; positionTicks?: number }): Promise<void>;
   reportPlaybackStop(params: { itemId: string; positionTicks: number }): Promise<void>;
-
-  getImageInfo(params: {
-    item: MediaItem | MediaPerson;
-    opts?: {
-      width?: number;
-      height?: number;
-      preferBackdrop?: boolean;
-      preferLogo?: boolean;
-      preferThumb?: boolean;
-      preferBanner?: boolean;
-    };
-  }): ImageUrlInfo;
 }
