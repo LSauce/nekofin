@@ -35,9 +35,6 @@ export const embyAdapter: MediaAdapter = {
     throw new Error('Emby adapter not implemented');
   },
 
-  async getMediaFolders() {
-    throw new Error('Emby adapter not implemented');
-  },
   async getLatestItems() {
     throw new Error('Emby adapter not implemented');
   },

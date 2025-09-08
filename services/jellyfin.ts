@@ -76,10 +76,6 @@ export async function login(api: Api, username: string, password: string) {
   return await api.authenticateUserByName(username, password);
 }
 
-export async function getMediaFolders(api: Api) {
-  return await getLibraryApi(api).getMediaFolders();
-}
-
 export async function getLatestItems(
   api: Api,
   userId: string,

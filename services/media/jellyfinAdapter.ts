@@ -16,7 +16,6 @@ import {
   getJellyfinInstance,
   getLatestItems,
   getLatestItemsByFolder,
-  getMediaFolders,
   getNextUpItems,
   getNextUpItemsByFolder,
   getPublicUsers,
@@ -147,19 +146,6 @@ export const jellyfinAdapter: MediaAdapter = {
     return jfLogin(api, username, password);
   },
   authenticateAndSaveServer,
-
-  async getMediaFolders() {
-    const api = getApiInstance();
-    const result = await getMediaFolders(api);
-    return (
-      result.data?.Items?.map((folder) => ({
-        id: folder.Id || '',
-        name: folder.Name || '',
-        type: (folder.Type as MediaItemType) || 'Other',
-        collectionType: folder.CollectionType,
-      })) || []
-    );
-  },
 
   async getLatestItems(userId, limit, opts) {
     const api = getApiInstance();

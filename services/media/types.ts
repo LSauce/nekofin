@@ -71,13 +71,6 @@ export interface MediaItem {
   collectionType?: string;
 }
 
-export interface MediaFolder {
-  id: string;
-  name: string;
-  type: MediaItemType;
-  collectionType?: string;
-}
-
 export interface MediaUser {
   id: string;
   name: string;
@@ -154,7 +147,6 @@ export interface MediaAdapter {
     addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>,
   ): Promise<unknown>;
 
-  getMediaFolders(): Promise<MediaFolder[]>;
   getLatestItems(
     userId: string,
     limit?: number,
