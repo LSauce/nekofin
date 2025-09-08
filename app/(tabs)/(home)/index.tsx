@@ -9,12 +9,6 @@ import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import {
-  getLatestItemsByFolder,
-  getNextUpItems,
-  getResumeItems,
-  getUserView,
-} from '@/services/jellyfin';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
@@ -40,9 +34,9 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
       if (!currentServer) return [];
 
       const [userViewRes, nextUpRes, resumeRes] = await Promise.all([
-        mediaAdapter.getUserView(currentServer.userId),
-        mediaAdapter.getNextUpItems(currentServer.userId, 10),
-        mediaAdapter.getResumeItems(currentServer.userId, 10),
+        mediaAdapter.getUserView({ userId: currentServer.userId }),
+        mediaAdapter.getNextUpItems({ userId: currentServer.userId, limit: 10 }),
+        mediaAdapter.getResumeItems({ userId: currentServer.userId, limit: 10 }),
       ]);
 
       const userViewItems = (userViewRes || []).filter((f) => f.collectionType !== 'playlists');
@@ -51,11 +45,11 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
       for (const folder of userViewItems) {
         if (!folder.id) continue;
         try {
-          const latest = await mediaAdapter.getLatestItemsByFolder(
-            currentServer.userId,
-            folder.id,
-            16,
-          );
+          const latest = await mediaAdapter.getLatestItemsByFolder({
+            userId: currentServer.userId,
+            folderId: folder.id,
+            limit: 16,
+          });
           latestByFolder.push({
             folderId: folder.id,
             items: latest.data.Items || [],

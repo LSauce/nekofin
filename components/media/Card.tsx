@@ -53,12 +53,15 @@ export function EpisodeCard({
 
   const mediaAdapter = useMediaAdapter();
 
-  const imageInfo = mediaAdapter.getImageInfo(item, {
-    preferBackdrop: imgType === 'Backdrop',
-    preferThumb: imgType === 'Thumb',
-    preferBanner: imgType === 'Banner',
-    preferLogo: imgType === 'Logo',
-    width: 400,
+  const imageInfo = mediaAdapter.getImageInfo({
+    item,
+    opts: {
+      preferBackdrop: imgType === 'Backdrop',
+      preferThumb: imgType === 'Thumb',
+      preferBanner: imgType === 'Banner',
+      preferLogo: imgType === 'Logo',
+      width: 400,
+    },
   });
 
   const imageUrl = imageInfo.url;
@@ -163,12 +166,15 @@ export function SeriesCard({
 
   const mediaAdapter = useMediaAdapter();
 
-  const imageInfo = mediaAdapter.getImageInfo(item, {
-    preferBackdrop: imgType === 'Backdrop',
-    preferThumb: imgType === 'Thumb',
-    preferBanner: imgType === 'Banner',
-    preferLogo: imgType === 'Logo',
-    width: 400,
+  const imageInfo = mediaAdapter.getImageInfo({
+    item,
+    opts: {
+      preferBackdrop: imgType === 'Backdrop',
+      preferThumb: imgType === 'Thumb',
+      preferBanner: imgType === 'Banner',
+      preferLogo: imgType === 'Logo',
+      width: 400,
+    },
   });
 
   const imageUrl = imageInfo.url;

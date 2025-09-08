@@ -1,6 +1,6 @@
 import type { Api } from '@jellyfin/sdk';
 
-import type { MediaAdapter, MediaServerInfo } from './types';
+import type { MediaAdapter } from './types';
 
 export const embyAdapter: MediaAdapter = {
   getApiInstance() {
@@ -15,10 +15,10 @@ export const embyAdapter: MediaAdapter = {
     return null;
   },
 
-  createApi(address: string): Api {
+  createApi(): Api {
     throw new Error('Emby adapter not implemented');
   },
-  createApiFromServerInfo(serverInfo: MediaServerInfo): Api {
+  createApiFromServerInfo(): Api {
     throw new Error('Emby adapter not implemented');
   },
 

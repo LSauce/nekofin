@@ -56,10 +56,16 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
               if (!currentServer?.userId || !item?.id) return;
               try {
                 if (isFavorite) {
-                  await mediaAdapter.removeFavoriteItem(currentServer.userId, item.id);
+                  await mediaAdapter.removeFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: item.id!,
+                  });
                   setIsFavorite(false);
                 } else {
-                  await mediaAdapter.addFavoriteItem(currentServer.userId, item.id);
+                  await mediaAdapter.addFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: item.id!,
+                  });
                   setIsFavorite(true);
                 }
               } catch (e) {}
@@ -94,10 +100,13 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
     );
   }
 
-  const headerImageInfo = mediaAdapter.getImageInfo(item, { preferBackdrop: true, width: 1200 });
+  const headerImageInfo = mediaAdapter.getImageInfo({
+    item,
+    opts: { preferBackdrop: true, width: 1200 },
+  });
   const headerImageUrl = headerImageInfo.url;
 
-  const logoImageInfo = mediaAdapter.getImageInfo(item, { preferLogo: true, width: 400 });
+  const logoImageInfo = mediaAdapter.getImageInfo({ item, opts: { preferLogo: true, width: 400 } });
   const logoImageUrl = logoImageInfo.url;
 
   const renderModeContent = () => {

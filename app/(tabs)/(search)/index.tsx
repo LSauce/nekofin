@@ -5,7 +5,6 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { getRecommendedSearchKeywords, searchItems } from '@/services/jellyfin';
 import { MediaItem } from '@/services/media/types';
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
@@ -32,7 +31,10 @@ export default function SearchScreen() {
     queryKey: ['recommend-keywords', currentServer?.id],
     queryFn: async () => {
       if (!currentServer?.userId) return [];
-      return await mediaAdapter.getRecommendedSearchKeywords(currentServer.userId, 20);
+      return await mediaAdapter.getRecommendedSearchKeywords({
+        userId: currentServer.userId,
+        limit: 20,
+      });
     },
   });
 
@@ -53,7 +55,11 @@ export default function SearchScreen() {
     queryKey: ['search-items', currentServer?.id, effectiveKeyword],
     queryFn: async () => {
       if (!currentServer?.userId) return [];
-      return await mediaAdapter.searchItems(currentServer.userId, effectiveKeyword, 120);
+      return await mediaAdapter.searchItems({
+        userId: currentServer.userId,
+        searchTerm: effectiveKeyword,
+        limit: 120,
+      });
     },
   });
 

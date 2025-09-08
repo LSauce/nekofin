@@ -131,118 +131,109 @@ export interface MediaAdapter {
   getApiInstance(): unknown | null;
   setGlobalApiInstance(api: unknown | null): void;
 
-  discoverServers(host: string): Promise<RecommendedServerInfo[]>;
-  findBestServer(servers: RecommendedServerInfo[]): RecommendedServerInfo | null;
+  discoverServers(params: { host: string }): Promise<RecommendedServerInfo[]>;
+  findBestServer(params: { servers: RecommendedServerInfo[] }): RecommendedServerInfo | null;
 
-  createApi(address: string): unknown;
-  createApiFromServerInfo(serverInfo: MediaServerInfo): unknown;
+  createApi(params: { address: string }): unknown;
+  createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): unknown;
 
   getSystemInfo(): Promise<MediaSystemInfo>;
   getPublicUsers(): Promise<MediaUser[]>;
-  login(username: string, password: string): Promise<unknown>;
-  authenticateAndSaveServer(
-    address: string,
-    username: string,
-    password: string,
-    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>,
-  ): Promise<unknown>;
+  login(params: { username: string; password: string }): Promise<unknown>;
+  authenticateAndSaveServer(params: {
+    address: string;
+    username: string;
+    password: string;
+    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
+  }): Promise<unknown>;
 
-  getLatestItems(
-    userId: string,
-    limit?: number,
-    opts?: {
-      includeItemTypes?: MediaItemType[];
-      sortBy?: MediaSortBy[];
-      sortOrder?: MediaSortOrder;
-      year?: number;
-      tags?: string[];
-    },
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getLatestItemsByFolder(
-    userId: string,
-    folderId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getNextUpItems(
-    userId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getNextUpItemsByFolder(
-    userId: string,
-    folderId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getResumeItems(
-    userId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getFavoriteItems(
-    userId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getFavoriteItemsPaged(
-    userId: string,
-    startIndex?: number,
-    limit?: number,
-    opts?: {
-      includeItemTypes?: MediaItemType[];
-      sortBy?: MediaSortBy[];
-      sortOrder?: MediaSortOrder;
-      onlyUnplayed?: boolean;
-      year?: number;
-      tags?: string[];
-    },
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  getLatestItems(params: {
+    userId: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  getLatestItemsByFolder(params: { userId: string; folderId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  getNextUpItems(params: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  getNextUpItemsByFolder(params: { userId: string; folderId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  getResumeItems(params: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  getFavoriteItems(params: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  getFavoriteItemsPaged(params: {
+    userId: string;
+    startIndex?: number;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   logout(): Promise<void>;
-  getUserInfo(userId: string): Promise<MediaUser>;
-  getItemDetail(itemId: string, userId: string): Promise<MediaItem>;
-  getItemMediaSources(itemId: string): Promise<MediaPlaybackInfo>;
-  getUserView(userId: string): Promise<MediaItem[]>;
-  getAllItemsByFolder(
-    userId: string,
-    folderId: string,
-    startIndex?: number,
-    limit?: number,
-    itemTypes?: MediaItemType[],
-    opts?: {
-      sortBy?: MediaSortBy[];
-      sortOrder?: MediaSortOrder;
-      onlyUnplayed?: boolean;
-      year?: number;
-      tags?: string[];
-    },
-  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  getSeasonsBySeries(seriesId: string, userId: string): Promise<{ data: { Items?: MediaItem[] } }>;
-  getEpisodesBySeason(seasonId: string, userId: string): Promise<{ data: { Items?: MediaItem[] } }>;
-  getSimilarShows(
-    itemId: string,
-    userId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[] } }>;
-  getSimilarMovies(
-    itemId: string,
-    userId: string,
-    limit?: number,
-  ): Promise<{ data: { Items?: MediaItem[] } }>;
-  searchItems(
-    userId: string,
-    searchTerm: string,
-    limit?: number,
-    includeItemTypes?: MediaItemType[],
-  ): Promise<MediaItem[]>;
-  getRecommendedSearchKeywords(userId: string, limit?: number): Promise<string[]>;
-  getAvailableFilters(userId: string, parentId?: string): Promise<MediaFilters>;
+  getUserInfo(params: { userId: string }): Promise<MediaUser>;
+  getItemDetail(params: { itemId: string; userId: string }): Promise<MediaItem>;
+  getItemMediaSources(params: { itemId: string }): Promise<MediaPlaybackInfo>;
+  getUserView(params: { userId: string }): Promise<MediaItem[]>;
+  getAllItemsByFolder(params: {
+    userId: string;
+    folderId: string;
+    startIndex?: number;
+    limit?: number;
+    itemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  getSeasonsBySeries(params: { seriesId: string; userId: string }): Promise<{
+    data: { Items?: MediaItem[] };
+  }>;
+  getEpisodesBySeason(params: { seasonId: string; userId: string }): Promise<{
+    data: { Items?: MediaItem[] };
+  }>;
+  getSimilarShows(params: { itemId: string; userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[] };
+  }>;
+  getSimilarMovies(params: { itemId: string; userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[] };
+  }>;
+  searchItems(params: {
+    userId: string;
+    searchTerm: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+  }): Promise<MediaItem[]>;
+  getRecommendedSearchKeywords(params: { userId: string; limit?: number }): Promise<string[]>;
+  getAvailableFilters(params: { userId: string; parentId?: string }): Promise<MediaFilters>;
 
-  addFavoriteItem(userId: string, itemId: string): Promise<void>;
-  removeFavoriteItem(userId: string, itemId: string): Promise<void>;
-  markItemPlayed(userId: string, itemId: string, datePlayed?: string): Promise<void>;
-  markItemUnplayed(userId: string, itemId: string): Promise<void>;
-  reportPlaybackProgress(itemId: string, positionTicks: number, isPaused?: boolean): Promise<void>;
-  reportPlaybackStart(itemId: string, positionTicks?: number): Promise<void>;
-  reportPlaybackStop(itemId: string, positionTicks: number): Promise<void>;
+  addFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
+  removeFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
+  markItemPlayed(params: { userId: string; itemId: string; datePlayed?: string }): Promise<void>;
+  markItemUnplayed(params: { userId: string; itemId: string }): Promise<void>;
+  reportPlaybackProgress(params: {
+    itemId: string;
+    positionTicks: number;
+    isPaused?: boolean;
+  }): Promise<void>;
+  reportPlaybackStart(params: { itemId: string; positionTicks?: number }): Promise<void>;
+  reportPlaybackStop(params: { itemId: string; positionTicks: number }): Promise<void>;
 
-  getImageInfo(
-    item: MediaItem | MediaPerson,
+  getImageInfo(params: {
+    item: MediaItem | MediaPerson;
     opts?: {
       width?: number;
       height?: number;
@@ -250,6 +241,6 @@ export interface MediaAdapter {
       preferLogo?: boolean;
       preferThumb?: boolean;
       preferBanner?: boolean;
-    },
-  ): ImageUrlInfo;
+    };
+  }): ImageUrlInfo;
 }

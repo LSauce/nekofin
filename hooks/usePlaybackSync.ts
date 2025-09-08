@@ -22,7 +22,7 @@ export const usePlaybackSync = ({
       if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackProgress(itemDetail.id!, positionTicks, isPaused);
+      mediaAdapter.reportPlaybackProgress({ itemId: itemDetail.id!, positionTicks, isPaused });
     },
     [mediaAdapter, currentServer, itemDetail],
   );
@@ -32,7 +32,7 @@ export const usePlaybackSync = ({
       if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackStart(itemDetail.id!, positionTicks);
+      mediaAdapter.reportPlaybackStart({ itemId: itemDetail.id!, positionTicks });
     },
     [mediaAdapter, currentServer, itemDetail],
   );
@@ -42,7 +42,7 @@ export const usePlaybackSync = ({
       if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackStop(itemDetail.id!, positionTicks);
+      mediaAdapter.reportPlaybackStop({ itemId: itemDetail.id!, positionTicks });
     },
     [mediaAdapter, currentServer, itemDetail],
   );

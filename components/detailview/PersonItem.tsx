@@ -9,7 +9,7 @@ import { IconSymbol } from '../ui/IconSymbol';
 export const PersonItem = ({ item }: { item: MediaPerson }) => {
   const mediaAdapter = useMediaAdapter();
 
-  const imageInfo = mediaAdapter.getImageInfo(item, { width: 300 });
+  const imageInfo = mediaAdapter.getImageInfo({ item, opts: { width: 300 } });
 
   return (
     <View style={styles.personCard}>

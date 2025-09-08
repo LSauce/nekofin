@@ -2,7 +2,6 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getDeviceId, getStreamInfo } from '@/lib/utils';
-import { getEpisodesBySeason, getItemDetail } from '@/services/jellyfin';
 import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -52,7 +51,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryKey: ['itemDetail', itemId, currentServer?.userId],
     queryFn: async () => {
       if (!currentServer) return null;
-      const data = await mediaAdapter.getItemDetail(itemId, currentServer.userId);
+      const data = await mediaAdapter.getItemDetail({ itemId, userId: currentServer.userId });
       return data;
     },
     enabled: !!itemId && !!currentServer,
@@ -68,7 +67,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryKey: ['seriesInfo', itemDetail?.seriesId, currentServer?.userId],
     queryFn: async () => {
       if (!currentServer || !itemDetail?.seriesId) return null;
-      const data = await mediaAdapter.getItemDetail(itemDetail.seriesId, currentServer.userId);
+      const data = await mediaAdapter.getItemDetail({
+        itemId: itemDetail.seriesId,
+        userId: currentServer.userId,
+      });
       return data;
     },
     enabled: !!itemDetail?.seriesId && !!currentServer,
@@ -109,10 +111,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryKey: ['episodes', itemDetail?.seasonId, currentServer?.userId],
     queryFn: async () => {
       if (!currentServer || !itemDetail?.seasonId) return [];
-      const response = await mediaAdapter.getEpisodesBySeason(
-        itemDetail.seasonId,
-        currentServer.userId,
-      );
+      const response = await mediaAdapter.getEpisodesBySeason({
+        seasonId: itemDetail.seasonId,
+        userId: currentServer.userId,
+      });
       return response.data.Items ?? [];
     },
     enabled: !!currentServer && !!itemDetail?.seasonId,

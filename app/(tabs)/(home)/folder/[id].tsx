@@ -28,20 +28,18 @@ export default function FolderScreen() {
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       if (!currentServer || !id) return { items: [], total: 0 };
-      const response = await mediaAdapter.getAllItemsByFolder(
-        currentServer.userId,
-        id,
-        pageParam,
-        PAGE_SIZE,
-        filters.includeItemTypes ?? [],
-        {
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder,
-          onlyUnplayed: filters.onlyUnplayed,
-          year: filters.year,
-          tags: filters.tags,
-        },
-      );
+      const response = await mediaAdapter.getAllItemsByFolder({
+        userId: currentServer.userId,
+        folderId: id,
+        startIndex: pageParam,
+        limit: PAGE_SIZE,
+        itemTypes: filters.includeItemTypes ?? [],
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        onlyUnplayed: filters.onlyUnplayed,
+        year: filters.year,
+        tags: filters.tags,
+      });
       const items = response.data.Items || [];
       const total = response.data.TotalRecordCount ?? items.length;
       return { items: items, total };

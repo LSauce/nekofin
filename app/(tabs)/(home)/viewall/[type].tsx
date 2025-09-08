@@ -48,14 +48,20 @@ export default function ViewAllScreen() {
       if (!currentServer) return { items: [], total: 0 };
       switch (type) {
         case 'resume': {
-          const res = await mediaAdapter.getResumeItems(currentServer.userId, PAGE_SIZE);
+          const res = await mediaAdapter.getResumeItems({
+            userId: currentServer.userId,
+            limit: PAGE_SIZE,
+          });
           const d = res.data;
           const items = d?.Items ?? [];
           const total = d?.TotalRecordCount ?? items.length;
           return { items, total };
         }
         case 'nextup': {
-          const res = await mediaAdapter.getNextUpItems(currentServer.userId, PAGE_SIZE);
+          const res = await mediaAdapter.getNextUpItems({
+            userId: currentServer.userId,
+            limit: PAGE_SIZE,
+          });
           const d = res.data;
           const items = d?.Items ?? [];
           const total = d?.TotalRecordCount ?? items.length;
@@ -63,17 +69,19 @@ export default function ViewAllScreen() {
         }
         case 'latest': {
           if (folderId) {
-            const res = await mediaAdapter.getLatestItemsByFolder(
-              currentServer.userId,
+            const res = await mediaAdapter.getLatestItemsByFolder({
+              userId: currentServer.userId,
               folderId,
-              PAGE_SIZE,
-            );
+              limit: PAGE_SIZE,
+            });
             const d = res.data;
             const items = d?.Items ?? [];
             const total = d?.TotalRecordCount ?? items.length;
             return { items, total };
           }
-          const res = await mediaAdapter.getLatestItems(currentServer.userId, PAGE_SIZE, {
+          const res = await mediaAdapter.getLatestItems({
+            userId: currentServer.userId,
+            limit: PAGE_SIZE,
             includeItemTypes: filters.includeItemTypes,
             sortBy: filters.sortBy,
             sortOrder: filters.sortOrder,

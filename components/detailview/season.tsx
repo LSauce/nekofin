@@ -66,9 +66,15 @@ export const SeasonModeContent = ({
                   if (!currentServer?.userId || !item.id) return;
                   const isPlayed = !!item.userData?.played;
                   if (isPlayed) {
-                    await mediaAdapter.markItemUnplayed(currentServer.userId, item.id);
+                    await mediaAdapter.markItemUnplayed({
+                      userId: currentServer.userId,
+                      itemId: item.id!,
+                    });
                   } else {
-                    await mediaAdapter.markItemPlayed(currentServer.userId, item.id);
+                    await mediaAdapter.markItemPlayed({
+                      userId: currentServer.userId,
+                      itemId: item.id!,
+                    });
                   }
                   await queryClient.invalidateQueries({
                     queryKey: ['detail-bundle', 'season', item.parentId],

@@ -19,19 +19,17 @@ export default function FavoritesScreen() {
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
       if (!currentServer) return { items: [], total: 0 };
-      const res = await mediaAdapter.getFavoriteItemsPaged(
-        currentServer.userId,
-        pageParam,
-        PAGE_SIZE,
-        {
-          includeItemTypes: filters.includeItemTypes ?? [],
-          sortBy: filters.sortBy,
-          sortOrder: filters.sortOrder,
-          onlyUnplayed: filters.onlyUnplayed,
-          year: filters.year,
-          tags: filters.tags,
-        },
-      );
+      const res = await mediaAdapter.getFavoriteItemsPaged({
+        userId: currentServer.userId,
+        startIndex: pageParam,
+        limit: PAGE_SIZE,
+        includeItemTypes: filters.includeItemTypes ?? [],
+        sortBy: filters.sortBy,
+        sortOrder: filters.sortOrder,
+        onlyUnplayed: filters.onlyUnplayed,
+        year: filters.year,
+        tags: filters.tags,
+      });
       const items = res.data?.Items ?? [];
       const total = res.data?.TotalRecordCount ?? items.length;
       return { items, total };

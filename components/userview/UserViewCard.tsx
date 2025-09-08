@@ -14,7 +14,7 @@ export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }
 
   const mediaAdapter = useMediaAdapter();
 
-  const imageInfo = mediaAdapter.getImageInfo(item);
+  const imageInfo = mediaAdapter.getImageInfo({ item });
 
   return (
     <TouchableOpacity
