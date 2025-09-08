@@ -1,9 +1,9 @@
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { formatDurationFromTicks } from '@/lib/utils';
-import { markItemPlayed, markItemUnplayed } from '@/services/jellyfin';
+import { MediaItem } from '@/services/media/types';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -15,19 +15,20 @@ export const SeasonModeContent = ({
   episodes,
   item,
 }: {
-  episodes: BaseItemDto[];
-  item: BaseItemDto;
+  episodes: MediaItem[];
+  item: MediaItem;
 }) => {
-  const { currentApi, currentServer } = useMediaServers();
+  const { currentServer } = useMediaServers();
   const queryClient = useQueryClient();
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const mediaAdapter = useMediaAdapter();
 
   return (
     <>
       <ItemOverview item={item} />
       <View style={detailViewStyles.listContainer}>
         {episodes.map((item) => (
-          <View key={item.Id} style={detailViewStyles.listItem}>
+          <View key={item.id} style={detailViewStyles.listItem}>
             <View
               style={{
                 display: 'flex',
@@ -38,7 +39,7 @@ export const SeasonModeContent = ({
               }}
             >
               <EpisodeCard
-                key={item.Id}
+                key={item.id}
                 item={item}
                 style={{ width: 140, marginRight: 0 }}
                 hideText
@@ -52,31 +53,37 @@ export const SeasonModeContent = ({
                   alignSelf: 'flex-start',
                 }}
               >
-                <ThemedText style={{ lineHeight: 20 }}>{item.Name}</ThemedText>
+                <ThemedText style={{ lineHeight: 20 }}>{item.name}</ThemedText>
                 <ThemedText style={{ color: subtitleColor, fontSize: 12, lineHeight: 16 }}>
-                  {`S${item.ParentIndexNumber}E${item.IndexNumber}`}
+                  {`S${item.parentIndexNumber}E${item.indexNumber}`}
                 </ThemedText>
                 <ThemedText style={{ color: subtitleColor, fontSize: 12, lineHeight: 16 }}>
-                  {formatDurationFromTicks(item.RunTimeTicks)}
+                  {formatDurationFromTicks(item.runTimeTicks ?? 0)}
                 </ThemedText>
               </View>
               <TouchableOpacity
                 onPress={async () => {
-                  if (!currentServer?.userId || !item.Id) return;
-                  const isPlayed = !!item.UserData?.Played;
+                  if (!currentServer?.userId || !item.id) return;
+                  const isPlayed = !!item.userData?.played;
                   if (isPlayed) {
-                    await markItemUnplayed(currentApi!, currentServer.userId, item.Id);
+                    await mediaAdapter.markItemUnplayed({
+                      userId: currentServer.userId,
+                      itemId: item.id!,
+                    });
                   } else {
-                    await markItemPlayed(currentApi!, currentServer.userId, item.Id);
+                    await mediaAdapter.markItemPlayed({
+                      userId: currentServer.userId,
+                      itemId: item.id!,
+                    });
                   }
                   await queryClient.invalidateQueries({
-                    queryKey: ['detail-bundle', 'season', item.SeasonId],
+                    queryKey: ['detail-bundle', 'season', item.parentId],
                   });
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}
               >
                 <MaterialCommunityIcons
-                  name={item.UserData?.Played ? 'check-circle' : 'check-circle-outline'}
+                  name={item.userData?.played ? 'check-circle' : 'check-circle-outline'}
                   size={24}
                   color={subtitleColor}
                 />
@@ -87,7 +94,7 @@ export const SeasonModeContent = ({
                 style={{ color: subtitleColor, fontSize: 12, lineHeight: 16 }}
                 numberOfLines={3}
               >
-                {item.Overview?.trim()}
+                {item.overview?.trim()}
               </ThemedText>
             </View>
           </View>

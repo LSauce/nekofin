@@ -1,7 +1,7 @@
 /**
  * Item and playback helpers
  */
-import { getApiInstance } from '@/services/jellyfin';
+import { getApiInstance } from '@/services/media/jellyfin';
 import {
   BaseItemKind,
   ItemFields,

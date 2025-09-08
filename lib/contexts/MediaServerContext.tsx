@@ -1,8 +1,9 @@
 import {
   authenticateAndSaveServer,
   createApiFromServerInfo,
+  deleteCachedApiForServer,
   setGlobalApiInstance,
-} from '@/services/jellyfin';
+} from '@/services/media/jellyfin';
 import { MediaServerInfo } from '@/services/media/types';
 import { Api } from '@jellyfin/sdk';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
@@ -81,6 +82,13 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
           address: normalizeServerAddress(server.address),
         }));
         setServers(normalizedServers);
+        try {
+          normalizedServers.forEach((s) => {
+            createApiFromServerInfo(s);
+          });
+        } catch (e) {
+          console.warn('Failed to prewarm api instances on load:', e);
+        }
         const persistedId = storage.getString(CURRENT_SERVER_ID_KEY) || null;
         if (persistedId && normalizedServers.some((s) => s.id === persistedId)) {
           setCurrentServerId(persistedId);
@@ -109,7 +117,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     const newServer: MediaServerInfo = {
       ...server,
       address: normalizedAddress,
-      id: `${normalizedAddress}_${server.userId}_${Date.now()}`,
+      id: `${normalizedAddress}_${server.userId}`,
       createdAt: Date.now(),
     };
 
@@ -121,6 +129,11 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     } catch (error) {
       console.error('Failed to persist current server id on add:', error);
     }
+    try {
+      createApiFromServerInfo(newServer);
+    } catch (e) {
+      console.warn('Failed to prewarm api instance on add:', e);
+    }
   };
 
   const authenticateAndAddServer = async (address: string, username: string, password: string) => {
@@ -131,6 +144,11 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const removeServer = async (id: string) => {
     const updatedServers = servers.filter((server) => server.id !== id);
     await saveServers(updatedServers);
+    try {
+      deleteCachedApiForServer(id);
+    } catch (e) {
+      console.warn('Failed to cleanup api cache on remove:', e);
+    }
     if (currentServerId === id) {
       const next = updatedServers[0]?.id || null;
       setCurrentServerId(next);
@@ -157,6 +175,14 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
         : server,
     );
     await saveServers(updatedServers);
+    const updated = updatedServers.find((s) => s.id === id);
+    if (updated) {
+      try {
+        createApiFromServerInfo(updated);
+      } catch (e) {
+        console.warn('Failed to refresh api cache on update:', e);
+      }
+    }
   };
 
   const getServer = (id: string) => {
@@ -173,7 +199,7 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     if (!server) return;
     try {
       const { createApiFromServerInfo, getUserInfo, getSystemInfo } = await import(
-        '@/services/jellyfin'
+        '@/services/media/jellyfin'
       );
       const api = createApiFromServerInfo(server);
       const sysRes = await getSystemInfo(api);

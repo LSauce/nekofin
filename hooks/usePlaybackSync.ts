@@ -1,65 +1,60 @@
-import {
-  reportPlaybackProgress,
-  reportPlaybackStart,
-  reportPlaybackStop,
-} from '@/services/jellyfin';
-import { MediaServerInfo } from '@/services/media/types';
-import { Api } from '@jellyfin/sdk';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models/base-item-dto';
-import { useCallback, useEffect, useRef } from 'react';
+import { MediaItem, MediaServerInfo } from '@/services/media/types';
+import { useCallback, useEffect } from 'react';
 import { SharedValue } from 'react-native-reanimated';
 
+import { useMediaAdapter } from './useMediaAdapter';
+
 interface UsePlaybackSyncProps {
-  api: Api | null;
   currentServer: MediaServerInfo | null;
-  itemDetail: BaseItemDto | null;
+  itemDetail: MediaItem | null;
   currentTime: SharedValue<number>;
 }
 
 export const usePlaybackSync = ({
-  api,
   currentServer,
   itemDetail,
   currentTime,
 }: UsePlaybackSyncProps) => {
+  const mediaAdapter = useMediaAdapter();
+
   const syncPlaybackProgress = useCallback(
     (position: number, isPaused: boolean = false) => {
-      if (!api || !currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      reportPlaybackProgress(api, itemDetail.Id!, positionTicks, isPaused);
+      mediaAdapter.reportPlaybackProgress({ itemId: itemDetail.id!, positionTicks, isPaused });
     },
-    [api, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail],
   );
 
   const syncPlaybackStart = useCallback(
     (position: number) => {
-      if (!api || !currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      reportPlaybackStart(api, itemDetail.Id!, positionTicks);
+      mediaAdapter.reportPlaybackStart({ itemId: itemDetail.id!, positionTicks });
     },
-    [api, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail],
   );
 
   const syncPlaybackStop = useCallback(
     (position: number) => {
-      if (!api || !currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail) return;
 
       const positionTicks = Math.round(position);
-      reportPlaybackStop(api, itemDetail.Id!, positionTicks);
+      mediaAdapter.reportPlaybackStop({ itemId: itemDetail.id!, positionTicks });
     },
-    [api, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail],
   );
 
   useEffect(() => {
     return () => {
-      if (api && currentServer && itemDetail) {
+      if (currentServer && itemDetail) {
         const positionTicks = Math.round(currentTime.value);
         syncPlaybackStop(positionTicks);
       }
     };
-  }, [api, currentServer, itemDetail, syncPlaybackStop, currentTime]);
+  }, [mediaAdapter, currentServer, itemDetail, syncPlaybackStop, currentTime]);
 
   return {
     syncPlaybackProgress,

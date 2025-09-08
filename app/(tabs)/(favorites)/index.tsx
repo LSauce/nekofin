@@ -1,25 +1,29 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { getFavoriteItemsPaged } from '@/services/jellyfin';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem } from '@/services/media/types';
 import { useInfiniteQuery } from '@tanstack/react-query';
 
 export default function FavoritesScreen() {
-  const { currentServer, currentApi: api } = useMediaServers();
+  const { currentServer } = useMediaServers();
+  const mediaAdapter = useMediaAdapter();
 
   const PAGE_SIZE = 40;
 
   const { filters, setFilters } = useMediaFilters();
 
   const query = useInfiniteQuery({
-    enabled: !!api && !!currentServer,
+    enabled: !!currentServer,
     queryKey: ['favorites', currentServer?.id, filters],
     initialPageParam: 0,
     queryFn: async ({ pageParam = 0 }) => {
-      if (!api || !currentServer) return { items: [], total: 0 };
-      const res = await getFavoriteItemsPaged(api, currentServer.userId, pageParam, PAGE_SIZE, {
-        includeItemTypes: filters.includeItemTypes,
+      if (!currentServer) return { items: [], total: 0 };
+      const res = await mediaAdapter.getFavoriteItemsPaged({
+        userId: currentServer.userId,
+        startIndex: pageParam,
+        limit: PAGE_SIZE,
+        includeItemTypes: filters.includeItemTypes ?? [],
         sortBy: filters.sortBy,
         sortOrder: filters.sortOrder,
         onlyUnplayed: filters.onlyUnplayed,
@@ -31,8 +35,8 @@ export default function FavoritesScreen() {
       return { items, total };
     },
     getNextPageParam: (
-      lastPage: { items: BaseItemDto[]; total: number },
-      allPages: { items: BaseItemDto[]; total: number }[],
+      lastPage: { items: MediaItem[]; total: number },
+      allPages: { items: MediaItem[]; total: number }[],
     ) => {
       const loaded = allPages.reduce((sum, p) => sum + p.items.length, 0);
       return loaded >= lastPage.total || lastPage.items.length === 0 ? undefined : loaded;

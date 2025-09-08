@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { BaseItemDto, BaseItemPerson } from '@jellyfin/sdk/lib/generated-client';
+import { MediaItem, MediaPerson } from '@/services/media/types';
 import { useRouter } from 'expo-router';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
@@ -13,9 +13,9 @@ export const MovieModeContent = ({
   similarItems,
   item,
 }: {
-  people: BaseItemPerson[];
-  similarItems: BaseItemDto[];
-  item: BaseItemDto;
+  people: MediaPerson[];
+  similarItems: MediaItem[];
+  item: MediaItem;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { accentColor } = useAccentColor();
@@ -24,13 +24,13 @@ export const MovieModeContent = ({
   return (
     <>
       <ItemMeta item={item} />
-      {!!item.Id && (
+      {!!item.id && (
         <TouchableOpacity
           onPress={() => {
             router.push({
               pathname: '/player',
               params: {
-                itemId: item.Id!,
+                itemId: item.id!,
               },
             });
           }}
@@ -50,7 +50,7 @@ export const MovieModeContent = ({
             data={people}
             style={detailViewStyles.edgeToEdge}
             renderItem={({ item }) => <PersonItem item={item} />}
-            keyExtractor={(item) => `${item.Id ?? item.Name}-${item.Role ?? ''}`}
+            keyExtractor={(item) => `${item.id ?? item.name}-${item.role ?? ''}`}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -67,7 +67,7 @@ export const MovieModeContent = ({
             renderItem={({ item }) => (
               <SeriesCard item={item} style={detailViewStyles.seasonCard} imgType="Primary" />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />

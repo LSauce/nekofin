@@ -1,10 +1,9 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { useDetailBundle } from '@/hooks/useDetailBundle';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import { getImageInfo } from '@/lib/utils/image';
-import { addFavoriteItem, removeFavoriteItem } from '@/services/jellyfin';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
@@ -25,13 +24,14 @@ export type DetailViewProps = {
 
 export default function DetailView({ itemId, mode }: DetailViewProps) {
   const navigation = useNavigation();
-  const { currentServer, currentApi } = useMediaServers();
+  const { currentServer } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
   const { data: bundle, isLoading, refetch } = useDetailBundle(mode, itemId);
+  const mediaAdapter = useMediaAdapter();
 
   const item = bundle?.item;
   const seasons = bundle?.seasons ?? [];
@@ -44,22 +44,28 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
 
   useEffect(() => {
     if (!item) return;
-    setIsFavorite(!!item.UserData?.IsFavorite);
+    setIsFavorite(!!item.userData?.isFavorite);
   }, [item]);
 
   useEffect(() => {
     navigation.setOptions({
       headerRight: () =>
-        mode === 'series' && item?.Id ? (
+        mode === 'series' && item?.id ? (
           <TouchableOpacity
             onPress={async () => {
-              if (!currentApi || !currentServer?.userId || !item?.Id) return;
+              if (!currentServer?.userId || !item?.id) return;
               try {
                 if (isFavorite) {
-                  await removeFavoriteItem(currentApi, currentServer.userId, item.Id);
+                  await mediaAdapter.removeFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: item.id!,
+                  });
                   setIsFavorite(false);
                 } else {
-                  await addFavoriteItem(currentApi, currentServer.userId, item.Id);
+                  await mediaAdapter.addFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: item.id!,
+                  });
                   setIsFavorite(true);
                 }
               } catch (e) {}
@@ -76,13 +82,13 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
     });
   }, [
     navigation,
-    item?.Name,
+    item?.name,
     mode,
     isFavorite,
-    currentApi,
     currentServer?.userId,
-    item?.Id,
+    item?.id,
     textColor,
+    mediaAdapter,
   ]);
 
   if (isLoading || !item) {
@@ -94,10 +100,13 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
     );
   }
 
-  const headerImageInfo = getImageInfo(item, { preferBackdrop: true, width: 1200 });
+  const headerImageInfo = mediaAdapter.getImageInfo({
+    item,
+    opts: { preferBackdrop: true, width: 1200 },
+  });
   const headerImageUrl = headerImageInfo.url;
 
-  const logoImageInfo = getImageInfo(item, { preferLogo: true, width: 400 });
+  const logoImageInfo = mediaAdapter.getImageInfo({ item, opts: { preferLogo: true, width: 400 } });
   const logoImageUrl = logoImageInfo.url;
 
   const renderModeContent = () => {
@@ -106,7 +115,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
         <SeriesModeContent
           seasons={seasons}
           nextUpItems={nextUpItems}
-          people={(item?.People ?? []).slice(0, 20)}
+          people={(item?.people ?? []).slice(0, 20)}
           similarItems={similarShows}
           item={item}
         />
@@ -114,7 +123,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
       season: <SeasonModeContent episodes={episodes} item={item} />,
       movie: (
         <MovieModeContent
-          people={(item?.People ?? []).slice(0, 20)}
+          people={(item?.people ?? []).slice(0, 20)}
           similarItems={similarMovies}
           item={item}
         />
@@ -124,7 +133,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
           seasons={seasons}
           episodes={episodes}
           item={item}
-          people={(item?.People ?? []).slice(0, 20)}
+          people={(item?.people ?? []).slice(0, 20)}
           similarItems={similarMovies}
         />
       ),
@@ -162,7 +171,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
           />
         )}
         {mode !== 'episode' && (
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.Name}</Text>
+          <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.name}</Text>
         )}
 
         {renderModeContent()}

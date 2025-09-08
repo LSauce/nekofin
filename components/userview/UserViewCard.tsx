@@ -1,18 +1,20 @@
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { getImageInfo } from '@/lib/utils/image';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
+import { MediaItem } from '@/services/media/types';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { IconSymbol } from '../ui/IconSymbol';
 
-export const UserViewCard = ({ item, title }: { item: BaseItemDto; title: string }) => {
+export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }) => {
   const router = useRouter();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
-  const imageInfo = getImageInfo(item);
+  const mediaAdapter = useMediaAdapter();
+
+  const imageInfo = mediaAdapter.getImageInfo({ item });
 
   return (
     <TouchableOpacity
@@ -22,9 +24,9 @@ export const UserViewCard = ({ item, title }: { item: BaseItemDto; title: string
         router.push({
           pathname: '/folder/[id]',
           params: {
-            id: item.Id!,
+            id: item.id!,
             name: title,
-            itemTypes: item.CollectionType === 'movies' ? 'Movie' : 'Series',
+            itemTypes: item.collectionType === 'movies' ? 'Movie' : 'Series',
           },
         });
       }}

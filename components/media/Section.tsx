@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { MediaItem } from '@/services/media/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonCard, SkeletonSectionHeader } from '../ui/Skeleton';
@@ -15,7 +15,7 @@ export function Section({
 }: {
   title: string;
   onViewAll: () => void;
-  items: BaseItemDto[];
+  items: MediaItem[];
   isLoading: boolean;
   type?: 'episode' | 'series';
 }) {
@@ -53,7 +53,7 @@ export function Section({
           renderItem={({ item }) =>
             type === 'episode' ? <EpisodeCard item={item} /> : <SeriesCard item={item} />
           }
-          keyExtractor={(item) => item.Id!}
+          keyExtractor={(item) => item.id!}
         />
       ) : (
         <View style={styles.emptyContainer}>

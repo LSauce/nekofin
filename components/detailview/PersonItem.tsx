@@ -1,13 +1,15 @@
-import { getImageInfo } from '@/lib/utils/image';
-import { BaseItemPerson } from '@jellyfin/sdk/lib/generated-client/models/base-item-person';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
+import { MediaPerson } from '@/services/media/types';
 import { Image } from 'expo-image';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '../ThemedText';
 import { IconSymbol } from '../ui/IconSymbol';
 
-export const PersonItem = ({ item }: { item: BaseItemPerson }) => {
-  const imageInfo = getImageInfo(item, { width: 300 });
+export const PersonItem = ({ item }: { item: MediaPerson }) => {
+  const mediaAdapter = useMediaAdapter();
+
+  const imageInfo = mediaAdapter.getImageInfo({ item, opts: { width: 300 } });
 
   return (
     <View style={styles.personCard}>
@@ -29,11 +31,11 @@ export const PersonItem = ({ item }: { item: BaseItemPerson }) => {
         </View>
       )}
       <ThemedText style={styles.personName} numberOfLines={1}>
-        {item.Name}
+        {item.name}
       </ThemedText>
-      {!!item.Role && (
+      {!!item.role && (
         <ThemedText style={styles.personRole} numberOfLines={1}>
-          {item.Role}
+          {item.role}
         </ThemedText>
       )}
     </View>

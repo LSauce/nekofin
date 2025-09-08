@@ -2,7 +2,7 @@
  * Helper for image manipulation and image-related utility functions
  *
  */
-import { getApiInstance } from '@/services/jellyfin';
+import { getApiInstance } from '@/services/media/jellyfin';
 import {
   BaseItemKind,
   ImageType,

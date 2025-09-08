@@ -1,6 +1,12 @@
+import download from '@/lib/profiles/download';
 import { getDeviceId } from '@/lib/utils';
 import { Api, Jellyfin, RecommendedServerInfo } from '@jellyfin/sdk';
-import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import {
+  BaseItemDto,
+  BaseItemKind,
+  ItemSortBy,
+  MediaSourceInfo,
+} from '@jellyfin/sdk/lib/generated-client/models';
 import {
   getFilterApi,
   getItemsApi,
@@ -15,10 +21,11 @@ import {
   getUserViewsApi,
 } from '@jellyfin/sdk/lib/utils/api';
 
-import { MediaServerInfo } from './media/types';
+import { MediaServerInfo } from './types';
 
 let jellyfin: Jellyfin | null = null;
 let apiInstance: Api | null = null;
+let apiInstancesByServerId: Record<string, Api> = {};
 
 export function getJellyfinInstance() {
   if (!jellyfin) {
@@ -37,6 +44,9 @@ export function getJellyfinInstance() {
 }
 
 export function getApiInstance() {
+  if (!apiInstance) {
+    throw new Error('API instance not set');
+  }
   return apiInstance;
 }
 
@@ -71,10 +81,6 @@ export async function getPublicUsers(api: Api) {
 export async function login(api: Api, username: string, password: string) {
   console.log('login', username, password, api.basePath);
   return await api.authenticateUserByName(username, password);
-}
-
-export async function getMediaFolders(api: Api) {
-  return await getLibraryApi(api).getMediaFolders();
 }
 
 export async function getLatestItems(
@@ -209,10 +215,39 @@ export async function getUserInfo(api: Api, userId: string) {
   return await getUserApi(api).getUserById({ userId });
 }
 
+export function getApiInstances() {
+  return apiInstancesByServerId;
+}
+
+export function getCachedApiByServerId(serverId: string) {
+  return apiInstancesByServerId[serverId] ?? null;
+}
+
+export function setCachedApiForServer(serverId: string, api: Api) {
+  apiInstancesByServerId[serverId] = api;
+}
+
+export function deleteCachedApiForServer(serverId: string) {
+  delete apiInstancesByServerId[serverId];
+}
+
 export function createApiFromServerInfo(serverInfo: MediaServerInfo) {
-  const jellyfin = getJellyfinInstance();
-  const api = jellyfin.createApi(serverInfo.address);
+  const key = serverInfo.id || `${serverInfo.address}_${serverInfo.userId}`;
+  const existing = key ? apiInstancesByServerId[key] : undefined;
+  if (existing) {
+    if (existing.basePath !== serverInfo.address) {
+      const recreated = createApi(serverInfo.address);
+      recreated.accessToken = serverInfo.accessToken;
+      apiInstancesByServerId[key] = recreated;
+      return recreated;
+    }
+    existing.accessToken = serverInfo.accessToken;
+    return existing;
+  }
+  const jf = getJellyfinInstance();
+  const api = jf.createApi(serverInfo.address);
   api.accessToken = serverInfo.accessToken;
+  if (key) apiInstancesByServerId[key] = api;
   return api;
 }
 
@@ -507,3 +542,299 @@ export async function reportPlaybackStop(api: Api, itemId: string, positionTicks
     console.warn('Error reporting playback stop:', error);
   }
 }
+
+export type StreamInfo = {
+  url: string | null;
+  sessionId: string | null;
+  mediaSource: MediaSourceInfo | undefined;
+};
+
+interface StreamResult {
+  url: string;
+  sessionId: string | null;
+  mediaSource: MediaSourceInfo | undefined;
+}
+
+const getPlaybackUrl = (
+  api: Api,
+  itemId: string,
+  mediaSource: MediaSourceInfo | undefined,
+  params: {
+    subtitleStreamIndex?: number;
+    audioStreamIndex?: number;
+    deviceId?: string | null;
+    startTimeTicks?: number;
+    maxStreamingBitrate?: number;
+    userId: string;
+    playSessionId?: string | null;
+    container?: string;
+    static?: string;
+  },
+): string => {
+  let transcodeUrl = mediaSource?.TranscodingUrl;
+
+  if (transcodeUrl) {
+    if (params.subtitleStreamIndex === -1) {
+      transcodeUrl = transcodeUrl.replace('SubtitleMethod=Encode', 'SubtitleMethod=Hls');
+    }
+
+    console.log('Video is being transcoded:', transcodeUrl);
+    return `${api.basePath}${transcodeUrl}`;
+  }
+
+  const streamParams = new URLSearchParams({
+    static: params.static || 'true',
+    container: params.container || 'mp4',
+    mediaSourceId: mediaSource?.Id || '',
+    subtitleStreamIndex: params.subtitleStreamIndex?.toString() || '',
+    audioStreamIndex: params.audioStreamIndex?.toString() || '',
+    deviceId: params.deviceId || api.deviceInfo.id,
+    api_key: api.accessToken,
+    startTimeTicks: params.startTimeTicks?.toString() || '0',
+    maxStreamingBitrate: params.maxStreamingBitrate?.toString() || '',
+    userId: params.userId,
+  });
+
+  if (params.playSessionId) {
+    streamParams.append('playSessionId', params.playSessionId);
+  }
+
+  const directPlayUrl = `${api.basePath}/Videos/${itemId}/stream?${streamParams.toString()}`;
+
+  console.log('Video is being direct played:', directPlayUrl);
+  return directPlayUrl;
+};
+
+const getDownloadUrl = (
+  api: Api,
+  itemId: string,
+  mediaSource: MediaSourceInfo | undefined,
+  sessionId: string | null | undefined,
+  params: {
+    subtitleStreamIndex?: number;
+    audioStreamIndex?: number;
+    deviceId?: string | null;
+    startTimeTicks?: number;
+    maxStreamingBitrate?: number;
+    userId: string;
+    playSessionId?: string | null;
+  },
+): StreamResult => {
+  let downloadMediaSource = mediaSource;
+  if (mediaSource?.TranscodingUrl) {
+    downloadMediaSource = {
+      ...mediaSource,
+      TranscodingUrl: mediaSource.TranscodingUrl.replace('master.m3u8', 'stream'),
+    };
+  }
+
+  let url = getPlaybackUrl(api, itemId, downloadMediaSource, {
+    ...params,
+    container: 'ts',
+    static: 'false',
+  });
+
+  if (!mediaSource?.TranscodingUrl) {
+    const urlObj = new URL(url);
+    const downloadParams = {
+      subtitleMethod: 'Embed',
+      enableSubtitlesInManifest: 'true',
+      allowVideoStreamCopy: 'true',
+      allowAudioStreamCopy: 'true',
+    };
+
+    Object.entries(downloadParams).forEach(([key, value]) => {
+      urlObj.searchParams.append(key, value);
+    });
+
+    url = urlObj.toString();
+  }
+
+  return {
+    url,
+    sessionId: sessionId || null,
+    mediaSource,
+  };
+};
+
+export const getStreamInfo = async ({
+  api,
+  item,
+  userId,
+  startTimeTicks = 0,
+  maxStreamingBitrate,
+  playSessionId,
+  deviceProfile,
+  audioStreamIndex = 0,
+  subtitleStreamIndex = undefined,
+  mediaSourceId,
+  deviceId,
+}: {
+  api: Api | null | undefined;
+  item: BaseItemDto | null | undefined;
+  userId: string | null | undefined;
+  startTimeTicks: number;
+  maxStreamingBitrate?: number;
+  playSessionId?: string | null;
+  deviceProfile: any;
+  audioStreamIndex?: number;
+  subtitleStreamIndex?: number;
+  height?: number;
+  mediaSourceId?: string | null;
+  deviceId?: string | null;
+}): Promise<StreamInfo | null> => {
+  if (!api || !userId || !item?.Id) {
+    console.warn('Missing required parameters for getStreamInfo');
+    return null;
+  }
+
+  let mediaSource: MediaSourceInfo | undefined;
+  let sessionId: string | null | undefined;
+
+  if (item.Type === BaseItemKind.Program) {
+    console.log('Item is of type program...');
+    const res = await getMediaInfoApi(api).getPlaybackInfo(
+      {
+        userId,
+        itemId: item.ChannelId!,
+      },
+      {
+        method: 'POST',
+        params: {
+          startTimeTicks: 0,
+          isPlayback: true,
+          autoOpenLiveStream: true,
+          maxStreamingBitrate,
+          audioStreamIndex,
+        },
+        data: {
+          deviceProfile,
+        },
+      },
+    );
+
+    sessionId = res.data.PlaySessionId || null;
+    mediaSource = res.data.MediaSources?.[0];
+    const url = getPlaybackUrl(api, item.ChannelId!, mediaSource, {
+      subtitleStreamIndex,
+      audioStreamIndex,
+      deviceId,
+      startTimeTicks: 0,
+      maxStreamingBitrate,
+      userId,
+    });
+
+    console.log('Debug: url', url);
+
+    return {
+      url,
+      sessionId: sessionId || null,
+      mediaSource,
+    };
+  }
+
+  const res = await getMediaInfoApi(api).getPlaybackInfo(
+    {
+      itemId: item.Id!,
+    },
+    {
+      method: 'POST',
+      data: {
+        userId,
+        deviceProfile,
+        subtitleStreamIndex,
+        startTimeTicks,
+        isPlayback: true,
+        autoOpenLiveStream: true,
+        maxStreamingBitrate,
+        audioStreamIndex,
+        mediaSourceId,
+      },
+    },
+  );
+
+  if (res.status !== 200) {
+    console.error('Error getting playback info:', res.status, res.statusText);
+  }
+
+  sessionId = res.data.PlaySessionId || null;
+  mediaSource = res.data.MediaSources?.[0];
+
+  const url = getPlaybackUrl(api, item.Id!, mediaSource, {
+    subtitleStreamIndex,
+    audioStreamIndex,
+    deviceId,
+    startTimeTicks,
+    maxStreamingBitrate,
+    userId,
+    playSessionId: playSessionId || undefined,
+  });
+
+  return {
+    url,
+    sessionId: sessionId || null,
+    mediaSource,
+  };
+};
+
+export const getDownloadStreamInfo = async ({
+  api,
+  item,
+  userId,
+  maxStreamingBitrate,
+  audioStreamIndex = 0,
+  subtitleStreamIndex = undefined,
+  mediaSourceId,
+  deviceId,
+}: {
+  api: Api | null | undefined;
+  item: BaseItemDto | null | undefined;
+  userId: string | null | undefined;
+  maxStreamingBitrate?: number;
+  audioStreamIndex?: number;
+  subtitleStreamIndex?: number;
+  mediaSourceId?: string | null;
+  deviceId?: string | null;
+}): Promise<StreamInfo | null> => {
+  if (!api || !userId || !item?.Id) {
+    console.warn('Missing required parameters for getDownloadStreamInfo');
+    return null;
+  }
+
+  const res = await getMediaInfoApi(api).getPlaybackInfo(
+    {
+      itemId: item.Id!,
+    },
+    {
+      method: 'POST',
+      data: {
+        userId,
+        deviceProfile: download,
+        subtitleStreamIndex,
+        startTimeTicks: 0,
+        isPlayback: true,
+        autoOpenLiveStream: true,
+        maxStreamingBitrate,
+        audioStreamIndex,
+        mediaSourceId,
+      },
+    },
+  );
+
+  if (res.status !== 200) {
+    console.error('Error getting playback info:', res.status, res.statusText);
+  }
+
+  const sessionId = res.data.PlaySessionId || null;
+  const mediaSource = res.data.MediaSources?.[0];
+
+  return getDownloadUrl(api, item.Id!, mediaSource, sessionId, {
+    subtitleStreamIndex,
+    audioStreamIndex,
+    deviceId,
+    startTimeTicks: 0,
+    maxStreamingBitrate,
+    userId,
+    playSessionId: sessionId || undefined,
+  });
+};

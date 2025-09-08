@@ -1,126 +1,224 @@
-import type { Api } from '@jellyfin/sdk';
+import type { ImageUrlInfo } from '@/lib/utils/image';
+import type { Api, RecommendedServerInfo } from '@jellyfin/sdk';
+import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 
-import type { MediaAdapter, MediaServerInfo } from './types';
+import {
+  MediaAdapter,
+  type MediaFilters,
+  type MediaItem,
+  type MediaItemType,
+  type MediaPlaybackInfo,
+  type MediaServerInfo,
+  type MediaSortBy,
+  type MediaSortOrder,
+  type MediaSystemInfo,
+  type MediaUser,
+} from './types';
 
-export const embyAdapter: MediaAdapter = {
-  getApiInstance() {
+class EmbyAdapter implements MediaAdapter {
+  getApiInstance(): unknown | null {
     return null;
-  },
-  setGlobalApiInstance() {},
+  }
+  setGlobalApiInstance(_: unknown | null): void {}
 
-  async discoverServers() {
-    return [];
-  },
-  findBestServer() {
+  async discoverServers(_: { host: string }): Promise<RecommendedServerInfo[]> {
+    return [] as RecommendedServerInfo[];
+  }
+  findBestServer(_: { servers: RecommendedServerInfo[] }): RecommendedServerInfo | null {
     return null;
-  },
+  }
 
-  createApi(address: string): Api {
+  createApi(_: { address: string }): Api {
     throw new Error('Emby adapter not implemented');
-  },
-  createApiFromServerInfo(serverInfo: MediaServerInfo): Api {
+  }
+  createApiFromServerInfo(_: { serverInfo: MediaServerInfo }): Api {
     throw new Error('Emby adapter not implemented');
-  },
+  }
 
-  async getSystemInfo() {
+  async getSystemInfo(): Promise<MediaSystemInfo> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getPublicUsers() {
+  }
+  async getPublicUsers(): Promise<MediaUser[]> {
     throw new Error('Emby adapter not implemented');
-  },
-  async login() {
+  }
+  async login(_: { username: string; password: string }): Promise<unknown> {
     throw new Error('Emby adapter not implemented');
-  },
-  async authenticateAndSaveServer() {
+  }
+  async authenticateAndSaveServer(_: {
+    address: string;
+    username: string;
+    password: string;
+    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
+  }): Promise<unknown> {
     throw new Error('Emby adapter not implemented');
-  },
+  }
 
-  async getMediaFolders() {
+  async getLatestItems(_: {
+    userId: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getLatestItems() {
+  }
+  async getLatestItemsByFolder(_: { userId: string; folderId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getLatestItemsByFolder() {
+  }
+  async getNextUpItems(_: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getNextUpItems() {
+  }
+  async getNextUpItemsByFolder(_: { userId: string; folderId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getNextUpItemsByFolder() {
+  }
+  async getResumeItems(_: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getResumeItems() {
+  }
+  async getFavoriteItems(_: { userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getFavoriteItems() {
+  }
+  async getFavoriteItemsPaged(_: {
+    userId: string;
+    startIndex?: number;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getFavoriteItemsPaged() {
+  }
+  async logout(): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async logout() {
+  }
+  async getUserInfo(_: { userId: string }): Promise<MediaUser> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getUserInfo() {
+  }
+  async getItemDetail(_: { itemId: string; userId: string }): Promise<MediaItem> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getItemDetail() {
+  }
+  async getItemMediaSources(_: { itemId: string }): Promise<MediaPlaybackInfo> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getItemMediaSources() {
+  }
+  async getUserView(_: { userId: string }): Promise<MediaItem[]> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getUserView() {
+  }
+  async getAllItemsByFolder(_: {
+    userId: string;
+    folderId: string;
+    startIndex?: number;
+    limit?: number;
+    itemTypes?: MediaItemType[];
+    sortBy?: MediaSortBy[];
+    sortOrder?: MediaSortOrder;
+    onlyUnplayed?: boolean;
+    year?: number;
+    tags?: string[];
+  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getAllItemsByFolder() {
+  }
+  async getSeasonsBySeries(_: { seriesId: string; userId: string }): Promise<{
+    data: { Items?: MediaItem[] };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getSeasonsBySeries() {
+  }
+  async getEpisodesBySeason(_: { seasonId: string; userId: string }): Promise<{
+    data: { Items?: MediaItem[] };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getEpisodesBySeason() {
+  }
+  async getSimilarShows(_: { itemId: string; userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[] };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getSimilarShows() {
+  }
+  async getSimilarMovies(_: { itemId: string; userId: string; limit?: number }): Promise<{
+    data: { Items?: MediaItem[] };
+  }> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getSimilarMovies() {
+  }
+  async searchItems(_: {
+    userId: string;
+    searchTerm: string;
+    limit?: number;
+    includeItemTypes?: MediaItemType[];
+  }): Promise<MediaItem[]> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getSearchHints() {
+  }
+  async getRecommendedSearchKeywords(_: { userId: string; limit?: number }): Promise<string[]> {
     throw new Error('Emby adapter not implemented');
-  },
-  async searchItems() {
+  }
+  async getAvailableFilters(_: { userId: string; parentId?: string }): Promise<MediaFilters> {
     throw new Error('Emby adapter not implemented');
-  },
-  async getRecommendedSearchKeywords() {
+  }
+  getImageInfo(_: {
+    item: MediaItem | import('./types').MediaPerson;
+    opts?: {
+      width?: number;
+      height?: number;
+      preferBackdrop?: boolean;
+      preferLogo?: boolean;
+      preferThumb?: boolean;
+      preferBanner?: boolean;
+    };
+  }): ImageUrlInfo {
     throw new Error('Emby adapter not implemented');
-  },
-  async getAvailableFilters() {
+  }
+  getStreamInfo(_: {
+    item: MediaItem | null | undefined;
+    userId: string | null | undefined;
+    startTimeTicks: number;
+    maxStreamingBitrate?: number;
+    playSessionId?: string | null;
+    deviceProfile: DeviceProfile;
+    audioStreamIndex?: number;
+    subtitleStreamIndex?: number;
+    height?: number;
+    mediaSourceId?: string | null;
+    deviceId?: string | null;
+  }): Promise<import('./jellyfin').StreamInfo | null> {
     throw new Error('Emby adapter not implemented');
-  },
+  }
 
-  async addFavoriteItem() {
+  async addFavoriteItem(_: { userId: string; itemId: string }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async removeFavoriteItem() {
+  }
+  async removeFavoriteItem(_: { userId: string; itemId: string }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async markItemPlayed() {
+  }
+  async markItemPlayed(_: { userId: string; itemId: string; datePlayed?: string }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async markItemUnplayed() {
+  }
+  async markItemUnplayed(_: { userId: string; itemId: string }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async reportPlaybackProgress() {
+  }
+  async reportPlaybackProgress(_: {
+    itemId: string;
+    positionTicks: number;
+    isPaused?: boolean;
+  }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async reportPlaybackStart() {
+  }
+  async reportPlaybackStart(_: { itemId: string; positionTicks?: number }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-  async reportPlaybackStop() {
+  }
+  async reportPlaybackStop(_: { itemId: string; positionTicks: number }): Promise<void> {
     throw new Error('Emby adapter not implemented');
-  },
-};
+  }
+}
+
+export const embyAdapter = new EmbyAdapter();

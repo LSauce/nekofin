@@ -1,11 +1,11 @@
 import { EpisodeCard, SeriesCard } from '@/components/media/Card';
 import PageScrollView from '@/components/PageScrollView';
 import { SkeletonHorizontalSection } from '@/components/ui/Skeleton';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { getRecommendedSearchKeywords, searchItems } from '@/services/jellyfin';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem } from '@/services/media/types';
 import { useQuery } from '@tanstack/react-query';
 import { Stack } from 'expo-router';
 import React, { RefObject, useMemo, useRef, useState } from 'react';
@@ -13,9 +13,10 @@ import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native
 import { SearchBarCommands } from 'react-native-screens';
 
 export default function SearchScreen() {
-  const { currentApi, currentServer } = useMediaServers();
+  const { currentServer } = useMediaServers();
   const [keyword, setKeyword] = useState<string>('');
   const [selected, setSelected] = useState<string>('');
+  const mediaAdapter = useMediaAdapter();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -23,14 +24,17 @@ export default function SearchScreen() {
 
   const searchBarRef = useRef<SearchBarCommands>(null);
 
-  const canQuery = Boolean(currentApi && currentServer?.userId);
+  const canQuery = Boolean(currentServer?.userId);
 
   const { data: suggestions = [] } = useQuery<string[]>({
     enabled: canQuery,
     queryKey: ['recommend-keywords', currentServer?.id],
     queryFn: async () => {
-      if (!currentApi || !currentServer?.userId) return [];
-      return await getRecommendedSearchKeywords(currentApi, currentServer.userId, 20);
+      if (!currentServer?.userId) return [];
+      return await mediaAdapter.getRecommendedSearchKeywords({
+        userId: currentServer.userId,
+        limit: 20,
+      });
     },
   });
 
@@ -46,19 +50,23 @@ export default function SearchScreen() {
     isLoading: loadingResults,
     isError: isResultsError,
     refetch,
-  } = useQuery<BaseItemDto[]>({
+  } = useQuery<MediaItem[]>({
     enabled: canQuery && effectiveKeyword.length > 0,
     queryKey: ['search-items', currentServer?.id, effectiveKeyword],
     queryFn: async () => {
-      if (!currentApi || !currentServer?.userId) return [];
-      return await searchItems(currentApi, currentServer.userId, effectiveKeyword, 120);
+      if (!currentServer?.userId) return [];
+      return await mediaAdapter.searchItems({
+        userId: currentServer.userId,
+        searchTerm: effectiveKeyword,
+        limit: 120,
+      });
     },
   });
 
   const groupedResults = useMemo(() => {
-    const typeToItems: Record<string, BaseItemDto[]> = {};
+    const typeToItems: Record<string, MediaItem[]> = {};
     results.forEach((item) => {
-      const key = item.Type || 'Other';
+      const key = item.type || 'Other';
       if (!typeToItems[key]) typeToItems[key] = [];
       typeToItems[key].push(item);
     });
@@ -79,8 +87,8 @@ export default function SearchScreen() {
     return entries.map(([type, items]) => ({ key: type, title: titleMap[type] || type, items }));
   }, [results]);
 
-  const renderItem = ({ item }: { item: BaseItemDto }) => {
-    if (item.Type === 'Series') {
+  const renderItem = ({ item }: { item: MediaItem }) => {
+    if (item.type === 'Series') {
       return <SeriesCard item={item} />;
     }
     return <EpisodeCard item={item} />;
@@ -155,7 +163,7 @@ export default function SearchScreen() {
             <FlatList
               data={group.items}
               renderItem={renderItem}
-              keyExtractor={(item) => item.Id!}
+              keyExtractor={(item) => item.id!}
               horizontal
               showsHorizontalScrollIndicator={false}
               contentContainerStyle={styles.horizontalListContainer}
