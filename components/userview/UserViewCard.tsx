@@ -26,7 +26,7 @@ export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }
           params: {
             id: item.id!,
             name: title,
-            itemTypes: item.type === 'Movie' ? 'Movie' : 'Series',
+            itemTypes: item.collectionType === 'movies' ? 'Movie' : 'Series',
           },
         });
       }}
