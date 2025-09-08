@@ -1,13 +1,8 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import {
-  getLatestItems,
-  getLatestItemsByFolder,
-  getNextUpItems,
-  getResumeItems,
-} from '@/services/jellyfin';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem } from '@/services/media/types';
 import { useInfiniteQuery } from '@tanstack/react-query';
 import { useLocalSearchParams } from 'expo-router';
 
@@ -17,7 +12,8 @@ export default function ViewAllScreen() {
     folderId?: string;
     folderName?: string;
   }>();
-  const { currentServer, currentApi: api } = useMediaServers();
+  const { currentServer } = useMediaServers();
+  const mediaAdapter = useMediaAdapter();
   const { filters, setFilters } = useMediaFilters();
 
   const getTitle = () => {
@@ -45,39 +41,39 @@ export default function ViewAllScreen() {
   const PAGE_SIZE = 40;
 
   const query = useInfiniteQuery({
-    enabled: !!api && !!currentServer,
+    enabled: !!currentServer,
     queryKey: ['viewall', type, currentServer?.id, folderId, filters],
     initialPageParam: 0,
     queryFn: async () => {
-      if (!api || !currentServer) return { items: [], total: 0 };
+      if (!currentServer) return { items: [], total: 0 };
       switch (type) {
         case 'resume': {
-          const res = await getResumeItems(api, currentServer.userId, PAGE_SIZE);
+          const res = await mediaAdapter.getResumeItems(currentServer.userId, PAGE_SIZE);
           const d = res.data;
-          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const items = d?.Items ?? [];
           const total = d?.TotalRecordCount ?? items.length;
-          return { items: items, total };
+          return { items, total };
         }
         case 'nextup': {
-          const res = await getNextUpItems(api, currentServer.userId, PAGE_SIZE);
+          const res = await mediaAdapter.getNextUpItems(currentServer.userId, PAGE_SIZE);
           const d = res.data;
-          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const items = d?.Items ?? [];
           const total = d?.TotalRecordCount ?? items.length;
-          return { items: items, total };
+          return { items, total };
         }
         case 'latest': {
           if (folderId) {
-            const res = await getLatestItemsByFolder(
-              api,
+            const res = await mediaAdapter.getLatestItemsByFolder(
               currentServer.userId,
               folderId,
               PAGE_SIZE,
             );
-            const items = res.data;
-            const total = items.length;
+            const d = res.data;
+            const items = d?.Items ?? [];
+            const total = d?.TotalRecordCount ?? items.length;
             return { items, total };
           }
-          const res = await getLatestItems(api, currentServer.userId, PAGE_SIZE, {
+          const res = await mediaAdapter.getLatestItems(currentServer.userId, PAGE_SIZE, {
             includeItemTypes: filters.includeItemTypes,
             sortBy: filters.sortBy,
             sortOrder: filters.sortOrder,
@@ -85,7 +81,7 @@ export default function ViewAllScreen() {
             tags: filters.tags,
           });
           const d = res.data;
-          const items = (Array.isArray(d) ? d : d?.Items) ?? [];
+          const items = d?.Items ?? [];
           const total = d?.TotalRecordCount ?? items.length;
           return { items, total };
         }
@@ -94,8 +90,8 @@ export default function ViewAllScreen() {
       }
     },
     getNextPageParam: (
-      lastPage: { items: BaseItemDto[]; total: number },
-      allPages: { items: BaseItemDto[]; total: number }[],
+      lastPage: { items: MediaItem[]; total: number },
+      allPages: { items: MediaItem[]; total: number }[],
     ) => {
       const loaded = allPages.reduce((sum, p) => sum + p.items.length, 0);
       return loaded >= lastPage.total || lastPage.items.length === 0 ? undefined : loaded;

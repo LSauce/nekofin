@@ -37,6 +37,9 @@ export function getJellyfinInstance() {
 }
 
 export function getApiInstance() {
+  if (!apiInstance) {
+    throw new Error('API instance not set');
+  }
   return apiInstance;
 }
 

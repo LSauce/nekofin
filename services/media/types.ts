@@ -1,8 +1,126 @@
-import { AvailableFilters } from '@/services/jellyfin';
-import { Api, RecommendedServerInfo } from '@jellyfin/sdk';
-import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { ImageUrlInfo } from '@/lib/utils/image';
+import { RecommendedServerInfo } from '@jellyfin/sdk';
+import { BaseItemPersonImageBlurHashes } from '@jellyfin/sdk/lib/generated-client/models/base-item-person-image-blur-hashes';
 
 export type MediaServerType = 'jellyfin' | 'emby';
+
+export type MediaItemType = 'Movie' | 'Series' | 'Season' | 'Episode' | 'MusicVideo' | 'Other';
+
+export type MediaSortBy =
+  | 'DateCreated'
+  | 'SortName'
+  | 'IndexNumber'
+  | 'IsFavoriteOrLiked'
+  | 'Random'
+  | 'CommunityRating'
+  | 'DatePlayed'
+  | 'OfficialRating'
+  | 'PremiereDate';
+export type MediaSortOrder = 'Ascending' | 'Descending';
+
+export interface MediaUserData {
+  played?: boolean | null;
+  playedPercentage?: number | null;
+  isFavorite?: boolean | null;
+  playbackPositionTicks?: number | null;
+}
+
+export interface MediaPerson {
+  name?: string | null;
+  id: string;
+  type?: 'Actor' | 'Director' | 'Writer' | 'Producer';
+  role?: string | null;
+  primaryImageTag?: string | null;
+  imageBlurHashes?: BaseItemPersonImageBlurHashes | null;
+  raw: unknown;
+}
+
+export interface MediaGenre {
+  name: string;
+}
+
+export interface MediaStudio {
+  name: string;
+}
+
+export interface MediaItem {
+  id: string;
+  name: string;
+  type: MediaItemType;
+  raw: unknown;
+  seriesName?: string | null;
+  seriesId?: string | null;
+  parentId?: string | null;
+  indexNumber?: number | null;
+  parentIndexNumber?: number | null;
+  productionYear?: number | null;
+  endDate?: string | null;
+  status?: 'Continuing' | 'Ended';
+  overview?: string | null;
+  communityRating?: number | null;
+  criticRating?: number | null;
+  officialRating?: string | null;
+  genres?: string[] | null;
+  genreItems?: MediaGenre[] | null;
+  people?: MediaPerson[] | null;
+  studios?: MediaStudio[] | null;
+  userData?: MediaUserData | null;
+  runTimeTicks?: number | null;
+  originalTitle?: string | null;
+  seasonId?: string | null;
+  collectionType?: string;
+}
+
+export interface MediaFolder {
+  id: string;
+  name: string;
+  type: MediaItemType;
+  collectionType?: string;
+}
+
+export interface MediaUser {
+  id: string;
+  name: string;
+  serverName?: string | null;
+  avatar?: string | null;
+}
+
+export interface MediaSystemInfo {
+  serverName?: string | null;
+  version?: string | null;
+  operatingSystem?: string | null;
+}
+
+export interface MediaPlaybackInfo {
+  mediaSources: MediaSource[];
+}
+
+export interface MediaSource {
+  id: string;
+  protocol: string;
+  container: string;
+  size?: number | null;
+  bitrate?: number | null;
+  mediaStreams: MediaStream[];
+}
+
+export interface MediaStream {
+  codec: string;
+  type: 'Video' | 'Audio' | 'Subtitle';
+  index: number;
+  language?: string | null;
+  isDefault?: boolean | null;
+  isForced?: boolean | null;
+  width?: number | null;
+  height?: number | null;
+  bitRate?: number | null;
+}
+
+export interface MediaFilters {
+  years: number[];
+  tags: string[];
+  genres: string[];
+}
 
 export interface MediaServerInfo {
   id: string;
@@ -17,22 +135,18 @@ export interface MediaServerInfo {
 }
 
 export interface MediaAdapter {
-  getApiInstance(): Api | null;
-  setGlobalApiInstance(api: Api | null): void;
+  getApiInstance(): unknown | null;
+  setGlobalApiInstance(api: unknown | null): void;
 
   discoverServers(host: string): Promise<RecommendedServerInfo[]>;
   findBestServer(servers: RecommendedServerInfo[]): RecommendedServerInfo | null;
 
-  createApi(address: string): Api;
-  createApiFromServerInfo(serverInfo: MediaServerInfo): Api;
+  createApi(address: string): unknown;
+  createApiFromServerInfo(serverInfo: MediaServerInfo): unknown;
 
-  getSystemInfo(api: Api): ReturnType<typeof import('@/services/jellyfin').getSystemInfo>;
-  getPublicUsers(api: Api): ReturnType<typeof import('@/services/jellyfin').getPublicUsers>;
-  login(
-    api: Api,
-    username: string,
-    password: string,
-  ): ReturnType<typeof import('@/services/jellyfin').login>;
+  getSystemInfo(): Promise<MediaSystemInfo>;
+  getPublicUsers(): Promise<MediaUser[]>;
+  login(username: string, password: string): Promise<unknown>;
   authenticateAndSaveServer(
     address: string,
     username: string,
@@ -40,158 +154,110 @@ export interface MediaAdapter {
     addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>,
   ): Promise<unknown>;
 
-  getMediaFolders(api: Api): ReturnType<typeof import('@/services/jellyfin').getMediaFolders>;
+  getMediaFolders(): Promise<MediaFolder[]>;
   getLatestItems(
-    api: Api,
     userId: string,
     limit?: number,
     opts?: {
-      includeItemTypes?: BaseItemKind[];
-      sortBy?: ItemSortBy[];
-      sortOrder?: 'Ascending' | 'Descending';
+      includeItemTypes?: MediaItemType[];
+      sortBy?: MediaSortBy[];
+      sortOrder?: MediaSortOrder;
       year?: number;
       tags?: string[];
     },
-  ): ReturnType<typeof import('@/services/jellyfin').getLatestItems>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getLatestItemsByFolder(
-    api: Api,
     userId: string,
     folderId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getLatestItemsByFolder>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getNextUpItems(
-    api: Api,
     userId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getNextUpItems>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getNextUpItemsByFolder(
-    api: Api,
     userId: string,
     folderId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getNextUpItemsByFolder>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getResumeItems(
-    api: Api,
     userId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getResumeItems>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getFavoriteItems(
-    api: Api,
     userId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getFavoriteItems>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
   getFavoriteItemsPaged(
-    api: Api,
     userId: string,
     startIndex?: number,
     limit?: number,
     opts?: {
-      includeItemTypes?: BaseItemKind[];
-      sortBy?: ItemSortBy[];
-      sortOrder?: 'Ascending' | 'Descending';
+      includeItemTypes?: MediaItemType[];
+      sortBy?: MediaSortBy[];
+      sortOrder?: MediaSortOrder;
       onlyUnplayed?: boolean;
       year?: number;
       tags?: string[];
     },
-  ): ReturnType<typeof import('@/services/jellyfin').getFavoriteItemsPaged>;
-  logout(api: Api): ReturnType<typeof import('@/services/jellyfin').logout>;
-  getUserInfo(
-    api: Api,
-    userId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getUserInfo>;
-  getItemDetail(
-    api: Api,
-    itemId: string,
-    userId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getItemDetail>;
-  getItemMediaSources(
-    api: Api,
-    itemId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getItemMediaSources>;
-  getUserView(
-    api: Api,
-    userId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getUserView>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  logout(): Promise<void>;
+  getUserInfo(userId: string): Promise<MediaUser>;
+  getItemDetail(itemId: string, userId: string): Promise<MediaItem>;
+  getItemMediaSources(itemId: string): Promise<MediaPlaybackInfo>;
+  getUserView(userId: string): Promise<MediaItem[]>;
   getAllItemsByFolder(
-    api: Api,
     userId: string,
     folderId: string,
     startIndex?: number,
     limit?: number,
-    itemTypes?: BaseItemKind[],
+    itemTypes?: MediaItemType[],
     opts?: {
-      sortBy?: ItemSortBy[];
-      sortOrder?: 'Ascending' | 'Descending';
+      sortBy?: MediaSortBy[];
+      sortOrder?: MediaSortOrder;
       onlyUnplayed?: boolean;
       year?: number;
       tags?: string[];
     },
-  ): ReturnType<typeof import('@/services/jellyfin').getAllItemsByFolder>;
-  getSeasonsBySeries(
-    api: Api,
-    seriesId: string,
-    userId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getSeasonsBySeries>;
-  getEpisodesBySeason(
-    api: Api,
-    seasonId: string,
-    userId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').getEpisodesBySeason>;
+  ): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  getSeasonsBySeries(seriesId: string, userId: string): Promise<{ data: { Items?: MediaItem[] } }>;
+  getEpisodesBySeason(seasonId: string, userId: string): Promise<{ data: { Items?: MediaItem[] } }>;
   getSimilarShows(
-    api: Api,
     itemId: string,
     userId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getSimilarShows>;
+  ): Promise<{ data: { Items?: MediaItem[] } }>;
   getSimilarMovies(
-    api: Api,
     itemId: string,
     userId: string,
     limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getSimilarMovies>;
-  getSearchHints(
-    api: Api,
-    searchTerm: string,
-    userId?: string,
-    limit?: number,
-  ): ReturnType<typeof import('@/services/jellyfin').getSearchHints>;
+  ): Promise<{ data: { Items?: MediaItem[] } }>;
   searchItems(
-    api: Api,
     userId: string,
     searchTerm: string,
     limit?: number,
-    includeItemTypes?: BaseItemKind[],
-  ): Promise<BaseItemDto[]>;
-  getRecommendedSearchKeywords(api: Api, userId: string, limit?: number): Promise<string[]>;
-  getAvailableFilters(api: Api, userId: string, parentId?: string): Promise<AvailableFilters>;
+    includeItemTypes?: MediaItemType[],
+  ): Promise<MediaItem[]>;
+  getRecommendedSearchKeywords(userId: string, limit?: number): Promise<string[]>;
+  getAvailableFilters(userId: string, parentId?: string): Promise<MediaFilters>;
 
-  addFavoriteItem(
-    api: Api,
-    userId: string,
-    itemId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').addFavoriteItem>;
-  removeFavoriteItem(
-    api: Api,
-    userId: string,
-    itemId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').removeFavoriteItem>;
-  markItemPlayed(
-    api: Api,
-    userId: string,
-    itemId: string,
-    datePlayed?: string,
-  ): ReturnType<typeof import('@/services/jellyfin').markItemPlayed>;
-  markItemUnplayed(
-    api: Api,
-    userId: string,
-    itemId: string,
-  ): ReturnType<typeof import('@/services/jellyfin').markItemUnplayed>;
-  reportPlaybackProgress(
-    api: Api,
-    itemId: string,
-    positionTicks: number,
-    isPaused?: boolean,
-  ): Promise<void>;
-  reportPlaybackStart(api: Api, itemId: string, positionTicks?: number): Promise<void>;
-  reportPlaybackStop(api: Api, itemId: string, positionTicks: number): Promise<void>;
+  addFavoriteItem(userId: string, itemId: string): Promise<void>;
+  removeFavoriteItem(userId: string, itemId: string): Promise<void>;
+  markItemPlayed(userId: string, itemId: string, datePlayed?: string): Promise<void>;
+  markItemUnplayed(userId: string, itemId: string): Promise<void>;
+  reportPlaybackProgress(itemId: string, positionTicks: number, isPaused?: boolean): Promise<void>;
+  reportPlaybackStart(itemId: string, positionTicks?: number): Promise<void>;
+  reportPlaybackStop(itemId: string, positionTicks: number): Promise<void>;
+
+  getImageInfo(
+    item: MediaItem | MediaPerson,
+    opts?: {
+      width?: number;
+      height?: number;
+      preferBackdrop?: boolean;
+      preferLogo?: boolean;
+      preferThumb?: boolean;
+      preferBanner?: boolean;
+    },
+  ): ImageUrlInfo;
 }

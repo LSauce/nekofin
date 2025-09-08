@@ -1,7 +1,7 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import { MediaItem } from '@/services/media/types';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
 import { useCallback, useMemo, useRef, useState } from 'react';
 import {
   NativeSyntheticEvent,
@@ -15,19 +15,19 @@ import {
 import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
 
-export const ItemMeta = ({ item }: { item: BaseItemDto }) => {
+export const ItemMeta = ({ item }: { item: MediaItem }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   const ratingText = useMemo(() => {
-    if (typeof item?.CommunityRating === 'number') return item.CommunityRating.toFixed(1);
-    if (typeof item?.CriticRating === 'number') return String(item.CriticRating);
-    if (item?.OfficialRating) return item.OfficialRating;
+    if (typeof item?.communityRating === 'number') return item.communityRating.toFixed(1);
+    if (typeof item?.criticRating === 'number') return String(item.criticRating);
+    if (item?.officialRating) return item.officialRating;
     return '';
-  }, [item?.CommunityRating, item?.CriticRating, item?.OfficialRating]);
+  }, [item?.communityRating, item?.criticRating, item?.officialRating]);
 
   const yearText = useMemo(() => {
-    return typeof item?.ProductionYear === 'number' ? String(item.ProductionYear) : '';
-  }, [item?.ProductionYear]);
+    return typeof item?.productionYear === 'number' ? String(item.productionYear) : '';
+  }, [item?.productionYear]);
 
   return (
     <>
@@ -46,7 +46,7 @@ export const ItemMeta = ({ item }: { item: BaseItemDto }) => {
   );
 };
 
-export const ItemOverview = ({ item }: { item: BaseItemDto }) => {
+export const ItemOverview = ({ item }: { item: MediaItem }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
   const [textLineNumber, setTextLineNumber] = useState<number | null>(null);
@@ -54,7 +54,7 @@ export const ItemOverview = ({ item }: { item: BaseItemDto }) => {
 
   const { accentColor } = useAccentColor();
 
-  const overview = item?.Overview?.trim() ?? '';
+  const overview = item?.overview?.trim() ?? '';
 
   const handleTextLayout = useCallback((event: NativeSyntheticEvent<TextLayoutEventData>) => {
     const { lines } = event.nativeEvent;
@@ -111,25 +111,25 @@ export const ItemOverview = ({ item }: { item: BaseItemDto }) => {
   );
 };
 
-export const ItemInfoList = ({ item }: { item: BaseItemDto }) => {
+export const ItemInfoList = ({ item }: { item: MediaItem }) => {
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
 
   const genreText = useMemo(() => {
-    const primary = item?.Genres && item.Genres.length > 0 ? item.Genres : undefined;
+    const primary = item?.genres && item.genres.length > 0 ? item.genres : undefined;
     if (primary) return primary.join(', ');
-    const fallback = item?.GenreItems?.map((g) => g.Name).filter(Boolean) ?? [];
+    const fallback = item?.genreItems?.map((g) => g.name).filter(Boolean) ?? [];
     return fallback.join(', ');
-  }, [item?.GenreItems, item?.Genres]);
+  }, [item?.genreItems, item?.genres]);
 
   const writerText = useMemo(() => {
-    const people = item?.People?.filter((p) => p?.Type === 'Writer').map((p) => p.Name) ?? [];
+    const people = item?.people?.filter((p) => p?.type === 'Writer').map((p) => p.name) ?? [];
     return people.filter(Boolean).join(', ');
-  }, [item?.People]);
+  }, [item?.people]);
 
   const studioText = useMemo(() => {
-    const studios = item?.Studios?.map((s) => s.Name) ?? [];
+    const studios = item?.studios?.map((s) => s.name) ?? [];
     return studios.filter(Boolean).join(', ');
-  }, [item?.Studios]);
+  }, [item?.studios]);
 
   if (!genreText && !writerText && !studioText) return null;
 

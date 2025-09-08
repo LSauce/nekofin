@@ -1,10 +1,10 @@
-import { BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItemType, MediaSortBy, MediaSortOrder } from '@/services/media/types';
 import { useState } from 'react';
 
 export type MediaFilters = {
-  includeItemTypes?: BaseItemKind[];
-  sortBy?: ItemSortBy[];
-  sortOrder?: 'Ascending' | 'Descending';
+  includeItemTypes?: MediaItemType[];
+  sortBy?: MediaSortBy[];
+  sortOrder?: MediaSortOrder;
   onlyUnplayed?: boolean;
   year?: number;
   tags?: string[];

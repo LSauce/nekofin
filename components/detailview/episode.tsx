@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { BaseItemDto, BaseItemPerson } from '@jellyfin/sdk/lib/generated-client';
+import { MediaItem, MediaPerson } from '@/services/media/types';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
@@ -17,22 +17,22 @@ export const EpisodeModeContent = ({
   similarItems,
   item,
 }: {
-  seasons: BaseItemDto[];
-  episodes?: BaseItemDto[];
-  people: BaseItemPerson[];
-  similarItems: BaseItemDto[];
-  item: BaseItemDto;
+  seasons: MediaItem[];
+  episodes?: MediaItem[];
+  people: MediaPerson[];
+  similarItems: MediaItem[];
+  item: MediaItem;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
   const { accentColor } = useAccentColor();
 
-  const [selectedEpisode, setSelectedEpisode] = useState<BaseItemDto>(item ?? episodes[0]);
-  const flatListRef = useRef<FlatList<BaseItemDto>>(null);
+  const [selectedEpisode, setSelectedEpisode] = useState<MediaItem>(item ?? episodes[0]);
+  const flatListRef = useRef<FlatList<MediaItem>>(null);
 
   const initialIndex = useMemo(() => {
-    return episodes.findIndex((e) => e.Id === selectedEpisode.Id);
+    return episodes.findIndex((e) => e.id === selectedEpisode.id);
   }, [episodes, selectedEpisode]);
 
   const scrollToIndex = useCallback((index: number) => {
@@ -49,17 +49,17 @@ export const EpisodeModeContent = ({
     <>
       <View style={{ gap: 8 }}>
         <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>
-          {selectedEpisode.Name}
+          {selectedEpisode.name}
         </ThemedText>
         <ThemedText style={{ fontSize: 14, color: subtitleColor }}>
-          {`${selectedEpisode.SeasonName} 第${selectedEpisode.IndexNumber}集`}
+          {`${selectedEpisode.seriesName} 第${selectedEpisode.indexNumber}集`}
         </ThemedText>
       </View>
 
-      {!!selectedEpisode?.Id && (
+      {!!selectedEpisode?.id && (
         <TouchableOpacity
           onPress={() => {
-            router.push({ pathname: '/player', params: { itemId: selectedEpisode.Id! } });
+            router.push({ pathname: '/player', params: { itemId: selectedEpisode.id! } });
           }}
           style={[detailViewStyles.playButton, { backgroundColor: accentColor }]}
         >
@@ -72,7 +72,7 @@ export const EpisodeModeContent = ({
       {episodes && episodes.length > 0 && (
         <View style={detailViewStyles.sectionBlock}>
           <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>
-            更多来自 {selectedEpisode.SeasonName}
+            更多来自 {selectedEpisode.seriesName}
           </Text>
           <FlatList
             ref={flatListRef}
@@ -85,7 +85,7 @@ export const EpisodeModeContent = ({
               }, 50);
             }}
             renderItem={({ item: ep }) => {
-              const isSelected = ep.Id === selectedEpisode.Id;
+              const isSelected = ep.id === selectedEpisode.id;
               return (
                 <EpisodeCard
                   item={ep}
@@ -97,7 +97,7 @@ export const EpisodeModeContent = ({
                 />
               );
             }}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -118,7 +118,7 @@ export const EpisodeModeContent = ({
                 hideSubtitle
               />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -133,7 +133,7 @@ export const EpisodeModeContent = ({
             data={people}
             style={detailViewStyles.edgeToEdge}
             renderItem={({ item }) => <PersonItem item={item} />}
-            keyExtractor={(item) => `${item.Id ?? item.Name}-${item.Role ?? ''}`}
+            keyExtractor={(item) => `${item.id ?? item.name}-${item.role ?? ''}`}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -150,7 +150,7 @@ export const EpisodeModeContent = ({
             renderItem={({ item }) => (
               <SeriesCard item={item} style={detailViewStyles.seasonCard} imgType="Primary" />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />

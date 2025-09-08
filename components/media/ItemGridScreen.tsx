@@ -6,7 +6,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { getAvailableFilters } from '@/services/jellyfin';
-import { BaseItemDto, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem, MediaSortBy } from '@/services/media/types';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
 import { useNavigation } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
@@ -29,7 +29,7 @@ import { SkeletonItemGrid } from '../ui/Skeleton';
 export type ItemGridScreenProps = {
   title: string;
   query: UseInfiniteQueryResult<
-    InfiniteData<BaseItemDto[] | { items: BaseItemDto[]; total: number }, unknown>,
+    InfiniteData<MediaItem[] | { items: MediaItem[]; total: number }, unknown>,
     unknown
   >;
   type?: 'series' | 'episode';
@@ -61,12 +61,12 @@ export function ItemGridScreen({
 
   const items = useMemo(() => {
     const pages = data?.pages ?? [];
-    const merged: BaseItemDto[] = [];
+    const merged: MediaItem[] = [];
     const seen = new Set<string | undefined>();
     for (const page of pages) {
       const list = Array.isArray(page) ? page : page.items;
       for (const it of list) {
-        const id = it.Id;
+        const id = it.id;
         if (id && !seen.has(id)) {
           merged.push(it);
           seen.add(id);
@@ -77,9 +77,9 @@ export function ItemGridScreen({
   }, [data]);
 
   const groupedItems = useMemo(() => {
-    const typeToItems: Record<string, BaseItemDto[]> = {};
+    const typeToItems: Record<string, MediaItem[]> = {};
     items.forEach((item) => {
-      const key = item.Type || 'Other';
+      const key = item.type || 'Other';
       if (!typeToItems[key]) typeToItems[key] = [];
       typeToItems[key].push(item);
     });
@@ -113,10 +113,10 @@ export function ItemGridScreen({
   });
 
   const renderItem = useCallback(
-    ({ item }: { item: BaseItemDto }) => {
+    ({ item }: { item: MediaItem }) => {
       const itemStyle = { width: itemWidth };
 
-      if (item.Type === 'Episode') {
+      if (item.type === 'Episode') {
         return <EpisodeCard item={item} style={itemStyle} />;
       }
 
@@ -129,7 +129,7 @@ export function ItemGridScreen({
     [itemWidth, useThreeCols],
   );
 
-  const keyExtractor = useCallback((item: BaseItemDto) => item.Id!, []);
+  const keyExtractor = useCallback((item: MediaItem) => item.id!, []);
 
   const handleEndReached = useCallback(async () => {
     if (!hasNextPage || isFetchingNextPage) return;
@@ -262,7 +262,7 @@ export function ItemGridScreen({
             onSelect={(v) => {
               onChangeFilters?.({
                 includeItemTypes: filters?.includeItemTypes,
-                sortBy: v ? [v as ItemSortBy] : filters?.sortBy,
+                sortBy: v ? [v as MediaSortBy] : filters?.sortBy,
                 sortOrder: filters?.sortOrder,
                 year: filters?.year,
                 tags: filters?.tags,
@@ -302,7 +302,7 @@ export function ItemGridScreen({
   }, [onChangeFilters, availableFilters, filters]);
 
   const renderGroupSection = useCallback(
-    (group: { key: string; title: string; items: BaseItemDto[] }, showTitle: boolean) => {
+    (group: { key: string; title: string; items: MediaItem[] }, showTitle: boolean) => {
       const isEpisodeGroup = group.key === 'Episode';
       const groupItemWidth = isEpisodeGroup ? episodeLayout.itemWidth : itemWidth;
 
@@ -315,7 +315,7 @@ export function ItemGridScreen({
             data={group.items}
             renderItem={({ item }) => {
               const itemStyle = { width: groupItemWidth };
-              if (item.Type === 'Episode') {
+              if (item.type === 'Episode') {
                 return <EpisodeCard item={item} style={itemStyle} />;
               }
               return useThreeCols ? (

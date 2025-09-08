@@ -1,42 +1,36 @@
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import {
-  getEpisodesBySeason,
-  getItemDetail,
-  getNextUpItemsByFolder,
-  getSeasonsBySeries,
-  getSimilarMovies,
-  getSimilarShows,
-} from '@/services/jellyfin';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem } from '@/services/media/types';
 
+import { useMediaAdapter } from './useMediaAdapter';
 import { useQueryWithFocus } from './useQueryWithFocus';
 
 export type DetailBundle = {
-  item: BaseItemDto;
-  seasons?: BaseItemDto[];
-  nextUpItems?: BaseItemDto[];
-  episodes?: BaseItemDto[];
-  similarShows?: BaseItemDto[];
-  similarMovies?: BaseItemDto[];
+  item: MediaItem;
+  seasons?: MediaItem[];
+  nextUpItems?: MediaItem[];
+  episodes?: MediaItem[];
+  similarShows?: MediaItem[];
+  similarMovies?: MediaItem[];
 } | null;
 
 export function useDetailBundle(mode: 'series' | 'season' | 'movie' | 'episode', itemId: string) {
-  const { currentServer, currentApi } = useMediaServers();
+  const { currentServer } = useMediaServers();
+  const mediaAdapter = useMediaAdapter();
 
   const query = useQueryWithFocus<DetailBundle>({
     refetchOnScreenFocus: true,
     queryKey: ['detail-bundle', mode, itemId],
     queryFn: async () => {
-      if (!currentApi || !itemId || !currentServer?.userId) return null;
+      if (!itemId || !currentServer?.userId) return null;
       const userId = currentServer.userId;
-      const itemRes = await getItemDetail(currentApi, itemId, userId);
-      const baseItem = itemRes.data;
+      const itemRes = await mediaAdapter.getItemDetail(itemId, userId);
+      const baseItem = itemRes;
 
       if (mode === 'series') {
         const [seasonsRes, nextUpRes, similarShowsRes] = await Promise.all([
-          getSeasonsBySeries(currentApi, itemId, userId),
-          getNextUpItemsByFolder(currentApi, userId, itemId, 30),
-          getSimilarShows(currentApi, itemId, userId, 30),
+          mediaAdapter.getSeasonsBySeries(itemId, userId),
+          mediaAdapter.getNextUpItemsByFolder(userId, itemId, 30),
+          mediaAdapter.getSimilarShows(itemId, userId, 30),
         ]);
         return {
           item: baseItem,
@@ -47,7 +41,7 @@ export function useDetailBundle(mode: 'series' | 'season' | 'movie' | 'episode',
       }
 
       if (mode === 'season') {
-        const episodesRes = await getEpisodesBySeason(currentApi, itemId, userId);
+        const episodesRes = await mediaAdapter.getEpisodesBySeason(itemId, userId);
         return {
           item: baseItem,
           episodes: episodesRes.data.Items ?? [],
@@ -55,16 +49,18 @@ export function useDetailBundle(mode: 'series' | 'season' | 'movie' | 'episode',
       }
 
       if (mode === 'episode') {
-        const seriesId = baseItem.SeriesId;
-        const seasonId = baseItem.ParentId;
+        const seriesId = baseItem.seriesId;
+        const seasonId = baseItem.parentId;
 
-        const emptyItems = { data: { Items: [] } } as { data: { Items?: BaseItemDto[] } };
+        const emptyItems = { data: { Items: [] } } as { data: { Items?: MediaItem[] } };
 
         const [similarMoviesRes, seasonsRes, episodesRes] = await Promise.all([
-          getSimilarMovies(currentApi, itemId, userId, 30),
-          seriesId ? getSeasonsBySeries(currentApi, seriesId, userId) : Promise.resolve(emptyItems),
+          mediaAdapter.getSimilarMovies(itemId, userId, 30),
+          seriesId
+            ? mediaAdapter.getSeasonsBySeries(seriesId, userId)
+            : Promise.resolve(emptyItems),
           seasonId
-            ? getEpisodesBySeason(currentApi, seasonId, userId)
+            ? mediaAdapter.getEpisodesBySeason(seasonId, userId)
             : Promise.resolve(emptyItems),
         ]);
 
@@ -76,13 +72,13 @@ export function useDetailBundle(mode: 'series' | 'season' | 'movie' | 'episode',
         };
       }
 
-      const similarMoviesRes = await getSimilarMovies(currentApi, itemId, userId, 30);
+      const similarMoviesRes = await mediaAdapter.getSimilarMovies(itemId, userId, 30);
       return {
         item: baseItem,
         similarMovies: similarMoviesRes.data.Items ?? [],
       };
     },
-    enabled: !!currentApi && !!itemId && !!currentServer?.userId,
+    enabled: !!itemId && !!currentServer?.userId,
   });
 
   return query;

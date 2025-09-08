@@ -1,7 +1,9 @@
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getDeviceId, getStreamInfo } from '@/lib/utils';
 import { getEpisodesBySeason, getItemDetail } from '@/services/jellyfin';
+import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -29,8 +31,9 @@ const LoadingIndicator = () => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
-  const { currentServer, currentApi: api } = useMediaServers();
+  const { currentServer, currentApi } = useMediaServers();
   const router = useRouter();
+  const mediaAdapter = useMediaAdapter();
 
   const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
@@ -48,69 +51,71 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const { data: itemDetail } = useQuery({
     queryKey: ['itemDetail', itemId, currentServer?.userId],
     queryFn: async () => {
-      if (!api || !currentServer) return null;
-      const response = await getItemDetail(api, itemId, currentServer.userId);
-      return response.data;
+      if (!currentServer) return null;
+      const data = await mediaAdapter.getItemDetail(itemId, currentServer.userId);
+      return data;
     },
-    enabled: !!api && !!itemId && !!currentServer,
+    enabled: !!itemId && !!currentServer,
   });
 
   const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
-    api,
     currentServer,
     itemDetail: itemDetail ?? null,
     currentTime,
   });
 
   const { data: seriesInfo } = useQuery({
-    queryKey: ['seriesInfo', itemDetail?.SeriesId, currentServer?.userId],
+    queryKey: ['seriesInfo', itemDetail?.seriesId, currentServer?.userId],
     queryFn: async () => {
-      if (!api || !currentServer || !itemDetail?.SeriesId) return null;
-      const response = await getItemDetail(api, itemDetail.SeriesId, currentServer.userId);
-      return response.data;
+      if (!currentServer || !itemDetail?.seriesId) return null;
+      const data = await mediaAdapter.getItemDetail(itemDetail.seriesId, currentServer.userId);
+      return data;
     },
-    enabled: !!api && !!itemDetail?.SeriesId && !!currentServer,
+    enabled: !!itemDetail?.seriesId && !!currentServer,
   });
 
   const { data: comments = [] } = useQuery({
-    queryKey: ['comments', itemDetail?.Id, seriesInfo?.OriginalTitle],
+    queryKey: ['comments', itemDetail?.id, seriesInfo?.originalTitle],
     queryFn: async () => {
-      if (!itemDetail || !seriesInfo?.OriginalTitle) return [];
+      if (!itemDetail || !seriesInfo?.originalTitle) return [];
       try {
-        return await getCommentsByItem(itemDetail, seriesInfo.OriginalTitle);
+        return await getCommentsByItem(itemDetail.raw as BaseItemDto, seriesInfo.originalTitle);
       } catch (error) {
         console.warn('Failed to load danmaku comments:', error);
         return [];
       }
     },
-    enabled: !!itemDetail && !!seriesInfo?.OriginalTitle,
+    enabled: !!itemDetail && !!seriesInfo?.originalTitle,
     staleTime: 1000 * 60 * 5,
   });
 
   const { data: streamInfo } = useQuery({
     queryKey: ['streamInfo', itemId, currentServer?.userId],
     queryFn: async () => {
-      if (!api || !currentServer || !itemDetail) return null;
+      if (!currentServer || !itemDetail) return null;
       return await getStreamInfo({
-        api,
-        item: itemDetail,
+        api: currentApi,
+        item: itemDetail.raw as BaseItemDto,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile(),
-        startTimeTicks: itemDetail.UserData?.PlaybackPositionTicks || 0,
+        startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
         deviceId: getDeviceId(),
       });
     },
-    enabled: !!api && !!currentServer && !!itemDetail,
+    enabled: !!currentApi && !!currentServer && !!itemDetail,
   });
 
   const { data: episodes = [] } = useQuery({
-    queryKey: ['episodes', itemDetail?.SeasonId, currentServer?.userId],
+    queryKey: ['episodes', itemDetail?.seasonId, currentServer?.userId],
     queryFn: async () => {
-      if (!api || !currentServer || !itemDetail?.SeasonId) return [];
-      const response = await getEpisodesBySeason(api, itemDetail.SeasonId, currentServer.userId);
+      if (!currentServer || !itemDetail?.seasonId) return [];
+      const response = await mediaAdapter.getEpisodesBySeason(
+        itemDetail.seasonId,
+        currentServer.userId,
+      );
       return response.data.Items ?? [];
     },
-    enabled: !!api && !!currentServer && !!itemDetail?.SeasonId,
+    enabled: !!currentServer && !!itemDetail?.seasonId,
   });
 
   const showLoading = useMemo(() => {
@@ -125,10 +130,10 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const formattedTitle = useMemo(() => {
     if (!itemDetail) return '';
-    const seriesName = itemDetail.SeriesName ?? '';
-    const seasonNumber = itemDetail.ParentIndexNumber;
-    const episodeNumber = itemDetail.IndexNumber;
-    const episodeName = itemDetail.Name ?? '';
+    const seriesName = itemDetail.seriesName ?? '';
+    const seasonNumber = itemDetail.parentIndexNumber;
+    const episodeNumber = itemDetail.indexNumber;
+    const episodeName = itemDetail.name ?? '';
 
     if (seriesName && seasonNumber != null && episodeNumber != null) {
       return `${seriesName} S${seasonNumber}E${episodeNumber} - ${episodeName}`;
@@ -141,7 +146,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   const currentEpisodeIndex = useMemo(() => {
     if (!itemId || !episodes.length) return -1;
-    const index = episodes.findIndex((episode) => episode.Id === itemId);
+    const index = episodes.findIndex((episode) => episode.id === itemId);
     return index;
   }, [itemId, episodes]);
 
@@ -164,8 +169,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [hasNextEpisode, episodes, currentEpisodeIndex]);
 
   useEffect(() => {
-    if (itemDetail?.UserData?.PlaybackPositionTicks !== undefined) {
-      const startTimeMs = Math.round(itemDetail.UserData.PlaybackPositionTicks / 10000);
+    if (itemDetail?.userData?.playbackPositionTicks !== undefined) {
+      const startTimeMs = Math.round(itemDetail.userData.playbackPositionTicks! / 10000);
       setInitialTime(startTimeMs);
       currentTime.value = startTimeMs;
     }
@@ -237,22 +242,22 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, []);
 
   const handlePreviousEpisode = useCallback(() => {
-    if (previousEpisode?.Id) {
+    if (previousEpisode?.id) {
       router.replace({
         pathname: '/player',
         params: {
-          itemId: previousEpisode.Id,
+          itemId: previousEpisode.id,
         },
       });
     }
   }, [previousEpisode, router]);
 
   const handleNextEpisode = useCallback(() => {
-    if (nextEpisode?.Id) {
+    if (nextEpisode?.id) {
       router.replace({
         pathname: '/player',
         params: {
-          itemId: nextEpisode.Id,
+          itemId: nextEpisode.id,
         },
       });
     }

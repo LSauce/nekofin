@@ -1,5 +1,5 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client';
+import { MediaItem } from '@/services/media/types';
 import { FlatList, StyleSheet, Text, View } from 'react-native';
 
 import { SkeletonUserViewCard } from '../ui/Skeleton';
@@ -9,7 +9,7 @@ export const UserViewSection = ({
   userView,
   isLoading,
 }: {
-  userView: BaseItemDto[];
+  userView: MediaItem[];
   isLoading?: boolean;
 }) => {
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -43,11 +43,11 @@ export const UserViewSection = ({
       <FlatList
         data={userViewItems}
         horizontal
-        keyExtractor={(item, index) => (item.Id ? String(item.Id) : String(index))}
+        keyExtractor={(item, index) => (item.id ? String(item.id) : String(index))}
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.userViewContainer}
         renderItem={({ item, index }) => (
-          <UserViewCard item={item} key={item.Id || index} title={item.Name || '未知标题'} />
+          <UserViewCard item={item} key={item.id || index} title={item.name || '未知标题'} />
         )}
       />
     </View>

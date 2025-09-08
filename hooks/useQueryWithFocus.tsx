@@ -24,7 +24,7 @@ export function useQueryWithFocus<
 
   useFocusEffect(
     useCallback(() => {
-      if (options.refetchOnScreenFocus) {
+      if (options.refetchOnScreenFocus ?? true) {
         refetch();
       }
     }, [refetch, options.refetchOnScreenFocus]),

@@ -1,26 +1,27 @@
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import { getImageInfo } from '@/lib/utils/image';
+import { MediaItem } from '@/services/media/types';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BaseItemDto, ImageType } from '@jellyfin/sdk/lib/generated-client/models';
+import { ImageType } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image } from 'expo-image';
 import { useRouter } from 'expo-router';
 import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 
-export const getSubtitle = (item: BaseItemDto) => {
-  if (item.Type === 'Episode') {
-    return `S${item.ParentIndexNumber}E${item.IndexNumber} - ${item.Name}`;
+export const getSubtitle = (item: MediaItem) => {
+  if (item.type === 'Episode') {
+    return `S${item.parentIndexNumber}E${item.indexNumber} - ${item.name}`;
   }
-  if (item.Type === 'Movie') {
-    return item.ProductionYear ?? '未知时间';
+  if (item.type === 'Movie') {
+    return item.productionYear ?? '未知时间';
   }
-  if (item.Type === 'Series') {
-    const startYear = item.ProductionYear?.toString() ?? '';
-    if (item.Status === 'Continuing') {
+  if (item.type === 'Series') {
+    const startYear = item.productionYear?.toString() ?? '';
+    if (item.status === 'Continuing') {
       return startYear ? `${startYear} - 现在` : '现在';
     }
-    if (item.EndDate) {
-      const endYear = new Date(item.EndDate).getFullYear();
+    if (item.endDate) {
+      const endYear = new Date(item.endDate).getFullYear();
       if (startYear && parseInt(startYear) === endYear) {
         return startYear;
       }
@@ -28,7 +29,7 @@ export const getSubtitle = (item: BaseItemDto) => {
     }
     return startYear ?? '未知时间';
   }
-  return item.Name;
+  return item.name;
 };
 
 export function EpisodeCard({
@@ -38,7 +39,7 @@ export function EpisodeCard({
   imgType = 'Thumb',
   onPress,
 }: {
-  item: BaseItemDto;
+  item: MediaItem;
   style?: StyleProp<ViewStyle>;
   hideText?: boolean;
   imgType?: ImageType;
@@ -50,7 +51,9 @@ export function EpisodeCard({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { accentColor } = useAccentColor();
 
-  const imageInfo = getImageInfo(item, {
+  const mediaAdapter = useMediaAdapter();
+
+  const imageInfo = mediaAdapter.getImageInfo(item, {
     preferBackdrop: imgType === 'Backdrop',
     preferThumb: imgType === 'Thumb',
     preferBanner: imgType === 'Banner',
@@ -61,12 +64,12 @@ export function EpisodeCard({
   const imageUrl = imageInfo.url;
 
   const handlePress = async () => {
-    if (!item.Id) return;
+    if (!item.id) return;
 
-    if (item.Type === 'Movie') {
+    if (item.type === 'Movie') {
       router.push({
         pathname: '/movie/[id]',
-        params: { id: item.Id },
+        params: { id: item.id },
       });
       return;
     }
@@ -74,17 +77,17 @@ export function EpisodeCard({
     router.push({
       pathname: '/episode/[id]',
       params: {
-        id: item.Id,
+        id: item.id,
       },
     });
   };
 
   const playedPercentage =
-    typeof item.UserData?.PlayedPercentage === 'number'
-      ? item.UserData.PlayedPercentage
+    typeof item.userData?.playedPercentage === 'number'
+      ? item.userData.playedPercentage
       : undefined;
 
-  const isPlayed = item.UserData?.Played === true;
+  const isPlayed = item.userData?.played === true;
 
   return (
     <TouchableOpacity
@@ -131,7 +134,7 @@ export function EpisodeCard({
       {!hideText && (
         <>
           <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-            {item.SeriesName || item.Name || '未知标题'}
+            {item.seriesName || item.name || '未知标题'}
           </Text>
           <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
             {getSubtitle(item)}
@@ -148,7 +151,7 @@ export function SeriesCard({
   imgType = 'Primary',
   hideSubtitle = false,
 }: {
-  item: BaseItemDto;
+  item: MediaItem;
   style?: StyleProp<ViewStyle>;
   imgType?: ImageType;
   hideSubtitle?: boolean;
@@ -158,7 +161,9 @@ export function SeriesCard({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
 
-  const imageInfo = getImageInfo(item, {
+  const mediaAdapter = useMediaAdapter();
+
+  const imageInfo = mediaAdapter.getImageInfo(item, {
     preferBackdrop: imgType === 'Backdrop',
     preferThumb: imgType === 'Thumb',
     preferBanner: imgType === 'Banner',
@@ -172,21 +177,21 @@ export function SeriesCard({
     <TouchableOpacity
       style={[styles.card, { width: 120, backgroundColor }, style]}
       onPress={() => {
-        const type = item.Type;
+        const type = item.type;
 
         if (type === 'Season') {
-          router.push({ pathname: '/season/[id]', params: { id: item.Id! } });
+          router.push({ pathname: '/season/[id]', params: { id: item.id! } });
           return;
         }
 
         if (type === 'Series' || type === 'Episode') {
-          const seriesId = item.SeriesId ?? item.Id;
+          const seriesId = item.seriesId ?? item.id;
           router.push({ pathname: '/series/[id]', params: { id: seriesId! } });
           return;
         }
 
         if (type === 'Movie') {
-          router.push({ pathname: '/movie/[id]', params: { id: item.Id! } });
+          router.push({ pathname: '/movie/[id]', params: { id: item.id! } });
           return;
         }
 
@@ -209,7 +214,7 @@ export function SeriesCard({
         </View>
       )}
       <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-        {hideSubtitle ? item.Name : item.SeriesName || item.Name || '未知标题'}
+        {hideSubtitle ? item.name : item.seriesName || item.name || '未知标题'}
       </Text>
       {!hideSubtitle && (
         <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>

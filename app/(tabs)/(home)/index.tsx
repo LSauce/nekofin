@@ -4,6 +4,7 @@ import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { UserViewSection } from '@/components/userview/UserViewSection';
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
@@ -14,8 +15,7 @@ import {
   getResumeItems,
   getUserView,
 } from '@/services/jellyfin';
-import { MediaServerInfo } from '@/services/media/types';
-import { BaseItemDto } from '@jellyfin/sdk/lib/generated-client/models';
+import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
@@ -26,41 +26,43 @@ import { useSafeAreaInsets } from 'react-native-safe-area-context';
 type HomeSection = {
   key: string;
   title: string;
-  items: BaseItemDto[];
+  items: MediaItem[];
   type?: 'latest' | 'nextup' | 'resume' | 'userview';
 };
 
 function useHomeSections(currentServer: MediaServerInfo | null) {
-  const { currentApi: api } = useMediaServers();
+  const mediaAdapter = useMediaAdapter();
 
   const query = useQueryWithFocus({
     refetchOnScreenFocus: true,
     queryKey: ['homeSections', currentServer?.id],
     queryFn: async (): Promise<HomeSection[]> => {
-      if (!currentServer || !api) return [];
+      if (!currentServer) return [];
 
       const [userViewRes, nextUpRes, resumeRes] = await Promise.all([
-        getUserView(api, currentServer.userId),
-        getNextUpItems(api, currentServer.userId, 10),
-        getResumeItems(api, currentServer.userId, 10),
+        mediaAdapter.getUserView(currentServer.userId),
+        mediaAdapter.getNextUpItems(currentServer.userId, 10),
+        mediaAdapter.getResumeItems(currentServer.userId, 10),
       ]);
 
-      const userViewItems = (userViewRes.data.Items || []).filter(
-        (f) => f.CollectionType !== 'playlists',
-      );
+      const userViewItems = (userViewRes || []).filter((f) => f.collectionType !== 'playlists');
 
-      const latestByFolder: { folderId: string; items: BaseItemDto[]; name: string }[] = [];
+      const latestByFolder: { folderId: string; items: MediaItem[]; name: string }[] = [];
       for (const folder of userViewItems) {
-        if (!folder.Id) continue;
+        if (!folder.id) continue;
         try {
-          const latest = await getLatestItemsByFolder(api, currentServer.userId, folder.Id, 16);
+          const latest = await mediaAdapter.getLatestItemsByFolder(
+            currentServer.userId,
+            folder.id,
+            16,
+          );
           latestByFolder.push({
-            folderId: folder.Id,
-            items: latest.data || [],
-            name: folder.Name || '',
+            folderId: folder.id,
+            items: latest.data.Items || [],
+            name: folder.name || '',
           });
         } catch (e) {
-          latestByFolder.push({ folderId: folder.Id, items: [], name: folder.Name || '' });
+          latestByFolder.push({ folderId: folder.id, items: [], name: folder.name || '' });
         }
       }
 

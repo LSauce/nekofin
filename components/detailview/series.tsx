@@ -1,5 +1,5 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { BaseItemDto, BaseItemPerson } from '@jellyfin/sdk/lib/generated-client';
+import { MediaItem, MediaPerson } from '@/services/media/types';
 import { FlatList, Text, View } from 'react-native';
 
 import { EpisodeCard, SeriesCard } from '../media/Card';
@@ -13,11 +13,11 @@ export const SeriesModeContent = ({
   similarItems,
   item,
 }: {
-  seasons: BaseItemDto[];
-  nextUpItems: BaseItemDto[];
-  people: BaseItemPerson[];
-  similarItems: BaseItemDto[];
-  item: BaseItemDto;
+  seasons: MediaItem[];
+  nextUpItems: MediaItem[];
+  people: MediaPerson[];
+  similarItems: MediaItem[];
+  item: MediaItem;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   return (
@@ -36,7 +36,7 @@ export const SeriesModeContent = ({
             renderItem={({ item }) => (
               <EpisodeCard item={item} style={detailViewStyles.horizontalCard} imgType="Primary" />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -58,7 +58,7 @@ export const SeriesModeContent = ({
                 hideSubtitle
               />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -73,7 +73,7 @@ export const SeriesModeContent = ({
             data={people}
             style={detailViewStyles.edgeToEdge}
             renderItem={({ item }) => <PersonItem item={item} />}
-            keyExtractor={(item) => `${item.Id ?? item.Name}-${item.Role ?? ''}`}
+            keyExtractor={(item) => `${item.id ?? item.name}-${item.type ?? ''}`}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />
@@ -90,7 +90,7 @@ export const SeriesModeContent = ({
             renderItem={({ item }) => (
               <SeriesCard item={item} style={detailViewStyles.seasonCard} imgType="Primary" />
             )}
-            keyExtractor={(item) => item.Id!}
+            keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
           />

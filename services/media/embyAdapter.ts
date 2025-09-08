@@ -89,9 +89,6 @@ export const embyAdapter: MediaAdapter = {
   async getSimilarMovies() {
     throw new Error('Emby adapter not implemented');
   },
-  async getSearchHints() {
-    throw new Error('Emby adapter not implemented');
-  },
   async searchItems() {
     throw new Error('Emby adapter not implemented');
   },
@@ -121,6 +118,10 @@ export const embyAdapter: MediaAdapter = {
     throw new Error('Emby adapter not implemented');
   },
   async reportPlaybackStop() {
+    throw new Error('Emby adapter not implemented');
+  },
+
+  getImageInfo() {
     throw new Error('Emby adapter not implemented');
   },
 };
