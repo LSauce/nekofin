@@ -124,7 +124,7 @@ export default function HomeScreen() {
   useEffect(() => {
     navigation.setOptions({
       headerRight: () =>
-        servers && servers.length > 1 ? (
+        servers && servers.length > 0 ? (
           <View style={styles.headerButtons}>
             <MenuView
               isAnchoredToRight

@@ -1,7 +1,6 @@
 import { ImageUrlInfo } from '@/lib/utils/image';
 import { RecommendedServerInfo } from '@jellyfin/sdk';
 import { BaseItemPersonImageBlurHashes } from '@jellyfin/sdk/lib/generated-client/models/base-item-person-image-blur-hashes';
-import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 
 import { StreamInfo } from './jellyfin';
 

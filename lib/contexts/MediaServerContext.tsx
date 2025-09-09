@@ -1,11 +1,8 @@
-import {
-  authenticateAndSaveServer,
-  createApiFromServerInfo,
-  deleteCachedApiForServer,
-  setGlobalApiInstance,
-} from '@/services/media/jellyfin';
-import { MediaServerInfo } from '@/services/media/types';
-import { Api } from '@jellyfin/sdk';
+import { getMediaAdapter } from '@/services/media';
+import { embyAdapter } from '@/services/media/embyAdapter';
+import { deleteCachedApiForServer } from '@/services/media/jellyfin';
+import { jellyfinAdapter } from '@/services/media/jellyfinAdapter';
+import { MediaServerInfo, MediaServerType } from '@/services/media/types';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { storage } from '../storage';
@@ -13,7 +10,7 @@ import { storage } from '../storage';
 interface MediaServerContextType {
   servers: MediaServerInfo[];
   currentServer: MediaServerInfo | null;
-  currentApi: Api | null;
+  currentApi: unknown | null;
   setCurrentServer: (server: MediaServerInfo) => void;
   isInitialized: boolean;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
@@ -49,16 +46,18 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const currentApi = useMemo(() => {
     if (!currentServer) {
-      setGlobalApiInstance(null);
+      // 清空全局实例
+      jellyfinAdapter.setGlobalApiInstance(null);
       return null;
     }
     try {
-      const api = createApiFromServerInfo(currentServer);
-      setGlobalApiInstance(api);
+      const adapter = getMediaAdapter(currentServer.type);
+      const api = adapter.createApiFromServerInfo({ serverInfo: currentServer });
+      adapter.setGlobalApiInstance(api);
       return api;
     } catch (error) {
       console.error('Failed to create API instance:', error);
-      setGlobalApiInstance(null);
+      jellyfinAdapter.setGlobalApiInstance(null);
       return null;
     }
   }, [currentServer]);
@@ -84,7 +83,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
         setServers(normalizedServers);
         try {
           normalizedServers.forEach((s) => {
-            createApiFromServerInfo(s);
+            const adapter = getMediaAdapter(s.type);
+            adapter.createApiFromServerInfo({ serverInfo: s });
           });
         } catch (e) {
           console.warn('Failed to prewarm api instances on load:', e);
@@ -130,7 +130,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
       console.error('Failed to persist current server id on add:', error);
     }
     try {
-      createApiFromServerInfo(newServer);
+      const adapter = getMediaAdapter(newServer.type);
+      adapter.createApiFromServerInfo({ serverInfo: newServer });
     } catch (e) {
       console.warn('Failed to prewarm api instance on add:', e);
     }
@@ -138,14 +139,23 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const authenticateAndAddServer = async (address: string, username: string, password: string) => {
     const normalizedAddress = normalizeServerAddress(address);
-    await authenticateAndSaveServer(normalizedAddress, username, password, addServer);
+    // 目前默认使用 Jellyfin 适配器进行认证
+    await jellyfinAdapter.authenticateAndSaveServer({
+      address: normalizedAddress,
+      username,
+      password,
+      addServer,
+    });
   };
 
   const removeServer = async (id: string) => {
     const updatedServers = servers.filter((server) => server.id !== id);
     await saveServers(updatedServers);
     try {
-      deleteCachedApiForServer(id);
+      const removed = servers.find((s) => s.id === id);
+      if (removed?.type === 'jellyfin') {
+        deleteCachedApiForServer(id);
+      }
     } catch (e) {
       console.warn('Failed to cleanup api cache on remove:', e);
     }
@@ -178,7 +188,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     const updated = updatedServers.find((s) => s.id === id);
     if (updated) {
       try {
-        createApiFromServerInfo(updated);
+        const adapter = getMediaAdapter(updated.type);
+        adapter.createApiFromServerInfo({ serverInfo: updated });
       } catch (e) {
         console.warn('Failed to refresh api cache on update:', e);
       }
@@ -198,18 +209,15 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     const server = servers.find((s) => s.id === id);
     if (!server) return;
     try {
-      const { createApiFromServerInfo, getUserInfo, getSystemInfo } = await import(
-        '@/services/media/jellyfin'
-      );
-      const api = createApiFromServerInfo(server);
-      const sysRes = await getSystemInfo(api);
-      const system = sysRes.data;
-      const userRes = await getUserInfo(api, server.userId);
-      const user = userRes.data;
+      const adapter = getMediaAdapter(server.type);
+      const api = adapter.createApiFromServerInfo({ serverInfo: server });
+      adapter.setGlobalApiInstance(api);
+      const system = await adapter.getSystemInfo();
+      const user = await adapter.getUserInfo({ userId: server.userId });
       await updateServer(id, {
-        name: system.ServerName || user.ServerName || server.address,
-        username: user.Name || server.username,
-        userAvatar: `${server.address}/Users/${user.Id}/Images/Primary?quality=90`,
+        name: system.serverName || user.serverName || server.address,
+        username: user.name || server.username,
+        userAvatar: user.avatar || server.userAvatar,
       });
     } catch (error) {
       console.error('Failed to refresh server info:', error);

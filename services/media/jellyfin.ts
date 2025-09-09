@@ -262,9 +262,10 @@ export async function authenticateAndSaveServer(
 
   if (authResult.data?.User?.Id && authResult.data?.AccessToken) {
     const normalizedAddress = address.replace(/\/$/, '');
+    const systemInfo = await getSystemInfo(api);
     const serverInfo: Omit<MediaServerInfo, 'id' | 'createdAt'> = {
       address: normalizedAddress,
-      name: authResult.data.User.ServerName || normalizedAddress,
+      name: systemInfo.data?.ServerName || normalizedAddress,
       userId: authResult.data.User.Id,
       username: authResult.data.User.Name || username,
       userAvatar: `${normalizedAddress}/Users/${authResult.data.User.Id}/Images/Primary?quality=90`,
