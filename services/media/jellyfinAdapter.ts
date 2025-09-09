@@ -20,6 +20,7 @@ import {
   getNextUpItemsByFolder,
   getPublicUsers,
   getRecommendedSearchKeywords,
+  getResumeItems,
   getSeasonsBySeries,
   getSimilarMovies,
   getSimilarShows,
@@ -44,6 +45,7 @@ import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-
 
 import {
   MediaAdapter,
+  MediaPerson,
   type MediaItem,
   type MediaItemType,
   type MediaServerInfo,
@@ -243,9 +245,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getResumeItems({ userId, limit }: { userId: string; limit?: number }) {
     const api = getApiInstance();
-    const result = await import('@/services/media/jellyfin').then((m) =>
-      m.getResumeItems(api, userId, limit),
-    );
+    const result = await getResumeItems(api, userId, limit);
     return {
       data: {
         Items: result.data?.Items?.map(convertBaseItemDtoToMediaItem),
@@ -497,7 +497,7 @@ class JellyfinAdapter implements MediaAdapter {
     item,
     opts,
   }: {
-    item: MediaItem | import('./types').MediaPerson;
+    item: MediaItem | MediaPerson;
     opts?: {
       width?: number;
       height?: number;

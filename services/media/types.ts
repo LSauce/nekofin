@@ -4,6 +4,11 @@ import { BaseItemPersonImageBlurHashes } from '@jellyfin/sdk/lib/generated-clien
 
 import { StreamInfo } from './jellyfin';
 
+export type MediaApi = {
+  basePath: string;
+  accessToken: string | null;
+};
+
 export type MediaServerType = 'jellyfin' | 'emby';
 
 export type MediaItemType = 'Movie' | 'Series' | 'Season' | 'Episode' | 'MusicVideo' | 'Other';
@@ -136,16 +141,16 @@ export interface MediaServerInfo {
 }
 
 export abstract class MediaAdapter {
-  abstract getApiInstance(): unknown | null;
-  abstract setGlobalApiInstance(api: unknown | null): void;
+  abstract getApiInstance(): MediaApi | null;
+  abstract setGlobalApiInstance(api: MediaApi | null): void;
 
   abstract discoverServers(params: { host: string }): Promise<RecommendedServerInfo[]>;
   abstract findBestServer(params: {
     servers: RecommendedServerInfo[];
   }): RecommendedServerInfo | null;
 
-  abstract createApi(params: { address: string }): unknown;
-  abstract createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): unknown;
+  abstract createApi(params: { address: string }): MediaApi;
+  abstract createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): MediaApi;
 
   abstract getSystemInfo(): Promise<MediaSystemInfo>;
   abstract getPublicUsers(): Promise<MediaUser[]>;

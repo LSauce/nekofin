@@ -1,8 +1,7 @@
 import { getMediaAdapter } from '@/services/media';
-import { embyAdapter } from '@/services/media/embyAdapter';
 import { deleteCachedApiForServer } from '@/services/media/jellyfin';
 import { jellyfinAdapter } from '@/services/media/jellyfinAdapter';
-import { MediaServerInfo, MediaServerType } from '@/services/media/types';
+import { MediaApi, MediaServerInfo, MediaServerType } from '@/services/media/types';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
 import { storage } from '../storage';
@@ -10,11 +9,16 @@ import { storage } from '../storage';
 interface MediaServerContextType {
   servers: MediaServerInfo[];
   currentServer: MediaServerInfo | null;
-  currentApi: unknown | null;
+  currentApi: MediaApi | null;
   setCurrentServer: (server: MediaServerInfo) => void;
   isInitialized: boolean;
   addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
-  authenticateAndAddServer: (address: string, username: string, password: string) => Promise<void>;
+  authenticateAndAddServer: (params: {
+    address: string;
+    username: string;
+    password: string;
+    type?: MediaServerType;
+  }) => Promise<void>;
   removeServer: (id: string) => Promise<void>;
   updateServer: (id: string, updates: Partial<MediaServerInfo>) => Promise<void>;
   getServer: (id: string) => MediaServerInfo | undefined;
@@ -137,10 +141,20 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     }
   };
 
-  const authenticateAndAddServer = async (address: string, username: string, password: string) => {
+  const authenticateAndAddServer = async ({
+    address,
+    username,
+    password,
+    type,
+  }: {
+    address: string;
+    username: string;
+    password: string;
+    type?: MediaServerType;
+  }) => {
     const normalizedAddress = normalizeServerAddress(address);
-    // 目前默认使用 Jellyfin 适配器进行认证
-    await jellyfinAdapter.authenticateAndSaveServer({
+    const adapter = getMediaAdapter(type || 'jellyfin');
+    await adapter.authenticateAndSaveServer({
       address: normalizedAddress,
       username,
       password,

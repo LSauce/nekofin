@@ -51,11 +51,12 @@ export const AddServerForm: React.FC<AddServerFormProps> = ({ onClose }) => {
   const onSubmit = async (data: AddServerFormData) => {
     setIsLoading(true);
     try {
-      if (data.serverType === 'emby') {
-        Alert.alert('提示', 'Emby 添加即将支持');
-        return;
-      }
-      await authenticateAndAddServer(data.address.trim(), data.username.trim(), data.password);
+      await authenticateAndAddServer({
+        address: data.address.trim(),
+        username: data.username.trim(),
+        password: data.password.trim(),
+        type: data.serverType,
+      });
 
       Alert.alert('成功', '服务器添加成功', [{ text: '确定', onPress: onClose }]);
       reset();

@@ -225,6 +225,7 @@ export default function HomeScreen() {
             return <UserViewSection key={section.key} userView={section.items} />;
           }
           if (section.type === 'resume') {
+            if (section.items.length === 0) return null;
             return (
               <Section
                 key={section.key}
@@ -236,6 +237,7 @@ export default function HomeScreen() {
             );
           }
           if (section.type === 'nextup') {
+            if (section.items.length === 0) return null;
             return (
               <Section
                 key={section.key}
