@@ -1,5 +1,5 @@
-import { embyAdapter } from './embyAdapter';
-import { jellyfinAdapter } from './jellyfinAdapter';
+import { embyAdapter } from './emby/embyAdapter';
+import { jellyfinAdapter } from './jellyfin/jellyfinAdapter';
 import type { MediaAdapter, MediaServerType } from './types';
 
 export function getMediaAdapter(type: MediaServerType = 'jellyfin'): MediaAdapter {

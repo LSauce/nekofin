@@ -21,7 +21,7 @@ import {
   getUserViewsApi,
 } from '@jellyfin/sdk/lib/utils/api';
 
-import { MediaServerInfo } from './types';
+import { MediaServerInfo } from '../types';
 
 let jellyfin: Jellyfin | null = null;
 let apiInstance: Api | null = null;

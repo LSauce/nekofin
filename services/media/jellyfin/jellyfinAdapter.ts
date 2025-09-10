@@ -1,4 +1,8 @@
 import { getImageInfo } from '@/lib/utils/image';
+import type { Api, RecommendedServerInfo } from '@jellyfin/sdk';
+import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
+import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
+
 import {
   addFavoriteItem,
   authenticateAndSaveServer,
@@ -38,11 +42,7 @@ import {
   reportPlaybackStop,
   searchItems,
   setGlobalApiInstance,
-} from '@/services/media/jellyfin';
-import type { Api, RecommendedServerInfo } from '@jellyfin/sdk';
-import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
-import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
-
+} from '.';
 import {
   MediaAdapter,
   MediaPerson,
@@ -50,9 +50,9 @@ import {
   type MediaItemType,
   type MediaServerInfo,
   type MediaSortBy,
-} from './types';
+} from '../types';
 
-function convertBaseItemDtoToMediaItem(item: BaseItemDto): MediaItem {
+export function convertBaseItemDtoToMediaItem(item: BaseItemDto): MediaItem {
   return {
     id: item.Id || '',
     name: item.Name || '',
@@ -155,6 +155,7 @@ class JellyfinAdapter implements MediaAdapter {
     const api = getApiInstance();
     return jfLogin(api, username, password);
   }
+
   authenticateAndSaveServer(params: {
     address: string;
     username: string;
@@ -488,6 +489,7 @@ class JellyfinAdapter implements MediaAdapter {
     const api = getApiInstance();
     return getRecommendedSearchKeywords(api, userId, limit);
   }
+
   async getAvailableFilters({ userId, parentId }: { userId: string; parentId?: string }) {
     const api = getApiInstance();
     const result = await getAvailableFilters(api, userId, parentId);
@@ -510,6 +512,7 @@ class JellyfinAdapter implements MediaAdapter {
     const baseItem = (item as MediaItem).raw ?? item;
     return getImageInfo(baseItem as BaseItemDto, opts);
   }
+
   async getStreamInfo({
     item,
     userId,
@@ -592,10 +595,12 @@ class JellyfinAdapter implements MediaAdapter {
     const api = getApiInstance();
     await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false);
   }
+
   async reportPlaybackStart({ itemId, positionTicks }: { itemId: string; positionTicks?: number }) {
     const api = getApiInstance();
     await reportPlaybackStart(api, itemId, positionTicks ?? 0);
   }
+
   async reportPlaybackStop({ itemId, positionTicks }: { itemId: string; positionTicks: number }) {
     const api = getApiInstance();
     await reportPlaybackStop(api, itemId, positionTicks);

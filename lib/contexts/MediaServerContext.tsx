@@ -1,6 +1,6 @@
 import { getMediaAdapter } from '@/services/media';
 import { deleteCachedApiForServer } from '@/services/media/jellyfin';
-import { jellyfinAdapter } from '@/services/media/jellyfinAdapter';
+import { jellyfinAdapter } from '@/services/media/jellyfin/jellyfinAdapter';
 import { MediaApi, MediaServerInfo, MediaServerType } from '@/services/media/types';
 import React, { createContext, useContext, useEffect, useMemo, useState } from 'react';
 
