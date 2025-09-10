@@ -1,7 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getDeviceId } from '@/lib/utils';
+import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -125,8 +125,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
 
   const duration = useMemo(() => {
-    return mediaInfo?.length ?? 0;
-  }, [mediaInfo]);
+    return ticksToMilliseconds(itemDetail?.runTimeTicks ?? 0) ?? mediaInfo?.length ?? 0;
+  }, [mediaInfo, itemDetail?.runTimeTicks]);
 
   const formattedTitle = useMemo(() => {
     if (!itemDetail) return '';

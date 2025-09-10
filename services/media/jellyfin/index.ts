@@ -725,8 +725,6 @@ export const getStreamInfo = async ({
       userId,
     });
 
-    console.log('Debug: url', url);
-
     return {
       url,
       sessionId: sessionId || null,

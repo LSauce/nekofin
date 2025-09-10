@@ -14,6 +14,10 @@ export const ticksToSeconds = (ticks: number) => {
   return ticks / 10000000;
 };
 
+export const ticksToMilliseconds = (ticks: number) => {
+  return ticks / 10000;
+};
+
 export const formatDurationFromTicks = (ticks?: number | null) => {
   if (!ticks) return '';
   const totalSeconds = Math.floor(ticksToSeconds(ticks));
