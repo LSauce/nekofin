@@ -444,6 +444,7 @@ class JellyfinAdapter implements MediaAdapter {
     const result = await getAvailableFilters(api, userId, parentId);
     return result;
   }
+
   getImageInfo({ item, opts }: GetImageInfoParams) {
     const baseItem = (item as MediaItem).raw ?? item;
     return getImageInfo(baseItem as BaseItemDto, opts);

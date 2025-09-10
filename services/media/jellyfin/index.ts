@@ -79,7 +79,6 @@ export async function getPublicUsers(api: Api) {
 }
 
 export async function login(api: Api, username: string, password: string) {
-  console.log('login', username, password, api.basePath);
   return await api.authenticateUserByName(username, password);
 }
 
