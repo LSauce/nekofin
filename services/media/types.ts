@@ -140,152 +140,196 @@ export interface MediaServerInfo {
   type: MediaServerType;
 }
 
+// 占位的抽象类已下移整合
+
+// Params 类型提取
+export interface DiscoverServersParams {
+  host: string;
+}
+export interface FindBestServerParams {
+  servers: RecommendedServerInfo[];
+}
+export interface CreateApiParams {
+  address: string;
+}
+export interface CreateApiFromServerInfoParams {
+  serverInfo: MediaServerInfo;
+}
+
+// Auth & User
+export interface LoginParams {
+  username: string;
+  password: string;
+}
+export interface AuthenticateAndSaveServerParams {
+  address: string;
+  username: string;
+  password: string;
+  addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
+}
+export interface GetUserInfoParams {
+  userId: string;
+}
+
+// Items common
+// 基础可复用片段
+export type WithUserId = { userId: string };
+export type WithLimit = { limit?: number };
+export type WithPaging = { startIndex?: number; limit?: number };
+export type WithFolderId = { folderId: string };
+export type WithItemId = { itemId: string };
+export type WithSeriesId = { seriesId: string };
+export type WithSeasonId = { seasonId: string };
+export type WithFilterOptions = {
+  includeItemTypes?: MediaItemType[];
+  sortBy?: MediaSortBy[];
+  sortOrder?: MediaSortOrder;
+  onlyUnplayed?: boolean;
+  year?: number;
+  tags?: string[];
+};
+
+// 组合别名（保持原导出名不变）
+export type GetLatestItemsParams = WithUserId & WithLimit & Omit<WithFilterOptions, 'onlyUnplayed'>;
+export type GetLatestItemsByFolderParams = WithUserId & WithFolderId & WithLimit;
+export type GetNextUpItemsParams = WithUserId & WithLimit;
+export type GetNextUpItemsByFolderParams = WithUserId & WithFolderId & WithLimit;
+export type GetResumeItemsParams = WithUserId & WithLimit;
+export type GetFavoriteItemsParams = WithUserId & WithLimit;
+export type GetFavoriteItemsPagedParams = WithUserId & WithPaging & WithFilterOptions;
+export type GetItemDetailParams = WithItemId & WithUserId;
+export type GetItemMediaSourcesParams = WithItemId;
+export type GetUserViewParams = WithUserId;
+export type GetAllItemsByFolderParams = WithUserId &
+  WithFolderId &
+  WithPaging &
+  WithFilterOptions & {
+    itemTypes?: MediaItemType[];
+  };
+export type GetSeasonsBySeriesParams = WithUserId & WithSeriesId;
+export type GetEpisodesBySeasonParams = WithUserId & WithSeasonId;
+export type GetSimilarShowsParams = WithItemId & WithUserId & WithLimit;
+export type GetSimilarMoviesParams = WithItemId & WithUserId & WithLimit;
+export type SearchItemsParams = WithUserId & { searchTerm: string } & WithLimit & {
+    includeItemTypes?: MediaItemType[];
+  };
+export type GetRecommendedSearchKeywordsParams = WithUserId & WithLimit;
+export type GetAvailableFiltersParams = WithUserId & { parentId?: string };
+export interface GetImageInfoParams {
+  item: MediaItem | MediaPerson;
+  opts?: {
+    width?: number;
+    height?: number;
+    preferBackdrop?: boolean;
+    preferLogo?: boolean;
+    preferThumb?: boolean;
+    preferBanner?: boolean;
+  };
+}
+export interface GetStreamInfoParams {
+  item: MediaItem | null | undefined;
+  userId: string | null | undefined;
+  startTimeTicks: number;
+  maxStreamingBitrate?: number;
+  playSessionId?: string | null;
+  deviceProfile: any;
+  audioStreamIndex?: number;
+  subtitleStreamIndex?: number;
+  height?: number;
+  mediaSourceId?: string | null;
+  deviceId?: string | null;
+}
+export interface UpdateFavoriteItemParams {
+  userId: string;
+  itemId: string;
+}
+export interface MarkItemPlayedParams {
+  userId: string;
+  itemId: string;
+  datePlayed?: string;
+}
+export interface ReportPlaybackProgressParams {
+  itemId: string;
+  positionTicks: number;
+  isPaused?: boolean;
+}
+export interface ReportPlaybackStartParams {
+  itemId: string;
+  positionTicks?: number;
+}
+export interface ReportPlaybackStopParams {
+  itemId: string;
+  positionTicks: number;
+}
+
 export abstract class MediaAdapter {
   abstract getApiInstance(): MediaApi | null;
   abstract setGlobalApiInstance(api: MediaApi | null): void;
 
-  abstract discoverServers(params: { host: string }): Promise<RecommendedServerInfo[]>;
-  abstract findBestServer(params: {
-    servers: RecommendedServerInfo[];
-  }): RecommendedServerInfo | null;
+  abstract discoverServers(params: DiscoverServersParams): Promise<RecommendedServerInfo[]>;
+  abstract findBestServer(params: FindBestServerParams): RecommendedServerInfo | null;
 
-  abstract createApi(params: { address: string }): MediaApi;
-  abstract createApiFromServerInfo(params: { serverInfo: MediaServerInfo }): MediaApi;
+  abstract createApi(params: CreateApiParams): MediaApi;
+  abstract createApiFromServerInfo(params: CreateApiFromServerInfoParams): MediaApi;
 
   abstract getSystemInfo(): Promise<MediaSystemInfo>;
   abstract getPublicUsers(): Promise<MediaUser[]>;
-  abstract login(params: { username: string; password: string }): Promise<unknown>;
-  abstract authenticateAndSaveServer(params: {
-    address: string;
-    username: string;
-    password: string;
-    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
-  }): Promise<unknown>;
+  abstract login(params: LoginParams): Promise<unknown>;
+  abstract authenticateAndSaveServer(params: AuthenticateAndSaveServerParams): Promise<unknown>;
 
-  abstract getLatestItems(params: {
-    userId: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  abstract getLatestItemsByFolder(params: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }): Promise<{
+  abstract getLatestItems(params: GetLatestItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  abstract getNextUpItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getLatestItemsByFolder(params: GetLatestItemsByFolderParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  abstract getNextUpItemsByFolder(params: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }): Promise<{
+  abstract getNextUpItems(params: GetNextUpItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  abstract getResumeItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getNextUpItemsByFolder(params: GetNextUpItemsByFolderParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  abstract getFavoriteItems(params: { userId: string; limit?: number }): Promise<{
+  abstract getResumeItems(params: GetResumeItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }>;
-  abstract getFavoriteItemsPaged(params: {
-    userId: string;
-    startIndex?: number;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
+  abstract getFavoriteItems(params: GetFavoriteItemsParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  abstract getFavoriteItemsPaged(params: GetFavoriteItemsPagedParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
   abstract logout(): Promise<void>;
-  abstract getUserInfo(params: { userId: string }): Promise<MediaUser>;
-  abstract getItemDetail(params: { itemId: string; userId: string }): Promise<MediaItem>;
-  abstract getItemMediaSources(params: { itemId: string }): Promise<MediaPlaybackInfo>;
-  abstract getUserView(params: { userId: string }): Promise<MediaItem[]>;
-  abstract getAllItemsByFolder(params: {
-    userId: string;
-    folderId: string;
-    startIndex?: number;
-    limit?: number;
-    itemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }>;
-  abstract getSeasonsBySeries(params: { seriesId: string; userId: string }): Promise<{
+  abstract getUserInfo(params: GetUserInfoParams): Promise<MediaUser>;
+  abstract getItemDetail(params: GetItemDetailParams): Promise<MediaItem>;
+  abstract getItemMediaSources(params: GetItemMediaSourcesParams): Promise<MediaPlaybackInfo>;
+  abstract getUserView(params: GetUserViewParams): Promise<MediaItem[]>;
+  abstract getAllItemsByFolder(params: GetAllItemsByFolderParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }>;
+  abstract getSeasonsBySeries(params: GetSeasonsBySeriesParams): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  abstract getEpisodesBySeason(params: { seasonId: string; userId: string }): Promise<{
+  abstract getEpisodesBySeason(params: GetEpisodesBySeasonParams): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  abstract getSimilarShows(params: { itemId: string; userId: string; limit?: number }): Promise<{
+  abstract getSimilarShows(params: GetSimilarShowsParams): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  abstract getSimilarMovies(params: { itemId: string; userId: string; limit?: number }): Promise<{
+  abstract getSimilarMovies(params: GetSimilarMoviesParams): Promise<{
     data: { Items?: MediaItem[] };
   }>;
-  abstract searchItems(params: {
-    userId: string;
-    searchTerm: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-  }): Promise<MediaItem[]>;
-  abstract getRecommendedSearchKeywords(params: {
-    userId: string;
-    limit?: number;
-  }): Promise<string[]>;
-  abstract getAvailableFilters(params: {
-    userId: string;
-    parentId?: string;
-  }): Promise<MediaFilters>;
-  abstract getImageInfo(params: {
-    item: MediaItem | MediaPerson;
-    opts?: {
-      width?: number;
-      height?: number;
-      preferBackdrop?: boolean;
-      preferLogo?: boolean;
-      preferThumb?: boolean;
-      preferBanner?: boolean;
-    };
-  }): ImageUrlInfo;
-  abstract getStreamInfo(params: {
-    item: MediaItem | null | undefined;
-    userId: string | null | undefined;
-    startTimeTicks: number;
-    maxStreamingBitrate?: number;
-    playSessionId?: string | null;
-    deviceProfile: any;
-    audioStreamIndex?: number;
-    subtitleStreamIndex?: number;
-    height?: number;
-    mediaSourceId?: string | null;
-    deviceId?: string | null;
-  }): Promise<StreamInfo | null>;
-
-  abstract addFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
-  abstract removeFavoriteItem(params: { userId: string; itemId: string }): Promise<void>;
-  abstract markItemPlayed(params: {
-    userId: string;
-    itemId: string;
-    datePlayed?: string;
-  }): Promise<void>;
-  abstract markItemUnplayed(params: { userId: string; itemId: string }): Promise<void>;
-  abstract reportPlaybackProgress(params: {
-    itemId: string;
-    positionTicks: number;
-    isPaused?: boolean;
-  }): Promise<void>;
-  abstract reportPlaybackStart(params: { itemId: string; positionTicks?: number }): Promise<void>;
-  abstract reportPlaybackStop(params: { itemId: string; positionTicks: number }): Promise<void>;
+  abstract searchItems(params: SearchItemsParams): Promise<MediaItem[]>;
+  abstract getRecommendedSearchKeywords(
+    params: GetRecommendedSearchKeywordsParams,
+  ): Promise<string[]>;
+  abstract getAvailableFilters(params: GetAvailableFiltersParams): Promise<MediaFilters>;
+  abstract getImageInfo(params: GetImageInfoParams): ImageUrlInfo;
+  abstract getStreamInfo(params: GetStreamInfoParams): Promise<StreamInfo | null>;
+  abstract addFavoriteItem(params: UpdateFavoriteItemParams): Promise<void>;
+  abstract removeFavoriteItem(params: UpdateFavoriteItemParams): Promise<void>;
+  abstract markItemPlayed(params: MarkItemPlayedParams): Promise<void>;
+  abstract markItemUnplayed(params: UpdateFavoriteItemParams): Promise<void>;
+  abstract reportPlaybackProgress(params: ReportPlaybackProgressParams): Promise<void>;
+  abstract reportPlaybackStart(params: ReportPlaybackStartParams): Promise<void>;
+  abstract reportPlaybackStop(params: ReportPlaybackStopParams): Promise<void>;
 }

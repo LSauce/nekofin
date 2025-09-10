@@ -1,5 +1,5 @@
 import { getImageInfo } from '@/lib/utils/image';
-import type { Api, RecommendedServerInfo } from '@jellyfin/sdk';
+import type { Api } from '@jellyfin/sdk';
 import { BaseItemDto, BaseItemKind, ItemSortBy } from '@jellyfin/sdk/lib/generated-client/models';
 import { DeviceProfile } from '@jellyfin/sdk/lib/generated-client/models/device-profile';
 
@@ -45,11 +45,36 @@ import {
 } from '.';
 import {
   MediaAdapter,
-  MediaPerson,
+  type AuthenticateAndSaveServerParams,
+  type CreateApiFromServerInfoParams,
+  type CreateApiParams,
+  type DiscoverServersParams,
+  type FindBestServerParams,
+  type GetAllItemsByFolderParams,
+  type GetAvailableFiltersParams,
+  type GetEpisodesBySeasonParams,
+  type GetFavoriteItemsPagedParams,
+  type GetFavoriteItemsParams,
+  type GetImageInfoParams,
+  type GetItemDetailParams,
+  type GetItemMediaSourcesParams,
+  type GetLatestItemsByFolderParams,
+  type GetLatestItemsParams,
+  type GetNextUpItemsByFolderParams,
+  type GetNextUpItemsParams,
+  type GetRecommendedSearchKeywordsParams,
+  type GetResumeItemsParams,
+  type GetSeasonsBySeriesParams,
+  type GetSimilarMoviesParams,
+  type GetSimilarShowsParams,
+  type GetStreamInfoParams,
+  type GetUserInfoParams,
+  type GetUserViewParams,
+  type LoginParams,
   type MediaItem,
   type MediaItemType,
-  type MediaServerInfo,
   type MediaSortBy,
+  type SearchItemsParams,
 } from '../types';
 
 export function convertBaseItemDtoToMediaItem(item: BaseItemDto): MediaItem {
@@ -109,20 +134,20 @@ class JellyfinAdapter implements MediaAdapter {
   getApiInstance = getApiInstance;
   setGlobalApiInstance = setGlobalApiInstance;
 
-  async discoverServers({ host }: { host: string }) {
+  async discoverServers({ host }: DiscoverServersParams) {
     const jf = getJellyfinInstance();
     return await jf.discovery.getRecommendedServerCandidates(host);
   }
 
-  findBestServer({ servers }: { servers: RecommendedServerInfo[] }) {
+  findBestServer({ servers }: FindBestServerParams) {
     const best = findBestServer(servers);
     return best ?? null;
   }
 
-  createApi({ address }: { address: string }) {
+  createApi({ address }: CreateApiParams) {
     return createApi(address);
   }
-  createApiFromServerInfo({ serverInfo }: { serverInfo: MediaServerInfo }): Api {
+  createApiFromServerInfo({ serverInfo }: CreateApiFromServerInfoParams): Api {
     return createApiFromServerInfo(serverInfo);
   }
 
@@ -151,17 +176,12 @@ class JellyfinAdapter implements MediaAdapter {
     );
   }
 
-  login({ username, password }: { username: string; password: string }) {
+  login({ username, password }: LoginParams) {
     const api = getApiInstance();
     return jfLogin(api, username, password);
   }
 
-  authenticateAndSaveServer(params: {
-    address: string;
-    username: string;
-    password: string;
-    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
-  }) {
+  authenticateAndSaveServer(params: AuthenticateAndSaveServerParams) {
     return authenticateAndSaveServer(
       params.address,
       params.username,
@@ -170,15 +190,7 @@ class JellyfinAdapter implements MediaAdapter {
     );
   }
 
-  async getLatestItems(params: {
-    userId: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: 'Ascending' | 'Descending';
-    year?: number;
-    tags?: string[];
-  }) {
+  async getLatestItems(params: GetLatestItemsParams) {
     const api = getApiInstance();
     const result = await getLatestItems(api, params.userId, params.limit, {
       includeItemTypes: params?.includeItemTypes
@@ -196,15 +208,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getLatestItemsByFolder({
-    userId,
-    folderId,
-    limit,
-  }: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }) {
+  async getLatestItemsByFolder({ userId, folderId, limit }: GetLatestItemsByFolderParams) {
     const api = getApiInstance();
     const result = await getLatestItemsByFolder(api, userId, folderId, limit);
     return {
@@ -214,7 +218,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getNextUpItems({ userId, limit }: { userId: string; limit?: number }) {
+  async getNextUpItems({ userId, limit }: GetNextUpItemsParams) {
     const api = getApiInstance();
     const result = await getNextUpItems(api, userId, limit);
     return {
@@ -225,15 +229,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getNextUpItemsByFolder({
-    userId,
-    folderId,
-    limit,
-  }: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }) {
+  async getNextUpItemsByFolder({ userId, folderId, limit }: GetNextUpItemsByFolderParams) {
     const api = getApiInstance();
     const result = await getNextUpItemsByFolder(api, userId, folderId, limit);
     return {
@@ -244,7 +240,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getResumeItems({ userId, limit }: { userId: string; limit?: number }) {
+  async getResumeItems({ userId, limit }: GetResumeItemsParams) {
     const api = getApiInstance();
     const result = await getResumeItems(api, userId, limit);
     return {
@@ -255,7 +251,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getFavoriteItems({ userId, limit }: { userId: string; limit?: number }) {
+  async getFavoriteItems({ userId, limit }: GetFavoriteItemsParams) {
     const api = getApiInstance();
     const result = await getFavoriteItems(api, userId, limit);
     return {
@@ -275,17 +271,7 @@ class JellyfinAdapter implements MediaAdapter {
     onlyUnplayed,
     year,
     tags,
-  }: {
-    userId: string;
-    startIndex?: number;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: 'Ascending' | 'Descending';
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }) {
+  }: GetFavoriteItemsPagedParams) {
     const api = getApiInstance();
     const result = await getFavoriteItemsPaged(api, userId, startIndex, limit, {
       includeItemTypes: includeItemTypes ? convertItemTypesToJellyfin(includeItemTypes) : undefined,
@@ -308,7 +294,7 @@ class JellyfinAdapter implements MediaAdapter {
     await logout(api);
   }
 
-  async getUserInfo({ userId }: { userId: string }) {
+  async getUserInfo({ userId }: GetUserInfoParams) {
     const api = getApiInstance();
     const result = await getUserInfo(api, userId);
     return {
@@ -321,13 +307,13 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getItemDetail({ itemId, userId }: { itemId: string; userId: string }) {
+  async getItemDetail({ itemId, userId }: GetItemDetailParams) {
     const api = getApiInstance();
     const result = await getItemDetail(api, itemId, userId);
     return convertBaseItemDtoToMediaItem(result.data!);
   }
 
-  async getItemMediaSources({ itemId }: { itemId: string }) {
+  async getItemMediaSources({ itemId }: GetItemMediaSourcesParams) {
     const api = getApiInstance();
     const result = await getItemMediaSources(api, itemId);
     return {
@@ -354,7 +340,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getUserView({ userId }: { userId: string }) {
+  async getUserView({ userId }: GetUserViewParams) {
     const api = getApiInstance();
     const result = await getUserView(api, userId);
     return result.data?.Items?.map(convertBaseItemDtoToMediaItem) || [];
@@ -371,18 +357,7 @@ class JellyfinAdapter implements MediaAdapter {
     onlyUnplayed,
     year,
     tags,
-  }: {
-    userId: string;
-    folderId: string;
-    startIndex?: number;
-    limit?: number;
-    itemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: 'Ascending' | 'Descending';
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }) {
+  }: GetAllItemsByFolderParams) {
     const api = getApiInstance();
     const result = await getAllItemsByFolder(
       api,
@@ -407,7 +382,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getSeasonsBySeries({ seriesId, userId }: { seriesId: string; userId: string }) {
+  async getSeasonsBySeries({ seriesId, userId }: GetSeasonsBySeriesParams) {
     const api = getApiInstance();
     const result = await getSeasonsBySeries(api, seriesId, userId);
     return {
@@ -417,7 +392,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getEpisodesBySeason({ seasonId, userId }: { seasonId: string; userId: string }) {
+  async getEpisodesBySeason({ seasonId, userId }: GetEpisodesBySeasonParams) {
     const api = getApiInstance();
     const result = await getEpisodesBySeason(api, seasonId, userId);
     return {
@@ -427,15 +402,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getSimilarShows({
-    itemId,
-    userId,
-    limit,
-  }: {
-    itemId: string;
-    userId: string;
-    limit?: number;
-  }) {
+  async getSimilarShows({ itemId, userId, limit }: GetSimilarShowsParams) {
     const api = getApiInstance();
     const result = await getSimilarShows(api, itemId, userId, limit);
     return {
@@ -445,15 +412,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async getSimilarMovies({
-    itemId,
-    userId,
-    limit,
-  }: {
-    itemId: string;
-    userId: string;
-    limit?: number;
-  }) {
+  async getSimilarMovies({ itemId, userId, limit }: GetSimilarMoviesParams) {
     const api = getApiInstance();
     const result = await getSimilarMovies(api, itemId, userId, limit);
     return {
@@ -463,17 +422,7 @@ class JellyfinAdapter implements MediaAdapter {
     };
   }
 
-  async searchItems({
-    userId,
-    searchTerm,
-    limit,
-    includeItemTypes,
-  }: {
-    userId: string;
-    searchTerm: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-  }) {
+  async searchItems({ userId, searchTerm, limit, includeItemTypes }: SearchItemsParams) {
     const api = getApiInstance();
     const result = await searchItems(
       api,
@@ -485,30 +434,17 @@ class JellyfinAdapter implements MediaAdapter {
     return result.map(convertBaseItemDtoToMediaItem);
   }
 
-  async getRecommendedSearchKeywords({ userId, limit }: { userId: string; limit?: number }) {
+  async getRecommendedSearchKeywords({ userId, limit }: GetRecommendedSearchKeywordsParams) {
     const api = getApiInstance();
     return getRecommendedSearchKeywords(api, userId, limit);
   }
 
-  async getAvailableFilters({ userId, parentId }: { userId: string; parentId?: string }) {
+  async getAvailableFilters({ userId, parentId }: GetAvailableFiltersParams) {
     const api = getApiInstance();
     const result = await getAvailableFilters(api, userId, parentId);
     return result;
   }
-  getImageInfo({
-    item,
-    opts,
-  }: {
-    item: MediaItem | MediaPerson;
-    opts?: {
-      width?: number;
-      height?: number;
-      preferBackdrop?: boolean;
-      preferLogo?: boolean;
-      preferThumb?: boolean;
-      preferBanner?: boolean;
-    };
-  }) {
+  getImageInfo({ item, opts }: GetImageInfoParams) {
     const baseItem = (item as MediaItem).raw ?? item;
     return getImageInfo(baseItem as BaseItemDto, opts);
   }
@@ -525,19 +461,7 @@ class JellyfinAdapter implements MediaAdapter {
     height,
     mediaSourceId,
     deviceId,
-  }: {
-    item: MediaItem | null | undefined;
-    userId: string | null | undefined;
-    startTimeTicks: number;
-    maxStreamingBitrate?: number;
-    playSessionId?: string | null;
-    deviceProfile: DeviceProfile;
-    audioStreamIndex?: number;
-    subtitleStreamIndex?: number;
-    height?: number;
-    mediaSourceId?: string | null;
-    deviceId?: string | null;
-  }) {
+  }: GetStreamInfoParams & { deviceProfile: DeviceProfile }) {
     const api = getApiInstance();
     return getStreamInfo({
       api,

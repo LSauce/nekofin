@@ -28,16 +28,44 @@ import { StreamInfo } from '../jellyfin';
 import { convertBaseItemDtoToMediaItem } from '../jellyfin/jellyfinAdapter';
 import {
   MediaAdapter,
-  MediaPerson,
+  type AuthenticateAndSaveServerParams,
+  type CreateApiFromServerInfoParams,
+  type CreateApiParams,
+  type DiscoverServersParams,
+  type FindBestServerParams,
+  type GetAllItemsByFolderParams,
+  type GetAvailableFiltersParams,
+  type GetEpisodesBySeasonParams,
+  type GetFavoriteItemsPagedParams,
+  type GetFavoriteItemsParams,
+  type GetImageInfoParams,
+  type GetItemDetailParams,
+  type GetItemMediaSourcesParams,
+  type GetLatestItemsByFolderParams,
+  type GetLatestItemsParams,
+  type GetNextUpItemsByFolderParams,
+  type GetNextUpItemsParams,
+  type GetRecommendedSearchKeywordsParams,
+  type GetResumeItemsParams,
+  type GetSeasonsBySeriesParams,
+  type GetSimilarMoviesParams,
+  type GetSimilarShowsParams,
+  type GetStreamInfoParams,
+  type GetUserInfoParams,
+  type GetUserViewParams,
+  type LoginParams,
+  type MarkItemPlayedParams,
   type MediaFilters,
   type MediaItem,
-  type MediaItemType,
   type MediaPlaybackInfo,
   type MediaServerInfo,
-  type MediaSortBy,
-  type MediaSortOrder,
   type MediaSystemInfo,
   type MediaUser,
+  type ReportPlaybackProgressParams,
+  type ReportPlaybackStartParams,
+  type ReportPlaybackStopParams,
+  type SearchItemsParams,
+  type UpdateFavoriteItemParams,
 } from '../types';
 
 class EmbyAdapter implements MediaAdapter {
@@ -49,7 +77,7 @@ class EmbyAdapter implements MediaAdapter {
     setGlobalApiInstance(api);
   }
 
-  async discoverServers({ host }: { host: string }): Promise<RecommendedServerInfo[]> {
+  async discoverServers({ host }: DiscoverServersParams): Promise<RecommendedServerInfo[]> {
     try {
       const address = host.replace(/\/$/, '');
       const res = await fetch(`${address}/System/Info/Public`);
@@ -61,11 +89,11 @@ class EmbyAdapter implements MediaAdapter {
     }
   }
 
-  findBestServer({ servers }: { servers: RecommendedServerInfo[] }): RecommendedServerInfo | null {
+  findBestServer({ servers }: FindBestServerParams): RecommendedServerInfo | null {
     return servers?.[0] ?? null;
   }
 
-  createApi({ address }: { address: string }): EmbyApi {
+  createApi({ address }: CreateApiParams): EmbyApi {
     const basePath = address.replace(/\/$/, '');
     const apiInstance = { basePath, accessToken: null };
     setGlobalApiInstance(apiInstance);
@@ -73,7 +101,7 @@ class EmbyAdapter implements MediaAdapter {
     return apiInstance;
   }
 
-  createApiFromServerInfo({ serverInfo }: { serverInfo: MediaServerInfo }): EmbyApi {
+  createApiFromServerInfo({ serverInfo }: CreateApiFromServerInfoParams): EmbyApi {
     const basePath = serverInfo.address.replace(/\/$/, '');
     const apiInstance = { basePath, accessToken: serverInfo.accessToken };
     setGlobalApiInstance(apiInstance);
@@ -105,13 +133,7 @@ class EmbyAdapter implements MediaAdapter {
     }));
   }
 
-  async login({
-    username,
-    password,
-  }: {
-    username: string;
-    password: string;
-  }): Promise<{ data: EmbyAuthenticateResponse }> {
+  async login({ username, password }: LoginParams): Promise<{ data: EmbyAuthenticateResponse }> {
     const client = getEmbyApiClient();
     const res = await client.post<EmbyAuthenticateResponse>(
       '/Users/AuthenticateByName',
@@ -130,12 +152,7 @@ class EmbyAdapter implements MediaAdapter {
     username,
     password,
     addServer,
-  }: {
-    address: string;
-    username: string;
-    password: string;
-    addServer: (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => Promise<void>;
-  }): Promise<unknown> {
+  }: AuthenticateAndSaveServerParams): Promise<unknown> {
     this.createApi({ address });
     const loginRes = await this.login({ username, password });
     const token = loginRes?.data?.AccessToken;
@@ -166,15 +183,7 @@ class EmbyAdapter implements MediaAdapter {
     sortOrder,
     year,
     tags,
-  }: {
-    userId: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
+  }: GetLatestItemsParams): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
     const baseParams = new URLSearchParams();
     applyDefaultImageAndFields(baseParams);
     const res = await getEmbyApiClient().get<{
@@ -196,15 +205,9 @@ class EmbyAdapter implements MediaAdapter {
     return { data };
   }
 
-  async getLatestItemsByFolder({
-    userId,
-    folderId,
-    limit,
-  }: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
+  async getLatestItemsByFolder({ userId, folderId, limit }: GetLatestItemsByFolderParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(
       `/Users/${userId}/Items/Latest`,
       {
@@ -221,7 +224,7 @@ class EmbyAdapter implements MediaAdapter {
     return { data: { Items: items } };
   }
 
-  async getNextUpItems({ userId, limit }: { userId: string; limit?: number }): Promise<{
+  async getNextUpItems({ userId, limit }: GetNextUpItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
@@ -238,15 +241,9 @@ class EmbyAdapter implements MediaAdapter {
     return { data };
   }
 
-  async getNextUpItemsByFolder({
-    userId,
-    folderId,
-    limit,
-  }: {
-    userId: string;
-    folderId: string;
-    limit?: number;
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
+  async getNextUpItemsByFolder({ userId, folderId, limit }: GetNextUpItemsByFolderParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
       `/Shows/NextUp`,
       {
@@ -259,7 +256,7 @@ class EmbyAdapter implements MediaAdapter {
     return { data };
   }
 
-  async getResumeItems({ userId, limit }: { userId: string; limit?: number }): Promise<{
+  async getResumeItems({ userId, limit }: GetResumeItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
@@ -277,7 +274,7 @@ class EmbyAdapter implements MediaAdapter {
     return { data };
   }
 
-  async getFavoriteItems({ userId, limit }: { userId: string; limit?: number }): Promise<{
+  async getFavoriteItems({ userId, limit }: GetFavoriteItemsParams): Promise<{
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }> {
     const baseParams = new URLSearchParams();
@@ -306,17 +303,9 @@ class EmbyAdapter implements MediaAdapter {
     onlyUnplayed,
     year,
     tags,
-  }: {
-    userId: string;
-    startIndex?: number;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
+  }: GetFavoriteItemsPagedParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     const baseParams = new URLSearchParams();
     applyDefaultImageAndFields(baseParams);
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
@@ -343,7 +332,7 @@ class EmbyAdapter implements MediaAdapter {
     setToken(null);
   }
 
-  async getUserInfo({ userId }: { userId: string }): Promise<MediaUser> {
+  async getUserInfo({ userId }: GetUserInfoParams): Promise<MediaUser> {
     const api = ensureApi();
     const res = await getEmbyApiClient().get<EmbyPublicUser>(`/Users/${userId}`);
     const result = res.data;
@@ -357,13 +346,13 @@ class EmbyAdapter implements MediaAdapter {
     };
   }
 
-  async getItemDetail({ itemId, userId }: { itemId: string; userId: string }): Promise<MediaItem> {
+  async getItemDetail({ itemId, userId }: GetItemDetailParams): Promise<MediaItem> {
     const res = await getEmbyApiClient().get<BaseItemDto>(`/Users/${userId}/Items/${itemId}`);
     const data = res.data;
     return convertBaseItemDtoToMediaItem(data);
   }
 
-  async getItemMediaSources({ itemId }: { itemId: string }): Promise<MediaPlaybackInfo> {
+  async getItemMediaSources({ itemId }: GetItemMediaSourcesParams): Promise<MediaPlaybackInfo> {
     const res = await getEmbyApiClient().post<EmbyPlaybackInfoResponse>(
       `/Items/${itemId}/PlaybackInfo`,
       {
@@ -396,7 +385,7 @@ class EmbyAdapter implements MediaAdapter {
     };
   }
 
-  async getUserView({ userId }: { userId: string }): Promise<MediaItem[]> {
+  async getUserView({ userId }: GetUserViewParams): Promise<MediaItem[]> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Views`);
     return await parseItems(res);
   }
@@ -412,18 +401,9 @@ class EmbyAdapter implements MediaAdapter {
     onlyUnplayed,
     year,
     tags,
-  }: {
-    userId: string;
-    folderId: string;
-    startIndex?: number;
-    limit?: number;
-    itemTypes?: MediaItemType[];
-    sortBy?: MediaSortBy[];
-    sortOrder?: MediaSortOrder;
-    onlyUnplayed?: boolean;
-    year?: number;
-    tags?: string[];
-  }): Promise<{ data: { Items?: MediaItem[]; TotalRecordCount?: number } }> {
+  }: GetAllItemsByFolderParams): Promise<{
+    data: { Items?: MediaItem[]; TotalRecordCount?: number };
+  }> {
     const baseParams = new URLSearchParams();
     applyDefaultImageAndFields(baseParams);
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
@@ -447,7 +427,7 @@ class EmbyAdapter implements MediaAdapter {
     return { data };
   }
 
-  async getSeasonsBySeries({ seriesId, userId }: { seriesId: string; userId: string }): Promise<{
+  async getSeasonsBySeries({ seriesId, userId }: GetSeasonsBySeriesParams): Promise<{
     data: { Items?: MediaItem[] };
   }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Items`, {
@@ -465,7 +445,7 @@ class EmbyAdapter implements MediaAdapter {
     return { data: { Items: items } };
   }
 
-  async getEpisodesBySeason({ seasonId, userId }: { seasonId: string; userId: string }): Promise<{
+  async getEpisodesBySeason({ seasonId, userId }: GetEpisodesBySeasonParams): Promise<{
     data: { Items?: MediaItem[] };
   }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Items`, {
@@ -482,11 +462,7 @@ class EmbyAdapter implements MediaAdapter {
     itemId,
     userId,
     limit,
-  }: {
-    itemId: string;
-    userId: string;
-    limit?: number;
-  }): Promise<{ data: { Items?: MediaItem[] } }> {
+  }: GetSimilarShowsParams): Promise<{ data: { Items?: MediaItem[] } }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(
       `/Items/${itemId}/Similar`,
       {
@@ -504,11 +480,7 @@ class EmbyAdapter implements MediaAdapter {
     itemId,
     userId,
     limit,
-  }: {
-    itemId: string;
-    userId: string;
-    limit?: number;
-  }): Promise<{ data: { Items?: MediaItem[] } }> {
+  }: GetSimilarMoviesParams): Promise<{ data: { Items?: MediaItem[] } }> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(
       `/Items/${itemId}/Similar`,
       {
@@ -527,12 +499,7 @@ class EmbyAdapter implements MediaAdapter {
     searchTerm,
     limit,
     includeItemTypes,
-  }: {
-    userId: string;
-    searchTerm: string;
-    limit?: number;
-    includeItemTypes?: MediaItemType[];
-  }): Promise<MediaItem[]> {
+  }: SearchItemsParams): Promise<MediaItem[]> {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Items`, {
       UserId: userId,
       Recursive: true,
@@ -551,10 +518,7 @@ class EmbyAdapter implements MediaAdapter {
   async getRecommendedSearchKeywords({
     userId,
     limit,
-  }: {
-    userId: string;
-    limit?: number;
-  }): Promise<string[]> {
+  }: GetRecommendedSearchKeywordsParams): Promise<string[]> {
     const res = await getEmbyApiClient().get<{ Items?: { Name?: string }[] }>(
       `/Users/${userId}/Items`,
       {
@@ -576,10 +540,7 @@ class EmbyAdapter implements MediaAdapter {
   async getAvailableFilters({
     userId,
     parentId,
-  }: {
-    userId: string;
-    parentId?: string;
-  }): Promise<MediaFilters> {
+  }: GetAvailableFiltersParams): Promise<MediaFilters> {
     const res = await getEmbyApiClient().get<EmbyFiltersResponse>(`/Items/Filters`, {
       UserId: userId,
       ParentId: parentId,
@@ -595,20 +556,7 @@ class EmbyAdapter implements MediaAdapter {
         : [],
     };
   }
-  getImageInfo({
-    item,
-    opts,
-  }: {
-    item: MediaItem | MediaPerson;
-    opts?: {
-      width?: number;
-      height?: number;
-      preferBackdrop?: boolean;
-      preferLogo?: boolean;
-      preferThumb?: boolean;
-      preferBanner?: boolean;
-    };
-  }): ImageUrlInfo {
+  getImageInfo({ item, opts }: GetImageInfoParams): ImageUrlInfo {
     const api = ensureApi();
     const baseItemCandidate = getUnderlyingRaw(item);
 
@@ -669,19 +617,7 @@ class EmbyAdapter implements MediaAdapter {
     height,
     mediaSourceId,
     deviceId,
-  }: {
-    item: MediaItem | null | undefined;
-    userId: string | null | undefined;
-    startTimeTicks: number;
-    maxStreamingBitrate?: number;
-    playSessionId?: string | null;
-    deviceProfile: any;
-    audioStreamIndex?: number;
-    subtitleStreamIndex?: number;
-    height?: number;
-    mediaSourceId?: string | null;
-    deviceId?: string | null;
-  }): Promise<StreamInfo | null> {
+  }: GetStreamInfoParams): Promise<StreamInfo | null> {
     const api = ensureApi();
     const rawCandidate = (item as MediaItem | null | undefined)?.raw ?? null;
     const baseItem = isBaseItemDto(rawCandidate) ? rawCandidate : null;
@@ -729,29 +665,21 @@ class EmbyAdapter implements MediaAdapter {
     return { url, sessionId, mediaSource: undefined };
   }
 
-  async addFavoriteItem({ userId, itemId }: { userId: string; itemId: string }): Promise<void> {
+  async addFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams): Promise<void> {
     await getEmbyApiClient().post(`/Users/${userId}/FavoriteItems/${itemId}`);
   }
 
-  async removeFavoriteItem({ userId, itemId }: { userId: string; itemId: string }): Promise<void> {
+  async removeFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams): Promise<void> {
     await getEmbyApiClient().delete(`/Users/${userId}/FavoriteItems/${itemId}`);
   }
 
-  async markItemPlayed({
-    userId,
-    itemId,
-    datePlayed,
-  }: {
-    userId: string;
-    itemId: string;
-    datePlayed?: string;
-  }): Promise<void> {
+  async markItemPlayed({ userId, itemId, datePlayed }: MarkItemPlayedParams): Promise<void> {
     const qs = new URLSearchParams();
     if (datePlayed) qs.set('DatePlayed', datePlayed);
     await getEmbyApiClient().post(`/Users/${userId}/PlayedItems/${itemId}?${qs.toString()}`);
   }
 
-  async markItemUnplayed({ userId, itemId }: { userId: string; itemId: string }): Promise<void> {
+  async markItemUnplayed({ userId, itemId }: UpdateFavoriteItemParams): Promise<void> {
     await getEmbyApiClient().delete(`/Users/${userId}/PlayedItems/${itemId}`);
   }
 
@@ -759,11 +687,7 @@ class EmbyAdapter implements MediaAdapter {
     itemId,
     positionTicks,
     isPaused,
-  }: {
-    itemId: string;
-    positionTicks: number;
-    isPaused?: boolean;
-  }): Promise<void> {
+  }: ReportPlaybackProgressParams): Promise<void> {
     await getEmbyApiClient().post(`/Sessions/Playing/Progress`, {
       ItemId: itemId,
       PositionTicks: Math.floor(positionTicks * 10000),
@@ -773,13 +697,7 @@ class EmbyAdapter implements MediaAdapter {
     });
   }
 
-  async reportPlaybackStart({
-    itemId,
-    positionTicks,
-  }: {
-    itemId: string;
-    positionTicks?: number;
-  }): Promise<void> {
+  async reportPlaybackStart({ itemId, positionTicks }: ReportPlaybackStartParams): Promise<void> {
     await getEmbyApiClient().post(`/Sessions/Playing`, {
       ItemId: itemId,
       PositionTicks: Math.floor((positionTicks ?? 0) * 10000),
@@ -788,13 +706,7 @@ class EmbyAdapter implements MediaAdapter {
     });
   }
 
-  async reportPlaybackStop({
-    itemId,
-    positionTicks,
-  }: {
-    itemId: string;
-    positionTicks: number;
-  }): Promise<void> {
+  async reportPlaybackStop({ itemId, positionTicks }: ReportPlaybackStopParams): Promise<void> {
     await getEmbyApiClient().post(`/Sessions/Playing/Stopped`, {
       ItemId: itemId,
       PositionTicks: Math.floor(positionTicks * 10000),
