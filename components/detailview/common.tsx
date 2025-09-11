@@ -2,15 +2,8 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem } from '@/services/media/types';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useCallback, useMemo, useRef, useState } from 'react';
-import {
-  NativeSyntheticEvent,
-  StyleSheet,
-  Text,
-  TextLayoutEventData,
-  TouchableOpacity,
-  View,
-} from 'react-native';
+import { useMemo, useRef } from 'react';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
@@ -49,22 +42,10 @@ export const ItemMeta = ({ item }: { item: MediaItem }) => {
 export const ItemOverview = ({ item }: { item: MediaItem }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
-  const [textLineNumber, setTextLineNumber] = useState<number | null>(null);
-  const [lastLineText, setLastLineText] = useState<string>('');
 
   const { accentColor } = useAccentColor();
 
   const overview = item?.overview?.trim() ?? '';
-
-  const handleTextLayout = useCallback((event: NativeSyntheticEvent<TextLayoutEventData>) => {
-    const { lines } = event.nativeEvent;
-    if (lines.length > 4) {
-      const lastLine = lines[4];
-      console.log(lastLine.text);
-      setLastLineText(lastLine.text);
-    }
-    setTextLineNumber(lines.length);
-  }, []);
 
   const handleShowMore = () => {
     bottomSheetModalRef.current?.present();
@@ -75,9 +56,6 @@ export const ItemOverview = ({ item }: { item: MediaItem }) => {
   return (
     <>
       <View style={detailViewStyles.overviewContainer}>
-        <Text style={[{ position: 'absolute', opacity: 0 }]} onTextLayout={handleTextLayout}>
-          {overview}
-        </Text>
         <Text style={[detailViewStyles.overview, { color: textColor }]} numberOfLines={5}>
           {overview}
         </Text>
