@@ -1,3 +1,4 @@
+import { AvatarImage } from '@/components/AvatarImage';
 import { Section } from '@/components/media/Section';
 import PageScrollView from '@/components/PageScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -10,8 +11,8 @@ import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
+import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
-import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';
 import { Platform, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
@@ -150,10 +151,10 @@ export default function HomeScreen() {
               ]}
             >
               <TouchableOpacity style={styles.serverButton}>
-                <Image
-                  source={{ uri: currentServer?.userAvatar }}
+                <AvatarImage
+                  key={currentServer?.id}
+                  avatarUri={currentServer?.userAvatar}
                   style={styles.serverButtonAvatar}
-                  contentFit="cover"
                 />
               </TouchableOpacity>
             </MenuView>

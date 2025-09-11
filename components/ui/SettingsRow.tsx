@@ -12,6 +12,7 @@ export interface SettingsRowProps {
   imageUri?: string;
   onPress?: () => void;
   showArrow?: boolean;
+  leftComponent?: React.ReactNode;
   rightComponent?: React.ReactNode;
   containerStyle?: StyleProp<ViewStyle>;
   menuTitle?: string;
@@ -27,6 +28,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
   imageUri,
   onPress,
   showArrow = true,
+  leftComponent,
   rightComponent,
   containerStyle,
   menuTitle,
@@ -48,6 +50,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       disabled={!onPress}
     >
       <View style={styles.settingItemLeft}>
+        {leftComponent}
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.settingImage} contentFit="cover" />
         ) : icon ? (

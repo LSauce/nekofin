@@ -1,4 +1,5 @@
 import { AddServerForm } from '@/components/AddServerForm';
+import { AvatarImage } from '@/components/AvatarImage';
 import { BottomSheetBackdropModal } from '@/components/BottomSheetBackdropModal';
 import PageScrollView from '@/components/PageScrollView';
 import { ThemedText } from '@/components/ThemedText';
@@ -45,10 +46,20 @@ export default function MediaScreen() {
       <SettingsRow
         key={server.id}
         title={server.name}
-        subtitle={`${server.address} • ${server.username}`}
-        imageUri={server.userAvatar}
+        subtitle={`${server.type} • ${server.address}`}
         icon={server.userAvatar ? undefined : 'dns'}
         showArrow={false}
+        leftComponent={
+          <AvatarImage
+            avatarUri={server.userAvatar}
+            style={{
+              width: 24,
+              height: 24,
+              borderRadius: 12,
+              marginRight: 12,
+            }}
+          />
+        }
         rightComponent={
           <MenuView
             isAnchoredToRight
