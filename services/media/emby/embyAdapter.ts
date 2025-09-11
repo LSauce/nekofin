@@ -403,7 +403,10 @@ class EmbyAdapter implements MediaAdapter {
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }> {
     const baseParams = new URLSearchParams();
-    applyDefaultImageAndFields(baseParams);
+    applyDefaultImageAndFields(
+      baseParams,
+      'BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate',
+    );
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
       `/Users/${userId}/Items`,
       {
@@ -539,19 +542,12 @@ class EmbyAdapter implements MediaAdapter {
     userId,
     parentId,
   }: GetAvailableFiltersParams): Promise<MediaFilters> {
-    const res = await getEmbyApiClient().get<EmbyFiltersResponse>(`/Items/Filters`, {
-      UserId: userId,
-      ParentId: parentId,
-    });
-    const d = res.data;
+    const currentYear = new Date().getFullYear();
+    const years = Array.from({ length: 10 }, (_, i) => currentYear - i);
     return {
-      years: Array.isArray(d?.Years)
-        ? d.Years.filter((x): x is number => typeof x === 'number')
-        : [],
-      tags: Array.isArray(d?.Tags) ? d.Tags.filter((x): x is string => typeof x === 'string') : [],
-      genres: Array.isArray(d?.Genres)
-        ? d.Genres.filter((x): x is string => typeof x === 'string')
-        : [],
+      years,
+      tags: [],
+      genres: [],
     };
   }
 

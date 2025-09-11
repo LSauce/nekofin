@@ -11,7 +11,6 @@ import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect } from 'react';

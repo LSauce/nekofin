@@ -23,6 +23,7 @@ type Props = PropsWithChildren<{
   contentStyle?: StyleProp<ViewStyle>;
   showsVerticalScrollIndicator?: boolean;
   refreshControl?: ScrollViewProps['refreshControl'];
+  contentInsetAdjustmentBehavior?: ScrollViewProps['contentInsetAdjustmentBehavior'];
 }>;
 
 export default function ParallaxScrollView({
@@ -35,6 +36,7 @@ export default function ParallaxScrollView({
   contentStyle,
   showsVerticalScrollIndicator = true,
   refreshControl,
+  contentInsetAdjustmentBehavior,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -79,6 +81,7 @@ export default function ParallaxScrollView({
         ref={scrollRef}
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
+        contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
       >
         <Animated.View
           style={[

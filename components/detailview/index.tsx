@@ -149,6 +149,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
+      contentStyle={{ paddingBottom: 40 }}
       headerImage={
         headerImageUrl ? (
           <Image
