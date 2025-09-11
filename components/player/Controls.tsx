@@ -10,6 +10,7 @@ import {
   ActivityIndicator,
   StyleSheet,
   Text,
+  TextInput,
   TouchableOpacity,
   useWindowDimensions,
   View,
@@ -18,7 +19,10 @@ import { Slider } from 'react-native-awesome-slider';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   runOnJS,
+  setNativeProps,
   SharedValue,
+  useAnimatedReaction,
+  useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
@@ -74,16 +78,21 @@ export function Controls({
 }: ControlsProps) {
   const currentTimeMs = useCurrentTime({ time: currentTime });
   const router = useRouter();
+  const { width: screenWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isGestureSeekingActive, setIsGestureSeekingActive] = useState(false);
+
+  const animatedTextInputRef = useAnimatedRef<TextInput>();
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
   const minimumValue = useSharedValue(0);
   const maximumValue = useSharedValue(1);
+
+  const gestureSeekPreview = useSharedValue(0);
 
   const audioTracks =
     mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
@@ -246,6 +255,61 @@ export function Controls({
     [handleSeek, hideControlsWithDelay],
   );
 
+  const panGesture = Gesture.Pan()
+    .minDistance(5)
+    .activeOffsetX([-5, 5])
+    .failOffsetY([-30, 30])
+    .maxPointers(1)
+    .onBegin(() => {
+      gestureSeekStartTime.value = currentTime.value;
+      gestureSeekOffset.value = 0;
+      gestureSeekPreview.value = currentTime.value;
+    })
+    .onUpdate((event) => {
+      'worklet';
+      if (!duration) return;
+
+      const deltaX = event.translationX;
+      const deltaY = event.translationY;
+
+      if (Math.abs(deltaX) <= Math.abs(deltaY) * 2) {
+        return;
+      }
+
+      if (!isGestureSeekingActive) {
+        runOnJS(handleGestureSeekStart)();
+      }
+
+      const progressRatio = deltaX / screenWidth;
+      const timeChange = progressRatio * 90000;
+
+      gestureSeekOffset.value = timeChange;
+      const newTime = Math.max(0, Math.min(duration, gestureSeekStartTime.value + timeChange));
+
+      const time = newTime;
+      gestureSeekPreview.value = time;
+      const hours = Math.floor(time / 3600000);
+      const minutes = Math.floor((time % 3600000) / 60000);
+      const seconds = Math.floor((time % 60000) / 1000);
+
+      let formattedTime: string;
+      if (hours > 0) {
+        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      } else {
+        formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+      }
+
+      setNativeProps(animatedTextInputRef, {
+        text: formattedTime,
+      });
+    })
+    .onEnd(() => {
+      if (!duration) return;
+
+      const finalTime = gestureSeekPreview.value;
+      runOnJS(handleGestureSeekEnd)(finalTime);
+    });
+
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
     .maxDuration(300)
@@ -265,7 +329,7 @@ export function Controls({
       }
     });
 
-  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture);
+  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture, panGesture);
 
   useEffect(() => {
     return () => {
@@ -447,7 +511,13 @@ export function Controls({
       </Animated.View>
       <Animated.View style={[styles.seekPreviewContainer, seekPreviewAnimatedStyle]}>
         <BlurView tint="dark" intensity={100} style={styles.seekPreviewBlur}>
-          <Text style={styles.seekPreviewText}></Text>
+          <TextInput
+            ref={animatedTextInputRef}
+            style={styles.seekPreviewText}
+            caretHidden
+            defaultValue=""
+            editable={false}
+          />
         </BlurView>
       </Animated.View>
       <GestureDetector gesture={composed}>
@@ -637,7 +707,6 @@ const styles = StyleSheet.create({
   seekPreviewText: {
     color: '#fff',
     fontSize: 16,
-    fontWeight: '600',
-    textAlign: 'center',
+    paddingVertical: 0,
   },
 });
