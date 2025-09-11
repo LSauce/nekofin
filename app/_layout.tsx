@@ -1,5 +1,4 @@
 import HeaderBackButton from '@/components/HeaderBackButton';
-import TabBarBackground from '@/components/ui/TabBarBackground';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
 import { MediaServerProvider } from '@/lib/contexts/MediaServerContext';
@@ -67,7 +66,6 @@ export default function RootLayout() {
                   <Stack
                     screenOptions={{
                       headerTransparent: Platform.OS === 'ios',
-                      headerBackground: TabBarBackground,
                       headerBackTitle: '返回',
                       headerLeft: HeaderBackButton,
                     }}

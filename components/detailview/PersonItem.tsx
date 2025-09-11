@@ -1,6 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { MediaPerson } from '@/services/media/types';
 import { Image } from 'expo-image';
+import { useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 import { ThemedText } from '../ThemedText';
@@ -10,17 +11,11 @@ export const PersonItem = ({ item }: { item: MediaPerson }) => {
   const mediaAdapter = useMediaAdapter();
 
   const imageInfo = mediaAdapter.getImageInfo({ item, opts: { width: 300 } });
+  const [imageFailed, setImageFailed] = useState(false);
 
   return (
     <View style={styles.personCard}>
-      {imageInfo.blurhash ? (
-        <Image
-          source={{ uri: imageInfo.url }}
-          style={styles.personPoster}
-          placeholder={{ blurhash: imageInfo.blurhash }}
-          contentFit="cover"
-        />
-      ) : (
+      {imageFailed || !imageInfo.url ? (
         <View
           style={[
             styles.personPoster,
@@ -29,6 +24,14 @@ export const PersonItem = ({ item }: { item: MediaPerson }) => {
         >
           <IconSymbol name="person.crop.rectangle" size={36} color="#bbb" />
         </View>
+      ) : (
+        <Image
+          source={{ uri: imageInfo.url }}
+          style={styles.personPoster}
+          placeholder={imageInfo.blurhash ? { blurhash: imageInfo.blurhash } : undefined}
+          contentFit="cover"
+          onError={() => setImageFailed(true)}
+        />
       )}
       <ThemedText style={styles.personName} numberOfLines={1}>
         {item.name}

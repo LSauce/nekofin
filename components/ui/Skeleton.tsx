@@ -190,17 +190,49 @@ export function SkeletonDetailContent({
         <Skeleton width="75%" height={14} borderRadius={4} />
       </View>
 
-      {mode === 'movie' ||
-        (mode === 'episode' && (
-          <Skeleton width={120} height={44} borderRadius={8} style={styles.detailPlayButton} />
+      {(mode === 'movie' || mode === 'episode') && (
+        <Skeleton width={120} height={44} borderRadius={8} style={styles.detailPlayButton} />
+      )}
+
+      {mode === 'season' && <SkeletonEpisodeList />}
+
+      {mode === 'episode' && (
+        <>
+          <SkeletonHorizontalEpisodes />
+          <SkeletonHorizontalSection title="季度" />
+          <SkeletonHorizontalSection title="演职人员" />
+          <SkeletonHorizontalSection title="更多类似的" />
+        </>
+      )}
+    </View>
+  );
+}
+
+export function SkeletonHorizontalEpisodes() {
+  const cardWidth = 200;
+  const cardHeight = cardWidth / (16 / 9);
+  return (
+    <View style={styles.horizontalSection}>
+      <Skeleton width={120} height={24} borderRadius={4} style={styles.sectionTitle} />
+      <ScrollView
+        horizontal
+        showsHorizontalScrollIndicator={false}
+        contentContainerStyle={styles.horizontalScrollContent}
+        style={{ marginHorizontal: -20 }}
+      >
+        {Array.from({ length: 6 }).map((_, index) => (
+          <View key={index} style={{ width: cardWidth }}>
+            <Skeleton width="100%" height={cardHeight} borderRadius={12} />
+            <Skeleton width="85%" height={16} borderRadius={4} style={styles.gridTitleSkeleton} />
+            <Skeleton
+              width="60%"
+              height={13}
+              borderRadius={4}
+              style={styles.gridSubtitleSkeleton}
+            />
+          </View>
         ))}
-
-      <SkeletonHorizontalSection title="接下来" />
-      <SkeletonHorizontalSection title="季度" />
-      <SkeletonHorizontalSection title="演职人员" />
-      <SkeletonHorizontalSection title="更多类似的" />
-
-      {mode === 'season' || (mode === 'episode' && <SkeletonEpisodeList />)}
+      </ScrollView>
     </View>
   );
 }
@@ -213,6 +245,7 @@ export function SkeletonHorizontalSection({ title }: { title: string }) {
         horizontal
         showsHorizontalScrollIndicator={false}
         contentContainerStyle={styles.horizontalScrollContent}
+        style={{ marginHorizontal: -20 }}
       >
         {Array.from({ length: 5 }).map((_, index) => (
           <Skeleton width={140} height={200} borderRadius={12} key={index} />

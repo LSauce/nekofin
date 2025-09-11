@@ -20,6 +20,7 @@ const MAPPING = {
   'chevron.right': 'chevron-right',
   'video.fill': 'movie',
   'externaldrive.connected.to.line.below': 'dns',
+  'person.crop.rectangle': 'person',
 } as IconMapping;
 
 /**

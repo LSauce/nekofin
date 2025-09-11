@@ -2,11 +2,54 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem } from '@/services/media/types';
+import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models';
-import { Image } from 'expo-image';
+import { Image, type ImageProps } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
+import { useState, type ReactNode } from 'react';
+import {
+  ImageStyle,
+  StyleProp,
+  StyleSheet,
+  Text,
+  TouchableOpacity,
+  View,
+  ViewStyle,
+} from 'react-native';
+
+function ImageWithFallback({
+  uri,
+  style,
+  placeholderBlurhash,
+  contentFit,
+  cachePolicy,
+  fallback,
+}: {
+  uri?: string;
+  style: StyleProp<ImageStyle>;
+  placeholderBlurhash?: string;
+  contentFit?: ImageProps['contentFit'];
+  cachePolicy?: ImageProps['cachePolicy'];
+  fallback: ReactNode;
+}) {
+  const [failed, setFailed] = useState(false);
+
+  if (!uri || failed) {
+    return <>{fallback}</>;
+  }
+
+  return (
+    <Image
+      source={{ uri: uri }}
+      style={style}
+      placeholder={placeholderBlurhash ? { blurhash: placeholderBlurhash } : undefined}
+      cachePolicy={cachePolicy}
+      contentFit={contentFit}
+      onError={() => setFailed(true)}
+    />
+  );
+}
 
 export const getSubtitle = (item: MediaItem) => {
   if (item.type === 'Episode') {
@@ -93,43 +136,40 @@ export function EpisodeCard({
 
   return (
     <TouchableOpacity style={[styles.card, { width: 200 }, style]} onPress={onPress || handlePress}>
-      {imageUrl ? (
-        <View style={styles.coverContainer}>
-          <Image
-            source={{ uri: imageUrl }}
-            style={styles.cover}
-            placeholder={{
-              blurhash: imageInfo.blurhash,
-            }}
-            cachePolicy="memory-disk"
-            contentFit="cover"
-          />
-          {isPlayed && (
-            <View style={styles.playedOverlay}>
-              <MaterialIcons name="check-circle" size={24} color={accentColor} />
+      <View style={styles.coverContainer}>
+        <ImageWithFallback
+          uri={imageUrl}
+          style={styles.cover}
+          placeholderBlurhash={imageInfo.blurhash}
+          cachePolicy="memory-disk"
+          contentFit="cover"
+          fallback={
+            <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
+              <FontAwesome name="film" size={36} color="#ccc" />
             </View>
-          )}
-          {playedPercentage !== undefined && (
-            <View style={styles.progressContainer}>
-              <View style={styles.progressBackground}>
-                <View
-                  style={[
-                    styles.progressFill,
-                    {
-                      width: `${playedPercentage}%`,
-                      backgroundColor: accentColor,
-                    },
-                  ]}
-                />
-              </View>
+          }
+        />
+        {isPlayed && (
+          <View style={styles.playedOverlay}>
+            <MaterialIcons name="check-circle" size={24} color={accentColor} />
+          </View>
+        )}
+        {playedPercentage !== undefined && (
+          <View style={styles.progressContainer}>
+            <View style={styles.progressBackground}>
+              <View
+                style={[
+                  styles.progressFill,
+                  {
+                    width: `${playedPercentage}%`,
+                    backgroundColor: accentColor,
+                  },
+                ]}
+              />
             </View>
-          )}
-        </View>
-      ) : (
-        <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-          <MaterialIcons name="chevron-left" size={48} color="#ccc" />
-        </View>
-      )}
+          </View>
+        )}
+      </View>
       {!hideText && (
         <>
           <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
@@ -199,21 +239,18 @@ export function SeriesCard({
         console.warn('Unknown type:', type);
       }}
     >
-      {imageUrl ? (
-        <Image
-          source={{ uri: imageUrl }}
-          style={styles.posterCover}
-          placeholder={{
-            blurhash: imageInfo.blurhash,
-          }}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-        />
-      ) : (
-        <View style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}>
-          <MaterialIcons name="chevron-left" size={48} color="#ccc" />
-        </View>
-      )}
+      <ImageWithFallback
+        uri={imageUrl}
+        style={styles.posterCover}
+        placeholderBlurhash={imageInfo.blurhash}
+        cachePolicy="memory-disk"
+        contentFit="cover"
+        fallback={
+          <View style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}>
+            <FontAwesome name="film" size={36} color="#ccc" />
+          </View>
+        }
+      />
       <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
         {hideSubtitle ? item.name : item.seriesName || item.name || '未知标题'}
       </Text>

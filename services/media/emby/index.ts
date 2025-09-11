@@ -154,7 +154,10 @@ export function setListIfNotEmpty(
 }
 
 export function applyDefaultImageAndFields(params: URLSearchParams, fields?: string) {
-  params.set('Fields', fields || 'PrimaryImageAspectRatio,Path');
+  params.set(
+    'Fields',
+    fields || 'BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate,Path',
+  );
   params.set('ImageTypeLimit', '1');
   params.set('EnableImageTypes', 'Primary,Backdrop,Thumb');
 }

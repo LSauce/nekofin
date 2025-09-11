@@ -60,6 +60,7 @@ export const ItemOverview = ({ item }: { item: MediaItem }) => {
     const { lines } = event.nativeEvent;
     if (lines.length > 4) {
       const lastLine = lines[4];
+      console.log(lastLine.text);
       setLastLineText(lastLine.text);
     }
     setTextLineNumber(lines.length);
@@ -77,28 +78,12 @@ export const ItemOverview = ({ item }: { item: MediaItem }) => {
         <Text style={[{ position: 'absolute', opacity: 0 }]} onTextLayout={handleTextLayout}>
           {overview}
         </Text>
-        <Text
-          style={[detailViewStyles.overview, { color: textColor }]}
-          numberOfLines={4}
-          ellipsizeMode="head"
-        >
+        <Text style={[detailViewStyles.overview, { color: textColor }]} numberOfLines={5}>
           {overview}
         </Text>
-        {textLineNumber && textLineNumber > 4 && lastLineText.trim() && (
-          <View style={detailViewStyles.lastLineContainer}>
-            <Text
-              style={[detailViewStyles.overview, { flex: 1, color: textColor }]}
-              numberOfLines={1}
-            >
-              {lastLineText}
-            </Text>
-            {textLineNumber && textLineNumber > 5 && (
-              <TouchableOpacity onPress={handleShowMore}>
-                <Text style={[detailViewStyles.overview, { color: accentColor }]}>查看更多</Text>
-              </TouchableOpacity>
-            )}
-          </View>
-        )}
+        <TouchableOpacity onPress={handleShowMore}>
+          <Text style={[detailViewStyles.overview, { color: accentColor }]}>查看更多</Text>
+        </TouchableOpacity>
       </View>
 
       <BottomSheetBackdropModal ref={bottomSheetModalRef} enableDynamicSizing>
@@ -194,6 +179,7 @@ export const detailViewStyles = StyleSheet.create({
   },
   overviewContainer: {
     gap: 8,
+    marginBottom: 8,
   },
   modalContent: {
     paddingHorizontal: 20,

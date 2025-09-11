@@ -403,10 +403,7 @@ class EmbyAdapter implements MediaAdapter {
     data: { Items?: MediaItem[]; TotalRecordCount?: number };
   }> {
     const baseParams = new URLSearchParams();
-    applyDefaultImageAndFields(
-      baseParams,
-      'BasicSyncInfo,CanDelete,PrimaryImageAspectRatio,ProductionYear,Status,EndDate',
-    );
+    applyDefaultImageAndFields(baseParams);
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[]; TotalRecordCount?: number }>(
       `/Users/${userId}/Items`,
       {
