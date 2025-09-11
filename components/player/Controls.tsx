@@ -8,10 +8,10 @@ import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import {
   ActivityIndicator,
-  Dimensions,
   StyleSheet,
   Text,
   TouchableOpacity,
+  useWindowDimensions,
   View,
 } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
@@ -74,7 +74,7 @@ export function Controls({
 }: ControlsProps) {
   const currentTimeMs = useCurrentTime({ time: currentTime });
   const router = useRouter();
-
+  const { width: screenWidth } = useWindowDimensions();
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
@@ -251,8 +251,6 @@ export function Controls({
   const handleDoubleTap = () => {
     handlePlayPause();
   };
-
-  const screenWidth = Dimensions.get('window').width;
 
   const gestureSeekStartTime = useSharedValue(0);
   const gestureSeekOffset = useSharedValue(0);

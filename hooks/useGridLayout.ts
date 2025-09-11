@@ -1,20 +1,10 @@
 import { useIsTablet } from '@/hooks/useIsTablet';
-import { useEffect, useMemo, useState } from 'react';
-import { Dimensions } from 'react-native';
+import { useMemo } from 'react';
+import { useWindowDimensions } from 'react-native';
 
 export function useGridLayout(type?: 'series' | 'episode') {
   const isTablet = useIsTablet();
-  const [dimensions, setDimensions] = useState(() => Dimensions.get('window'));
-
-  useEffect(() => {
-    const subscription = Dimensions.addEventListener('change', ({ window }) => {
-      setDimensions(window);
-    });
-
-    return () => subscription?.remove();
-  }, []);
-
-  const { width } = dimensions;
+  const { width } = useWindowDimensions();
 
   return useMemo(() => {
     const containerPadding = 40;
