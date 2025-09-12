@@ -18,7 +18,7 @@ export default function HeaderBackButton({ canGoBack = true }: { canGoBack?: boo
         {currentServer?.type === 'emby' ? (
           <MaterialCommunityIcons name="emby" size={34} color="#4caf50" />
         ) : (
-          <View style={{ width: 34, height: 34, justifyContent: 'center', alignItems: 'center' }}>
+          <View style={{ width: 36, height: 36, justifyContent: 'center', alignItems: 'center' }}>
             <Image
               source={require('@/assets/icons/jellyfin.svg')}
               style={{ width: 28, height: 28 }}
