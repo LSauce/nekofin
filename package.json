@@ -100,5 +100,10 @@
         "listUnknownPackages": false
       }
     }
+  },
+  "reanimated": {
+    "staticFeatureFlags": {
+      "DISABLE_COMMIT_PAUSING_MECHANISM": true
+    }
   }
 }
