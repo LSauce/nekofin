@@ -71,10 +71,15 @@ import {
   type GetUserInfoParams,
   type GetUserViewParams,
   type LoginParams,
+  type MarkItemPlayedParams,
   type MediaItem,
   type MediaItemType,
   type MediaSortBy,
+  type ReportPlaybackProgressParams,
+  type ReportPlaybackStartParams,
+  type ReportPlaybackStopParams,
   type SearchItemsParams,
+  type UpdateFavoriteItemParams,
 } from '../types';
 
 export function convertBaseItemDtoToMediaItem(item: BaseItemDto): MediaItem {
@@ -480,30 +485,22 @@ class JellyfinAdapter implements MediaAdapter {
     });
   }
 
-  async addFavoriteItem({ userId, itemId }: { userId: string; itemId: string }) {
+  async addFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
     await addFavoriteItem(api, userId, itemId);
   }
 
-  async removeFavoriteItem({ userId, itemId }: { userId: string; itemId: string }) {
+  async removeFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
     await removeFavoriteItem(api, userId, itemId);
   }
 
-  async markItemPlayed({
-    userId,
-    itemId,
-    datePlayed,
-  }: {
-    userId: string;
-    itemId: string;
-    datePlayed?: string;
-  }) {
+  async markItemPlayed({ userId, itemId, datePlayed }: MarkItemPlayedParams) {
     const api = getApiInstance();
     await markItemPlayed(api, userId, itemId, datePlayed);
   }
 
-  async markItemUnplayed({ userId, itemId }: { userId: string; itemId: string }) {
+  async markItemUnplayed({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
     await markItemUnplayed(api, userId, itemId);
   }
@@ -513,38 +510,17 @@ class JellyfinAdapter implements MediaAdapter {
     positionTicks,
     isPaused,
     PlaySessionId,
-  }: {
-    itemId: string;
-    positionTicks: number;
-    isPaused?: boolean;
-    PlaySessionId: string;
-  }) {
+  }: ReportPlaybackProgressParams) {
     const api = getApiInstance();
     await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false, PlaySessionId);
   }
 
-  async reportPlaybackStart({
-    itemId,
-    positionTicks,
-    PlaySessionId,
-  }: {
-    itemId: string;
-    positionTicks?: number;
-    PlaySessionId: string;
-  }) {
+  async reportPlaybackStart({ itemId, positionTicks, PlaySessionId }: ReportPlaybackStartParams) {
     const api = getApiInstance();
     await reportPlaybackStart(api, itemId, positionTicks ?? 0, PlaySessionId);
   }
 
-  async reportPlaybackStop({
-    itemId,
-    positionTicks,
-    PlaySessionId,
-  }: {
-    itemId: string;
-    positionTicks: number;
-    PlaySessionId: string;
-  }) {
+  async reportPlaybackStop({ itemId, positionTicks, PlaySessionId }: ReportPlaybackStopParams) {
     const api = getApiInstance();
     await reportPlaybackStop(api, itemId, positionTicks, PlaySessionId);
   }
