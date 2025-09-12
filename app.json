@@ -7,7 +7,7 @@
     "icon": "./assets/images/icon.png",
     "scheme": "nekofin",
     "userInterfaceStyle": "automatic",
-    "newArchEnabled": false,
+    "newArchEnabled": true,
     "ios": {
       "requireFullScreen": true,
       "supportsTablet": true,
@@ -90,7 +90,9 @@
             "useFrameworks": "static"
           }
         }
-      ]
+      ],
+      "expo-font",
+      "expo-web-browser"
     ],
     "experiments": {
       "typedRoutes": true
