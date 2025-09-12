@@ -11,7 +11,7 @@
         "@hookform/resolvers": "^5.2.1",
         "@jellyfin/sdk": "^0.11.0",
         "@react-native-masked-view/masked-view": "0.3.2",
-        "@react-native-menu/menu": "1.2.4",
+        "@react-native-menu/menu": "2.0.0",
         "@react-navigation/bottom-tabs": "^7.3.10",
         "@react-navigation/elements": "^2.3.8",
         "@react-navigation/native": "^7.1.6",
@@ -495,7 +495,7 @@
 
     "@react-native-masked-view/masked-view": ["@react-native-masked-view/masked-view@0.3.2", "", { "peerDependencies": { "react": ">=16", "react-native": ">=0.57" } }, "sha512-XwuQoW7/GEgWRMovOQtX3A4PrXhyaZm0lVUiY8qJDvdngjLms9Cpdck6SmGAUNqQwcj2EadHC1HwL0bEyoa/SQ=="],
 
-    "@react-native-menu/menu": ["@react-native-menu/menu@1.2.4", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-63NU9NHd/KcBa7lhhV69xQmY3ORUxjMRmlzTY/qrY56GHnuKX+16dvUpKAuRSPK5kebBuRw5X4MFe2L9JHUlWA=="],
+    "@react-native-menu/menu": ["@react-native-menu/menu@2.0.0", "https://registry.npmmirror.com/@react-native-menu/menu/-/menu-2.0.0.tgz", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-hb8Mirw6aKPGONhgo52IiNpwHtISVrgCT3rMdFX1qS7eOFNzOcQh8d2UDnaH5zVpxN+QuvWtaaiRMGFpIjzdtA=="],
 
     "@react-native/assets-registry": ["@react-native/assets-registry@0.81.4", "", {}, "sha512-AMcDadefBIjD10BRqkWw+W/VdvXEomR6aEZ0fhQRAv7igrBzb4PTn4vHKYg+sUK0e3wa74kcMy2DLc/HtnGcMA=="],
 
