@@ -252,14 +252,17 @@ export interface ReportPlaybackProgressParams {
   itemId: string;
   positionTicks: number;
   isPaused?: boolean;
+  PlaySessionId: string;
 }
 export interface ReportPlaybackStartParams {
   itemId: string;
   positionTicks?: number;
+  PlaySessionId: string;
 }
 export interface ReportPlaybackStopParams {
   itemId: string;
   positionTicks: number;
+  PlaySessionId: string;
 }
 
 export abstract class MediaAdapter {

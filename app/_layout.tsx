@@ -20,7 +20,8 @@ import 'react-native-reanimated';
 const queryClient = new QueryClient({
   defaultOptions: {
     queries: {
-      staleTime: 0,
+      staleTime: 1000 * 60 * 5,
+      gcTime: 1000 * 60 * 5,
       refetchOnWindowFocus: true,
       refetchOnMount: true,
       refetchOnReconnect: true,
@@ -75,7 +76,6 @@ export default function RootLayout() {
                       name="player"
                       options={{
                         headerShown: false,
-                        orientation: 'landscape',
                       }}
                     />
                     <Stack.Screen name="+not-found" />

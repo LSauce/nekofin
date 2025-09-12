@@ -9,7 +9,7 @@ export default function Layout() {
           headerShown: false,
           autoHideHomeIndicator: true,
           title: '',
-          animation: 'fade',
+          orientation: 'landscape',
         }}
       />
     </Stack>

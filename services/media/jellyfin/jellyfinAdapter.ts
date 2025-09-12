@@ -512,23 +512,41 @@ class JellyfinAdapter implements MediaAdapter {
     itemId,
     positionTicks,
     isPaused,
+    PlaySessionId,
   }: {
     itemId: string;
     positionTicks: number;
     isPaused?: boolean;
+    PlaySessionId: string;
   }) {
     const api = getApiInstance();
-    await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false);
+    await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false, PlaySessionId);
   }
 
-  async reportPlaybackStart({ itemId, positionTicks }: { itemId: string; positionTicks?: number }) {
+  async reportPlaybackStart({
+    itemId,
+    positionTicks,
+    PlaySessionId,
+  }: {
+    itemId: string;
+    positionTicks?: number;
+    PlaySessionId: string;
+  }) {
     const api = getApiInstance();
-    await reportPlaybackStart(api, itemId, positionTicks ?? 0);
+    await reportPlaybackStart(api, itemId, positionTicks ?? 0, PlaySessionId);
   }
 
-  async reportPlaybackStop({ itemId, positionTicks }: { itemId: string; positionTicks: number }) {
+  async reportPlaybackStop({
+    itemId,
+    positionTicks,
+    PlaySessionId,
+  }: {
+    itemId: string;
+    positionTicks: number;
+    PlaySessionId: string;
+  }) {
     const api = getApiInstance();
-    await reportPlaybackStop(api, itemId, positionTicks);
+    await reportPlaybackStop(api, itemId, positionTicks, PlaySessionId);
   }
 }
 

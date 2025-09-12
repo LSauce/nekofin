@@ -8,7 +8,6 @@ import {
   convertSortByToEmby,
   EmbyApi,
   EmbyAuthenticateResponse,
-  EmbyFiltersResponse,
   EmbyPlaybackInfoResponse,
   EmbyPublicSystemInfo,
   EmbyPublicUser,
@@ -787,29 +786,41 @@ class EmbyAdapter implements MediaAdapter {
     itemId,
     positionTicks,
     isPaused,
+    PlaySessionId,
   }: ReportPlaybackProgressParams): Promise<void> {
-    await getEmbyApiClient().post(`/Sessions/Playing/Progress`, {
+    await getEmbyApiClient().post(`/emby/Sessions/Playing/Progress`, {
       ItemId: itemId,
       PositionTicks: Math.floor(positionTicks * 10000),
       IsPaused: isPaused ?? false,
       CanSeek: true,
       PlaybackStartTimeTicks: Date.now() * 10000,
+      PlaySessionId,
     });
   }
 
-  async reportPlaybackStart({ itemId, positionTicks }: ReportPlaybackStartParams): Promise<void> {
-    await getEmbyApiClient().post(`/Sessions/Playing`, {
+  async reportPlaybackStart({
+    itemId,
+    positionTicks,
+    PlaySessionId,
+  }: ReportPlaybackStartParams): Promise<void> {
+    await getEmbyApiClient().post(`/emby/Sessions/Playing`, {
       ItemId: itemId,
       PositionTicks: Math.floor((positionTicks ?? 0) * 10000),
       CanSeek: true,
       PlaybackStartTimeTicks: Date.now() * 10000,
+      PlaySessionId,
     });
   }
 
-  async reportPlaybackStop({ itemId, positionTicks }: ReportPlaybackStopParams): Promise<void> {
-    await getEmbyApiClient().post(`/Sessions/Playing/Stopped`, {
+  async reportPlaybackStop({
+    itemId,
+    positionTicks,
+    PlaySessionId,
+  }: ReportPlaybackStopParams): Promise<void> {
+    await getEmbyApiClient().post(`/emby/Sessions/Playing/Stopped`, {
       ItemId: itemId,
       PositionTicks: Math.floor(positionTicks * 10000),
+      PlaySessionId,
     });
   }
 }

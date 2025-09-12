@@ -1,7 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
+import { getCommentsByItem, getDeviceId, ticksToMilliseconds } from '@/lib/utils';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import {
@@ -56,12 +56,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     enabled: !!itemId && !!currentServer,
   });
 
-  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
-    currentServer,
-    itemDetail: itemDetail ?? null,
-    currentTime,
-  });
-
   const { data: seriesInfo } = useQuery({
     queryKey: ['seriesInfo', itemDetail?.seriesId, currentServer?.userId],
     queryFn: async () => {
@@ -103,6 +97,13 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       });
     },
     enabled: !!currentServer && !!itemDetail,
+  });
+
+  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
+    currentServer,
+    itemDetail: itemDetail ?? null,
+    currentTime,
+    playSessionId: streamInfo?.sessionId ?? null,
   });
 
   const { data: episodes = [] } = useQuery({

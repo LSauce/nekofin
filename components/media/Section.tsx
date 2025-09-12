@@ -28,7 +28,13 @@ export function Section({
         <SkeletonSectionHeader />
       ) : (
         <View style={styles.sectionHeader}>
-          <Text style={[styles.sectionTitle, { color: textColor }]}>{title}</Text>
+          <Text
+            style={[styles.sectionTitle, { color: textColor }]}
+            numberOfLines={1}
+            ellipsizeMode="tail"
+          >
+            {title}
+          </Text>
           <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
             <Text style={styles.viewAllText}>查看所有</Text>
             <MaterialIcons name="keyboard-arrow-right" size={20} color={styles.viewAllText.color} />
@@ -70,7 +76,6 @@ const styles = StyleSheet.create({
   },
   sectionHeader: {
     flexDirection: 'row',
-    justifyContent: 'space-between',
     alignItems: 'center',
     paddingHorizontal: 20,
     marginBottom: 12,
@@ -78,10 +83,13 @@ const styles = StyleSheet.create({
   sectionTitle: {
     fontSize: 24,
     fontWeight: 'bold',
+    flex: 1,
+    marginRight: 12,
   },
   viewAllButton: {
     flexDirection: 'row',
     alignItems: 'center',
+    flexShrink: 0,
   },
   viewAllText: {
     color: '#9C4DFF',

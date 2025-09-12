@@ -8,53 +8,68 @@ interface UsePlaybackSyncProps {
   currentServer: MediaServerInfo | null;
   itemDetail: MediaItem | null;
   currentTime: SharedValue<number>;
+  playSessionId: string | null;
 }
 
 export const usePlaybackSync = ({
   currentServer,
   itemDetail,
   currentTime,
+  playSessionId,
 }: UsePlaybackSyncProps) => {
   const mediaAdapter = useMediaAdapter();
 
   const syncPlaybackProgress = useCallback(
     (position: number, isPaused: boolean = false) => {
-      if (!currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail || !playSessionId) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackProgress({ itemId: itemDetail.id!, positionTicks, isPaused });
+      mediaAdapter.reportPlaybackProgress({
+        itemId: itemDetail.id!,
+        positionTicks,
+        isPaused,
+        PlaySessionId: playSessionId,
+      });
     },
-    [mediaAdapter, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail, playSessionId],
   );
 
   const syncPlaybackStart = useCallback(
     (position: number) => {
-      if (!currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail || !playSessionId) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackStart({ itemId: itemDetail.id!, positionTicks });
+      mediaAdapter.reportPlaybackStart({
+        itemId: itemDetail.id!,
+        positionTicks,
+        PlaySessionId: playSessionId,
+      });
     },
-    [mediaAdapter, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail, playSessionId],
   );
 
   const syncPlaybackStop = useCallback(
     (position: number) => {
-      if (!currentServer || !itemDetail) return;
+      if (!currentServer || !itemDetail || !playSessionId) return;
 
       const positionTicks = Math.round(position);
-      mediaAdapter.reportPlaybackStop({ itemId: itemDetail.id!, positionTicks });
+      mediaAdapter.reportPlaybackStop({
+        itemId: itemDetail.id!,
+        positionTicks,
+        PlaySessionId: playSessionId,
+      });
     },
-    [mediaAdapter, currentServer, itemDetail],
+    [mediaAdapter, currentServer, itemDetail, playSessionId],
   );
 
   useEffect(() => {
     return () => {
-      if (currentServer && itemDetail) {
+      if (currentServer && itemDetail && playSessionId) {
         const positionTicks = Math.round(currentTime.value);
         syncPlaybackStop(positionTicks);
       }
     };
-  }, [mediaAdapter, currentServer, itemDetail, syncPlaybackStop, currentTime]);
+  }, [mediaAdapter, currentServer, itemDetail, playSessionId, syncPlaybackStop, currentTime]);
 
   return {
     syncPlaybackProgress,

@@ -9,7 +9,7 @@ import Animated, {
   interpolate,
   useAnimatedRef,
   useAnimatedStyle,
-  useScrollViewOffset,
+  useScrollOffset,
 } from 'react-native-reanimated';
 
 const HEADER_HEIGHT = 450;
@@ -40,7 +40,7 @@ export default function ParallaxScrollView({
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
-  const scrollOffset = useScrollViewOffset(scrollRef);
+  const scrollOffset = useScrollOffset(scrollRef);
   const linearColor = useThemeColor(
     { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
     'background',

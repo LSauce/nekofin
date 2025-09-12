@@ -499,6 +499,7 @@ export async function reportPlaybackProgress(
   itemId: string,
   positionTicks: number,
   isPaused: boolean = false,
+  PlaySessionId: string,
 ) {
   try {
     await getPlaystateApi(api).reportPlaybackProgress({
@@ -508,6 +509,7 @@ export async function reportPlaybackProgress(
         IsPaused: isPaused,
         CanSeek: true,
         PlaybackStartTimeTicks: Date.now() * 10000,
+        PlaySessionId,
       },
     });
   } catch (error) {
@@ -515,7 +517,12 @@ export async function reportPlaybackProgress(
   }
 }
 
-export async function reportPlaybackStart(api: Api, itemId: string, positionTicks: number = 0) {
+export async function reportPlaybackStart(
+  api: Api,
+  itemId: string,
+  positionTicks: number = 0,
+  PlaySessionId: string,
+) {
   try {
     await getPlaystateApi(api).reportPlaybackStart({
       playbackStartInfo: {
@@ -523,6 +530,7 @@ export async function reportPlaybackStart(api: Api, itemId: string, positionTick
         PositionTicks: Math.floor(positionTicks * 10000),
         CanSeek: true,
         PlaybackStartTimeTicks: Date.now() * 10000,
+        PlaySessionId,
       },
     });
   } catch (error) {
@@ -530,12 +538,18 @@ export async function reportPlaybackStart(api: Api, itemId: string, positionTick
   }
 }
 
-export async function reportPlaybackStop(api: Api, itemId: string, positionTicks: number) {
+export async function reportPlaybackStop(
+  api: Api,
+  itemId: string,
+  positionTicks: number,
+  PlaySessionId: string,
+) {
   try {
     await getPlaystateApi(api).reportPlaybackStopped({
       playbackStopInfo: {
         ItemId: itemId,
         PositionTicks: Math.floor(positionTicks * 10000),
+        PlaySessionId,
       },
     });
   } catch (error) {

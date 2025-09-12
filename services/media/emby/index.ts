@@ -120,7 +120,22 @@ export function rebuildApiClient() {
   });
   apiClient.addResponseInterceptor(async (response) => {
     if (!response.ok) return response;
-    const data = await response.json();
+
+    const text = await response.text();
+    if (!text.trim()) {
+      const wrapped: ApiResponse<unknown> = { code: 200, data: null, msg: 'ok' };
+      return wrapped as ApiResponse<unknown>;
+    }
+
+    let data: unknown;
+    try {
+      data = JSON.parse(text);
+    } catch (error) {
+      console.error('Failed to parse JSON response:', error);
+      const wrapped: ApiResponse<unknown> = { code: 200, data: null, msg: 'ok' };
+      return wrapped as ApiResponse<unknown>;
+    }
+
     const wrapped: ApiResponse<unknown> = { code: 200, data, msg: 'ok' };
     return wrapped as ApiResponse<unknown>;
   });
