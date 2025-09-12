@@ -2,8 +2,8 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem } from '@/services/media/types';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
-import { useMemo, useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
+import { useMemo, useRef, useState } from 'react';
+import { StyleSheet, Text, TextLayoutEvent, TouchableOpacity, View } from 'react-native';
 
 import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
@@ -42,6 +42,7 @@ export const ItemMeta = ({ item }: { item: MediaItem }) => {
 export const ItemOverview = ({ item }: { item: MediaItem }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const bottomSheetModalRef = useRef<BottomSheetModal>(null);
+  const [textLines, setTextLines] = useState(0);
 
   const { accentColor } = useAccentColor();
 
@@ -51,17 +52,29 @@ export const ItemOverview = ({ item }: { item: MediaItem }) => {
     bottomSheetModalRef.current?.present();
   };
 
+  const handleTextLayout = (event: TextLayoutEvent) => {
+    setTextLines(event.nativeEvent.lines.length);
+  };
+
   if (!overview) return null;
 
   return (
     <>
       <View style={detailViewStyles.overviewContainer}>
+        <Text
+          style={[detailViewStyles.overview, { opacity: 0, position: 'absolute' }]}
+          onTextLayout={handleTextLayout}
+        >
+          {overview}
+        </Text>
         <Text style={[detailViewStyles.overview, { color: textColor }]} numberOfLines={5}>
           {overview}
         </Text>
-        <TouchableOpacity onPress={handleShowMore}>
-          <Text style={[detailViewStyles.overview, { color: accentColor }]}>查看更多</Text>
-        </TouchableOpacity>
+        {textLines > 5 && (
+          <TouchableOpacity onPress={handleShowMore}>
+            <Text style={[detailViewStyles.overview, { color: accentColor }]}>查看更多</Text>
+          </TouchableOpacity>
+        )}
       </View>
 
       <BottomSheetBackdropModal ref={bottomSheetModalRef} enableDynamicSizing>
