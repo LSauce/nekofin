@@ -347,7 +347,7 @@ export function Controls({
       >
         <BlurView tint="dark" intensity={100} style={styles.backButtonBlur}>
           <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
-            <AntDesign name="arrowleft" size={24} color="white" />
+            <AntDesign name="arrow-left" size={24} color="white" />
           </TouchableOpacity>
         </BlurView>
       </Animated.View>
