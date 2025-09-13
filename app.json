@@ -86,6 +86,7 @@
         "expo-build-properties",
         {
           "ios": {
+            "useFrameworks": "static",
             "reactNativeReleaseLevel": "experimental"
           },
           "android": {
