@@ -1,5 +1,6 @@
 import { useState } from 'react';
-import { runOnJS, SharedValue, useAnimatedReaction } from 'react-native-reanimated';
+import { SharedValue, useAnimatedReaction } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 export function useCurrentTime({ time }: { time: SharedValue<number> }) {
   const [currentTime, setCurrentTime] = useState(0);
@@ -7,7 +8,7 @@ export function useCurrentTime({ time }: { time: SharedValue<number> }) {
   useAnimatedReaction(
     () => time.value,
     (newTime) => {
-      runOnJS(setCurrentTime)(newTime);
+      scheduleOnRN(setCurrentTime, newTime);
     },
   );
 

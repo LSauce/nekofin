@@ -5,7 +5,7 @@ import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
 import { MediaTracks, Tracks } from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import {
   ActivityIndicator,
   StyleSheet,
@@ -18,18 +18,19 @@ import {
 import { Slider } from 'react-native-awesome-slider';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
-  runOnJS,
   setNativeProps,
   SharedValue,
-  useAnimatedReaction,
   useAnimatedRef,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { scheduleOnRN } from 'react-native-worklets';
 
 const formatTime = (time: number) => {
+  'worklet';
+
   const hours = Math.floor(time / 3600000);
   const minutes = Math.floor((time % 3600000) / 60000);
   const seconds = Math.floor((time % 60000) / 1000);
@@ -85,6 +86,7 @@ export function Controls({
   const [isGestureSeekingActive, setIsGestureSeekingActive] = useState(false);
 
   const animatedTextInputRef = useAnimatedRef<TextInput>();
+  const animatedOffsetTextInputRef = useAnimatedRef<TextInput>();
 
   const fadeAnim = useSharedValue(1);
   const progressValue = useSharedValue(0);
@@ -93,11 +95,16 @@ export function Controls({
   const maximumValue = useSharedValue(1);
 
   const gestureSeekPreview = useSharedValue(0);
+  const gestureSeekOffset = useSharedValue(0);
 
   const audioTracks =
     mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
   const subtitleTracks =
     mediaTracks?.subtitle.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
+
+  const totalTime = useMemo(() => {
+    return formatTime(duration);
+  }, [duration]);
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -107,7 +114,7 @@ export function Controls({
 
   const seekPreviewAnimatedStyle = useAnimatedStyle(() => {
     return {
-      opacity: withTiming(isGestureSeekingActive ? 1 : 0, { duration: 150 }),
+      opacity: withTiming(isGestureSeekingActive ? 1 : 0, { duration: 10 }),
     };
   });
 
@@ -123,7 +130,7 @@ export function Controls({
       controlsTimeout.current = setTimeout(() => {
         if (!isDragging && !menuOpen && !isGestureSeekingActive) {
           fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-            runOnJS(setShowControls)(false);
+            scheduleOnRN(setShowControls, false);
           });
         }
       }, 3000);
@@ -142,7 +149,7 @@ export function Controls({
     controlsTimeout.current = setTimeout(() => {
       if (!isDragging && !menuOpen && !isGestureSeekingActive) {
         fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-          runOnJS(setShowControls)(false);
+          scheduleOnRN(setShowControls, false);
         });
       }
     }, 3000);
@@ -227,10 +234,10 @@ export function Controls({
     }
     if (showControls) {
       fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-        runOnJS(setShowControls)(false);
+        scheduleOnRN(setShowControls, false);
       });
     } else {
-      runOnJS(showControlsWithTimeout)();
+      scheduleOnRN(showControlsWithTimeout);
     }
   };
 
@@ -239,7 +246,6 @@ export function Controls({
   };
 
   const gestureSeekStartTime = useSharedValue(0);
-  const gestureSeekOffset = useSharedValue(0);
 
   const handleGestureSeekStart = useCallback(() => {
     setIsGestureSeekingActive(true);
@@ -277,55 +283,52 @@ export function Controls({
       }
 
       if (!isGestureSeekingActive) {
-        runOnJS(handleGestureSeekStart)();
+        scheduleOnRN(handleGestureSeekStart);
       }
 
       const progressRatio = deltaX / screenWidth;
-      const timeChange = progressRatio * 90000;
+      const timeChange = progressRatio * 180000;
 
       gestureSeekOffset.value = timeChange;
       const newTime = Math.max(0, Math.min(duration, gestureSeekStartTime.value + timeChange));
 
       const time = newTime;
       gestureSeekPreview.value = time;
-      const hours = Math.floor(time / 3600000);
-      const minutes = Math.floor((time % 3600000) / 60000);
-      const seconds = Math.floor((time % 60000) / 1000);
-
-      let formattedTime: string;
-      if (hours > 0) {
-        formattedTime = `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      } else {
-        formattedTime = `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-      }
 
       setNativeProps(animatedTextInputRef, {
-        text: formattedTime,
+        text: `${formatTime(newTime)} / ${totalTime}`,
+      });
+
+      const offsetSeconds = Math.round(timeChange / 1000);
+      const offsetText = offsetSeconds > 0 ? `+${offsetSeconds}s` : `${offsetSeconds}s`;
+
+      setNativeProps(animatedOffsetTextInputRef, {
+        text: offsetText,
       });
     })
     .onEnd(() => {
       if (!duration) return;
 
       const finalTime = gestureSeekPreview.value;
-      runOnJS(handleGestureSeekEnd)(finalTime);
+      scheduleOnRN(handleGestureSeekEnd, finalTime);
     });
 
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
-    .maxDuration(300)
+    .maxDuration(100)
     .onEnd((_event, success) => {
       if (success) {
-        runOnJS(handleSingleTap)();
+        scheduleOnRN(handleSingleTap);
       }
     });
 
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
-    .maxDuration(300)
+    .maxDuration(100)
     .maxDelay(200)
     .onEnd((_event, success) => {
       if (success) {
-        runOnJS(handleDoubleTap)();
+        scheduleOnRN(handleDoubleTap);
       }
     });
 
@@ -512,6 +515,13 @@ export function Controls({
       <Animated.View style={[styles.seekPreviewContainer, seekPreviewAnimatedStyle]}>
         <BlurView tint="dark" intensity={100} style={styles.seekPreviewBlur}>
           <TextInput
+            ref={animatedOffsetTextInputRef}
+            style={styles.seekPreviewOffsetText}
+            caretHidden
+            defaultValue=""
+            editable={false}
+          />
+          <TextInput
             ref={animatedTextInputRef}
             style={styles.seekPreviewText}
             caretHidden
@@ -693,7 +703,7 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -60 }, { translateY: -25 }],
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
     zIndex: 15,
   },
   seekPreviewBlur: {
@@ -704,9 +714,17 @@ const styles = StyleSheet.create({
     minWidth: 120,
     alignItems: 'center',
   },
+  seekPreviewOffsetText: {
+    color: '#fff',
+    fontSize: 18,
+    paddingVertical: 0,
+    fontFamily: 'Roboto',
+    marginBottom: 4,
+  },
   seekPreviewText: {
     color: '#fff',
     fontSize: 16,
     paddingVertical: 0,
+    fontFamily: 'Roboto',
   },
 });
