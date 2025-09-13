@@ -3,6 +3,7 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import Entypo from '@expo/vector-icons/Entypo';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
+import * as Brightness from 'expo-brightness';
 import { MediaTracks, Tracks } from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import { Fragment, useCallback, useEffect, useMemo, useRef, useState } from 'react';
@@ -26,7 +27,12 @@ import Animated, {
   useSharedValue,
   withTiming,
 } from 'react-native-reanimated';
+import { VolumeManager } from 'react-native-volume-manager';
 import { scheduleOnRN } from 'react-native-worklets';
+
+import { VerticalSlider } from './VerticalSlider';
+
+VolumeManager.showNativeVolumeUI({ enabled: true });
 
 const formatTime = (time: number) => {
   'worklet';
@@ -84,6 +90,11 @@ export function Controls({
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
   const [isGestureSeekingActive, setIsGestureSeekingActive] = useState(false);
+  const [isVolumeGestureActive, setIsVolumeGestureActive] = useState(false);
+  const [isBrightnessGestureActive, setIsBrightnessGestureActive] = useState(false);
+  const [volume, setVolume] = useState(1.0);
+  const [brightness, setBrightness] = useState(1.0);
+  const [isInitialized, setIsInitialized] = useState(false);
 
   const animatedTextInputRef = useAnimatedRef<TextInput>();
   const animatedOffsetTextInputRef = useAnimatedRef<TextInput>();
@@ -96,6 +107,12 @@ export function Controls({
 
   const gestureSeekPreview = useSharedValue(0);
   const gestureSeekOffset = useSharedValue(0);
+  const gestureVolumePreview = useSharedValue(0);
+  const gestureVolumeOffset = useSharedValue(0);
+  const gestureBrightnessPreview = useSharedValue(0);
+  const gestureBrightnessOffset = useSharedValue(0);
+  const volumeSliderValue = useSharedValue(1.0);
+  const brightnessSliderValue = useSharedValue(1.0);
 
   const audioTracks =
     mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
@@ -118,6 +135,18 @@ export function Controls({
     };
   });
 
+  const volumePreviewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isVolumeGestureActive ? 1 : 0, { duration: 10 }),
+    };
+  });
+
+  const brightnessPreviewAnimatedStyle = useAnimatedStyle(() => {
+    return {
+      opacity: withTiming(isBrightnessGestureActive ? 1 : 0, { duration: 10 }),
+    };
+  });
+
   const showControlsWithTimeout = () => {
     setShowControls(true);
     fadeAnim.value = withTiming(1, { duration: 200 });
@@ -128,7 +157,13 @@ export function Controls({
 
     if (!menuOpen) {
       controlsTimeout.current = setTimeout(() => {
-        if (!isDragging && !menuOpen && !isGestureSeekingActive) {
+        if (
+          !isDragging &&
+          !menuOpen &&
+          !isGestureSeekingActive &&
+          !isVolumeGestureActive &&
+          !isBrightnessGestureActive
+        ) {
           fadeAnim.value = withTiming(0, { duration: 300 }, () => {
             scheduleOnRN(setShowControls, false);
           });
@@ -147,18 +182,52 @@ export function Controls({
     }
 
     controlsTimeout.current = setTimeout(() => {
-      if (!isDragging && !menuOpen && !isGestureSeekingActive) {
+      if (
+        !isDragging &&
+        !menuOpen &&
+        !isGestureSeekingActive &&
+        !isVolumeGestureActive &&
+        !isBrightnessGestureActive
+      ) {
         fadeAnim.value = withTiming(0, { duration: 300 }, () => {
           scheduleOnRN(setShowControls, false);
         });
       }
     }, 3000);
-  }, [fadeAnim, isDragging, menuOpen, isGestureSeekingActive]);
+  }, [
+    fadeAnim,
+    isDragging,
+    menuOpen,
+    isGestureSeekingActive,
+    isVolumeGestureActive,
+    isBrightnessGestureActive,
+  ]);
 
   useEffect(() => {
     // hide controls when first loaded
     hideControlsWithDelay();
   }, [hideControlsWithDelay]);
+
+  useEffect(() => {
+    const initializeSystemValues = async () => {
+      try {
+        const systemBrightness = await Brightness.getBrightnessAsync();
+        setBrightness(systemBrightness);
+        brightnessSliderValue.value = systemBrightness;
+
+        const { volume: systemVolume } = await VolumeManager.getVolume();
+        setVolume(systemVolume);
+        volumeSliderValue.value = systemVolume;
+
+        setIsInitialized(true);
+      } catch (error) {
+        console.warn('Failed to get system values:', error);
+        setIsInitialized(true);
+      }
+    };
+
+    initializeSystemValues();
+  }, [brightnessSliderValue, volumeSliderValue]);
 
   useEffect(() => {
     if (menuOpen) {
@@ -246,6 +315,8 @@ export function Controls({
   };
 
   const gestureSeekStartTime = useSharedValue(0);
+  const gestureVolumeStartValue = useSharedValue(0);
+  const gestureBrightnessStartValue = useSharedValue(0);
 
   const handleGestureSeekStart = useCallback(() => {
     setIsGestureSeekingActive(true);
@@ -261,10 +332,56 @@ export function Controls({
     [handleSeek, hideControlsWithDelay],
   );
 
+  const handleVolumeGestureStart = useCallback(() => {
+    setIsVolumeGestureActive(true);
+    setShowControls(true);
+  }, []);
+
+  const handleVolumeChange = useCallback(async (newVolume: number) => {
+    setVolume(newVolume);
+    try {
+      await VolumeManager.setVolume(newVolume);
+    } catch (error) {
+      console.warn('Failed to set volume:', error);
+    }
+  }, []);
+
+  const handleBrightnessChange = useCallback(async (newBrightness: number) => {
+    setBrightness(newBrightness);
+    try {
+      await Brightness.setBrightnessAsync(newBrightness);
+    } catch (error) {
+      console.warn('Failed to set brightness:', error);
+    }
+  }, []);
+
+  const handleVolumeGestureEnd = useCallback(
+    (finalVolume: number) => {
+      handleVolumeChange(finalVolume);
+      setIsVolumeGestureActive(false);
+      hideControlsWithDelay();
+    },
+    [handleVolumeChange, hideControlsWithDelay],
+  );
+
+  const handleBrightnessGestureStart = useCallback(() => {
+    setIsBrightnessGestureActive(true);
+    setShowControls(true);
+  }, []);
+
+  const handleBrightnessGestureEnd = useCallback(
+    (finalBrightness: number) => {
+      handleBrightnessChange(finalBrightness);
+      setIsBrightnessGestureActive(false);
+      hideControlsWithDelay();
+    },
+    [handleBrightnessChange, hideControlsWithDelay],
+  );
+
   const panGesture = Gesture.Pan()
-    .minDistance(5)
-    .activeOffsetX([-5, 5])
-    .failOffsetY([-30, 30])
+    .minDistance(10)
+    .activeOffsetX([-15, 15])
+    .failOffsetY([-8, 8])
     .maxPointers(1)
     .onBegin(() => {
       gestureSeekStartTime.value = currentTime.value;
@@ -278,7 +395,11 @@ export function Controls({
       const deltaX = event.translationX;
       const deltaY = event.translationY;
 
-      if (Math.abs(deltaX) <= Math.abs(deltaY) * 2) {
+      if (Math.abs(deltaX) <= Math.abs(deltaY) * 1.2) {
+        return;
+      }
+
+      if (isVolumeGestureActive || isBrightnessGestureActive) {
         return;
       }
 
@@ -309,13 +430,102 @@ export function Controls({
     .onEnd(() => {
       if (!duration) return;
 
-      const finalTime = gestureSeekPreview.value;
-      scheduleOnRN(handleGestureSeekEnd, finalTime);
+      if (isGestureSeekingActive) {
+        const finalTime = gestureSeekPreview.value;
+        scheduleOnRN(handleGestureSeekEnd, finalTime);
+      }
+    });
+
+  const sliderGesture = Gesture.Pan()
+    .minDistance(8)
+    .activeOffsetY([-10, 10])
+    .failOffsetX([-8, 8])
+    .maxPointers(1)
+    .onStart((event) => {
+      'worklet';
+
+      const isLeftSide = event.x < screenWidth * 0.5;
+      const isRightSide = event.x >= screenWidth * 0.5;
+
+      if (isLeftSide) {
+        if (!isInitialized) {
+          return;
+        }
+        gestureBrightnessStartValue.value = brightness;
+        gestureBrightnessOffset.value = 0;
+        gestureBrightnessPreview.value = brightness;
+      } else if (isRightSide) {
+        gestureVolumeStartValue.value = volume;
+        gestureVolumeOffset.value = 0;
+        gestureVolumePreview.value = volume;
+      }
+    })
+    .onUpdate((event) => {
+      'worklet';
+
+      const isLeftSide = event.x < screenWidth * 0.5;
+      const isRightSide = event.x >= screenWidth * 0.5;
+
+      const deltaY = event.translationY;
+      const deltaX = event.translationX;
+
+      if (Math.abs(deltaY) <= Math.abs(deltaX) * 1.2) {
+        return;
+      }
+
+      if (isLeftSide) {
+        if (!isInitialized) {
+          return;
+        }
+
+        if (!isBrightnessGestureActive) {
+          scheduleOnRN(handleBrightnessGestureStart);
+        }
+
+        const progressRatio = -deltaY / (screenWidth * 0.3);
+        const brightnessChange = progressRatio * 0.6;
+
+        gestureBrightnessOffset.value = brightnessChange;
+        const newBrightness = Math.max(
+          0,
+          Math.min(1, gestureBrightnessStartValue.value + brightnessChange),
+        );
+
+        gestureBrightnessPreview.value = newBrightness;
+        brightnessSliderValue.value = newBrightness;
+
+        scheduleOnRN(handleBrightnessChange, newBrightness);
+      } else if (isRightSide) {
+        if (!isVolumeGestureActive) {
+          scheduleOnRN(handleVolumeGestureStart);
+        }
+
+        const progressRatio = -deltaY / (screenWidth * 0.3);
+        const volumeChange = progressRatio * 0.6;
+
+        gestureVolumeOffset.value = volumeChange;
+        const newVolume = Math.max(0, Math.min(1, gestureVolumeStartValue.value + volumeChange));
+
+        gestureVolumePreview.value = newVolume;
+        volumeSliderValue.value = newVolume;
+
+        scheduleOnRN(handleVolumeChange, newVolume);
+      }
+    })
+    .onEnd(() => {
+      if (isVolumeGestureActive) {
+        const finalVolume = gestureVolumePreview.value;
+        scheduleOnRN(handleVolumeGestureEnd, finalVolume);
+      }
+      if (isBrightnessGestureActive) {
+        const finalBrightness = gestureBrightnessPreview.value;
+        scheduleOnRN(handleBrightnessGestureEnd, finalBrightness);
+      }
     });
 
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
-    .maxDuration(100)
+    .maxDuration(300)
     .onEnd((_event, success) => {
       if (success) {
         scheduleOnRN(handleSingleTap);
@@ -332,7 +542,9 @@ export function Controls({
       }
     });
 
-  const composed = Gesture.Exclusive(doubleTapGesture, tapGesture, panGesture);
+  const tapGestures = Gesture.Exclusive(doubleTapGesture, tapGesture);
+  const panGestures = Gesture.Exclusive(panGesture, sliderGesture);
+  const composed = Gesture.Simultaneous(panGestures, tapGestures);
 
   useEffect(() => {
     return () => {
@@ -530,6 +742,22 @@ export function Controls({
           />
         </BlurView>
       </Animated.View>
+      <VerticalSlider
+        iconName="volume-high"
+        progress={volumeSliderValue}
+        minimumValue={minimumValue}
+        maximumValue={maximumValue}
+        animatedStyle={volumePreviewAnimatedStyle}
+        containerStyle={styles.volumeSliderContainer}
+      />
+      <VerticalSlider
+        iconName="sunny"
+        progress={brightnessSliderValue}
+        minimumValue={minimumValue}
+        maximumValue={maximumValue}
+        animatedStyle={brightnessPreviewAnimatedStyle}
+        containerStyle={styles.brightnessSliderContainer}
+      />
       <GestureDetector gesture={composed}>
         <Animated.View style={styles.touchOverlay} />
       </GestureDetector>
@@ -726,5 +954,17 @@ const styles = StyleSheet.create({
     fontSize: 16,
     paddingVertical: 0,
     fontFamily: 'Roboto',
+  },
+  volumeSliderContainer: {
+    right: 40,
+  },
+  brightnessSliderContainer: {
+    left: 40,
+  },
+  sliderValue: {
+    color: '#fff',
+    fontSize: 12,
+    marginTop: 8,
+    fontWeight: '500',
   },
 });
