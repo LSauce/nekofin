@@ -22,6 +22,7 @@
         "compare-versions": "^6.1.1",
         "expo": "^54.0.2",
         "expo-blur": "~15.0.7",
+        "expo-brightness": "^14.0.7",
         "expo-build-properties": "~1.0.8",
         "expo-constants": "~18.0.8",
         "expo-crypto": "~15.0.7",
@@ -59,6 +60,7 @@
         "react-native-svg": "15.12.1",
         "react-native-uuid": "^2.0.3",
         "react-native-video": "^6.16.1",
+        "react-native-volume-manager": "^2.0.8",
         "react-native-web": "^0.21.0",
         "react-native-webview": "13.15.0",
         "react-native-worklets": "0.5.1",
@@ -1012,6 +1014,8 @@
 
     "expo-blur": ["expo-blur@15.0.7", "", { "peerDependencies": { "expo": "*", "react": "*", "react-native": "*" } }, "sha512-SugQQbQd+zRPy8z2G5qDD4NqhcD7srBF7fN7O7yq6q7ZFK59VWvpDxtMoUkmSfdxgqONsrBN/rLdk00USADrMg=="],
 
+    "expo-brightness": ["expo-brightness@14.0.7", "https://registry.npmmirror.com/expo-brightness/-/expo-brightness-14.0.7.tgz", { "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-wccb/NdQEd45UF0lgNEksZt3E8uzlIcxIx1ZqZYWbHyNvcS3LUj5wxB6+ZgKTLeWu4vLQ+oHe+F0QrkC9ojrig=="],
+
     "expo-build-properties": ["expo-build-properties@1.0.8", "", { "dependencies": { "ajv": "^8.11.0", "semver": "^7.6.0" }, "peerDependencies": { "expo": "*" } }, "sha512-Ram9Jcg2WkbE7bRopWacMnXIhqUP6P13cQoj4rSfXLpJVOyGGvuMiw3rs1vzMbWSHxhvvsX2NvYXXIrZatexuw=="],
 
     "expo-constants": ["expo-constants@18.0.8", "", { "dependencies": { "@expo/config": "~12.0.8", "@expo/env": "~2.0.7" }, "peerDependencies": { "expo": "*", "react-native": "*" } }, "sha512-Tetphsx6RVImCTZeBAclRQMy0WOODY3y6qrUoc88YGUBVm8fAKkErCSWxLTCc6nFcJxdoOMYi62LgNIUFjZCLA=="],
@@ -1681,6 +1685,8 @@
     "react-native-uuid": ["react-native-uuid@2.0.3", "", {}, "sha512-f/YfIS2f5UB+gut7t/9BKGSCYbRA9/74A5R1MDp+FLYsuS+OSWoiM/D8Jko6OJB6Jcu3v6ONuddvZKHdIGpeiw=="],
 
     "react-native-video": ["react-native-video@6.16.1", "", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-+G6tVVGbwFqNTyPivqb+PhQzWr5OudDQ1dgvBNyBRAgcS8rOcbwuS6oX+m8cxOsXHn1UT9ofQnjQEwkGOsvomg=="],
+
+    "react-native-volume-manager": ["react-native-volume-manager@2.0.8", "https://registry.npmmirror.com/react-native-volume-manager/-/react-native-volume-manager-2.0.8.tgz", { "peerDependencies": { "react": "*", "react-native": "*" } }, "sha512-aZM47/mYkdQ4CbXpKYO6Ajiczv7fxbQXZ9c0H8gRuQUaS3OCz/MZABer6o9aDWq0KMNsQ7q7GVFLRPnSSeeMmw=="],
 
     "react-native-web": ["react-native-web@0.21.1", "", { "dependencies": { "@babel/runtime": "^7.18.6", "@react-native/normalize-colors": "^0.74.1", "fbjs": "^3.0.4", "inline-style-prefixer": "^7.0.1", "memoize-one": "^6.0.0", "nullthrows": "^1.1.1", "postcss-value-parser": "^4.2.0", "styleq": "^0.1.3" }, "peerDependencies": { "react": "^18.0.0 || ^19.0.0", "react-dom": "^18.0.0 || ^19.0.0" } }, "sha512-BeNsgwwe4AXUFPAoFU+DKjJ+CVQa3h54zYX77p7GVZrXiiNo3vl03WYDYVEy5R2J2HOPInXtQZB5gmj3vuzrKg=="],
 
