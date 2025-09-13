@@ -2,13 +2,18 @@ import * as NavigationBar from 'expo-navigation-bar';
 import { Stack } from 'expo-router';
 import * as StatusBar from 'expo-status-bar';
 import { useEffect } from 'react';
+import { Platform } from 'react-native';
 
 export default function Layout() {
   useEffect(() => {
-    NavigationBar.setVisibilityAsync('hidden');
+    if (Platform.OS === 'android') {
+      NavigationBar.setVisibilityAsync('hidden');
+    }
     StatusBar.setStatusBarHidden(true);
     return () => {
-      NavigationBar.setVisibilityAsync('visible');
+      if (Platform.OS === 'android') {
+        NavigationBar.setVisibilityAsync('visible');
+      }
       StatusBar.setStatusBarHidden(false);
     };
   }, []);
