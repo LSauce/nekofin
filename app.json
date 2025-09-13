@@ -82,12 +82,10 @@
           }
         }
       ],
-      "react-native-bottom-tabs",
       [
         "expo-build-properties",
         {
           "ios": {
-            "useFrameworks": "static",
             "reactNativeReleaseLevel": "experimental"
           },
           "android": {
