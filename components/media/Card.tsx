@@ -1,6 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import { ImageUrlInfo } from '@/lib/utils/image';
 import { MediaItem } from '@/services/media/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -80,12 +81,14 @@ export function EpisodeCard({
   style,
   hideText,
   imgType = 'Thumb',
+  imgInfo,
   onPress,
 }: {
   item: MediaItem;
   style?: StyleProp<ViewStyle>;
   hideText?: boolean;
   imgType?: ImageType;
+  imgInfo?: ImageUrlInfo;
   onPress?: () => void;
 }) {
   const router = useRouter();
@@ -95,16 +98,18 @@ export function EpisodeCard({
 
   const mediaAdapter = useMediaAdapter();
 
-  const imageInfo = mediaAdapter.getImageInfo({
-    item,
-    opts: {
-      preferBackdrop: imgType === 'Backdrop',
-      preferThumb: imgType === 'Thumb',
-      preferBanner: imgType === 'Banner',
-      preferLogo: imgType === 'Logo',
-      width: 400,
-    },
-  });
+  const imageInfo =
+    imgInfo ??
+    mediaAdapter.getImageInfo({
+      item,
+      opts: {
+        preferBackdrop: imgType === 'Backdrop',
+        preferThumb: imgType === 'Thumb',
+        preferBanner: imgType === 'Banner',
+        preferLogo: imgType === 'Logo',
+        width: 400,
+      },
+    });
 
   const imageUrl = imageInfo.url;
 

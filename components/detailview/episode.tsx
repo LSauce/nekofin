@@ -1,3 +1,4 @@
+import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaPerson } from '@/services/media/types';
@@ -8,6 +9,7 @@ import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 import { EpisodeCard, SeriesCard } from '../media/Card';
 import { ThemedText } from '../ThemedText';
 import { detailViewStyles, ItemOverview } from './common';
+import { useDetailView } from './DetailViewContext';
 import { PersonItem } from './PersonItem';
 
 export const EpisodeModeContent = ({
@@ -27,6 +29,8 @@ export const EpisodeModeContent = ({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
   const { accentColor } = useAccentColor();
+  const { setTitle, setBackgroundImageUrl } = useDetailView();
+  const mediaAdapter = useMediaAdapter();
 
   const [selectedEpisode, setSelectedEpisode] = useState<MediaItem>(item ?? episodes[0]);
   const flatListRef = useRef<FlatList<MediaItem>>(null);
@@ -45,12 +49,20 @@ export const EpisodeModeContent = ({
     scrollToIndex(initialIndex);
   }, [initialIndex, scrollToIndex]);
 
+  useEffect(() => {
+    setTitle(selectedEpisode.name);
+  }, [selectedEpisode.name, setTitle]);
+
+  useEffect(() => {
+    const imageInfo = mediaAdapter.getImageInfo({
+      item: selectedEpisode,
+    });
+    setBackgroundImageUrl(imageInfo.url);
+  }, [mediaAdapter, selectedEpisode, setBackgroundImageUrl]);
+
   return (
     <>
       <View style={{ gap: 8 }}>
-        <ThemedText style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>
-          {selectedEpisode.name}
-        </ThemedText>
         <ThemedText style={{ fontSize: 14, color: subtitleColor }}>
           {`${selectedEpisode.seriesName} 第${selectedEpisode.indexNumber}集`}
         </ThemedText>
@@ -94,6 +106,9 @@ export const EpisodeModeContent = ({
                   onPress={() => {
                     setSelectedEpisode(ep);
                   }}
+                  imgInfo={mediaAdapter.getImageInfo({
+                    item: ep,
+                  })}
                 />
               );
             }}

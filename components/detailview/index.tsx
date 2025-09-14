@@ -12,6 +12,7 @@ import { Platform, RefreshControl, Text, TouchableOpacity, View } from 'react-na
 
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
+import { DetailViewProvider, useDetailView } from './DetailViewContext';
 import { EpisodeModeContent } from './episode';
 import { MovieModeContent } from './movie';
 import { SeasonModeContent } from './season';
@@ -22,11 +23,12 @@ export type DetailViewProps = {
   mode: 'series' | 'season' | 'movie' | 'episode';
 };
 
-export default function DetailView({ itemId, mode }: DetailViewProps) {
+function DetailViewContent({ itemId, mode }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+  const { title, backgroundImageUrl, setItem } = useDetailView();
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
 
@@ -45,7 +47,8 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
   useEffect(() => {
     if (!item) return;
     setIsFavorite(!!item.userData?.isFavorite);
-  }, [item]);
+    setItem(item);
+  }, [item, setItem]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -104,7 +107,7 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
     item,
     opts: { preferBackdrop: true, width: 1200 },
   });
-  const headerImageUrl = headerImageInfo.url;
+  const headerImageUrl = backgroundImageUrl || headerImageInfo.url;
 
   const logoImageInfo = mediaAdapter.getImageInfo({ item, opts: { preferLogo: true, width: 400 } });
   const logoImageUrl = logoImageInfo.url;
@@ -171,12 +174,19 @@ export default function DetailView({ itemId, mode }: DetailViewProps) {
             contentFit="contain"
           />
         )}
-        {mode !== 'episode' && (
-          <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>{item.name}</Text>
-        )}
-
+        <Text style={{ fontSize: 24, fontWeight: 'bold', color: textColor }}>
+          {title || item.name}
+        </Text>
         {renderModeContent()}
       </View>
     </ParallaxScrollView>
+  );
+}
+
+export default function DetailView({ itemId, mode }: DetailViewProps) {
+  return (
+    <DetailViewProvider>
+      <DetailViewContent itemId={itemId} mode={mode} />
+    </DetailViewProvider>
   );
 }
