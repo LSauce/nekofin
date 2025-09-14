@@ -494,9 +494,9 @@ const styles = StyleSheet.create({
     fontFamily: 'Roboto',
   },
   volumeSliderContainer: {
-    left: 40,
+    left: 60,
   },
   brightnessSliderContainer: {
-    right: 40,
+    right: 60,
   },
 });

@@ -4,7 +4,7 @@ import PageScrollView from '@/components/PageScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
-import { UserViewSection } from '@/components/userview/UserViewSection';
+import { UserViewSection } from '@/components/user-view/UserViewSection';
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
 import useRefresh from '@/hooks/useRefresh';
@@ -230,7 +230,7 @@ export default function HomeScreen() {
               <Section
                 key={section.key}
                 title={section.title}
-                onViewAll={() => router.push('/viewall/resume')}
+                onViewAll={() => router.push('/view-all/resume')}
                 items={section.items}
                 isLoading={false}
               />
@@ -242,7 +242,7 @@ export default function HomeScreen() {
               <Section
                 key={section.key}
                 title={section.title}
-                onViewAll={() => router.push('/viewall/nextup')}
+                onViewAll={() => router.push('/view-all/nextup')}
                 items={section.items}
                 isLoading={false}
               />
@@ -255,7 +255,7 @@ export default function HomeScreen() {
               title={section.title}
               onViewAll={() =>
                 router.push({
-                  pathname: '/viewall/[type]',
+                  pathname: '/view-all/[type]',
                   params: {
                     folderId,
                     folderName: section.title.replace('最近添加的 ', ''),

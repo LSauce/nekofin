@@ -8,7 +8,7 @@ import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { Platform, RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
@@ -152,7 +152,7 @@ function DetailViewContent({ itemId, mode }: DetailViewProps) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
-      contentStyle={{ paddingBottom: Platform.OS === 'ios' ? 40 : 0 }}
+      contentStyle={{ paddingBottom: 40 }}
       headerImage={
         headerImageUrl ? (
           <Image
