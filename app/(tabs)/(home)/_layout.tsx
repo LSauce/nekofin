@@ -35,7 +35,7 @@ export default function HomeLayout() {
         }}
       />
       <Stack.Screen
-        name="viewall/[type]"
+        name="view-all/[type]"
         options={{
           title: '查看全部',
         }}

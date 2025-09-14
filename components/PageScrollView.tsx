@@ -1,5 +1,5 @@
 import React from 'react';
-import { ScrollView, ScrollViewProps } from 'react-native';
+import { Platform, ScrollView, ScrollViewProps } from 'react-native';
 
 type PageScrollViewProps = {
   children: React.ReactNode;
@@ -19,7 +19,7 @@ export default function PageScrollView({
       nestedScrollEnabled
       contentInsetAdjustmentBehavior="automatic"
       contentContainerStyle={{
-        paddingBottom: bottomTabBarHeight,
+        paddingBottom: bottomTabBarHeight + (Platform.OS === 'android' ? 100 : 0),
       }}
       {...rest}
     >
