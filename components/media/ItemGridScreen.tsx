@@ -13,6 +13,7 @@ import React, { useCallback, useEffect, useMemo } from 'react';
 import {
   ActivityIndicator,
   FlatList,
+  Platform,
   RefreshControl,
   ScrollView,
   StyleSheet,
@@ -381,7 +382,10 @@ export function ItemGridScreen({
         refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
         onEndReached={handleEndReached}
         onEndReachedThreshold={0.4}
-        contentContainerStyle={styles.listContainer}
+        contentContainerStyle={[
+          styles.listContainer,
+          { paddingBottom: Platform.OS === 'android' ? 100 : 0 },
+        ]}
         ListHeaderComponent={renderFilterBar()}
         ListFooterComponent={listFooter}
         ListEmptyComponent={
