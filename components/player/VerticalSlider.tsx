@@ -1,6 +1,6 @@
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
-import { StyleProp, StyleSheet, View, ViewStyle } from 'react-native';
+import { StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
 import Animated, { SharedValue } from 'react-native-reanimated';
 
@@ -9,8 +9,7 @@ type VerticalSliderProps = {
   progress: SharedValue<number>;
   minimumValue: SharedValue<number>;
   maximumValue: SharedValue<number>;
-  animatedStyle: StyleProp<ViewStyle>;
-  containerStyle?: StyleProp<ViewStyle>;
+  style?: StyleProp<ViewStyle>;
 };
 
 export function VerticalSlider({
@@ -18,11 +17,10 @@ export function VerticalSlider({
   progress,
   minimumValue,
   maximumValue,
-  animatedStyle,
-  containerStyle,
+  style,
 }: VerticalSliderProps) {
   return (
-    <Animated.View style={[styles.container, containerStyle, animatedStyle]}>
+    <Animated.View style={[styles.container, style]}>
       <BlurView tint="dark" intensity={100} style={styles.blur}>
         <Ionicons name={iconName} size={20} color="#fff" style={styles.sliderIcon} />
         <Slider
@@ -33,6 +31,7 @@ export function VerticalSlider({
           theme={{
             minimumTrackTintColor: '#fff',
             maximumTrackTintColor: 'rgba(255, 255, 255, 0.3)',
+            disableMinTrackTintColor: '#fff',
           }}
           containerStyle={{
             overflow: 'hidden',
