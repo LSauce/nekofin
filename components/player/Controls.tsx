@@ -47,9 +47,9 @@ export function Controls({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const [isGestureSeekingActive, setIsGestureSeekingActive] = useState(false);
-  const [isVolumeGestureActive, setIsVolumeGestureActive] = useState(false);
-  const [isBrightnessGestureActive, setIsBrightnessGestureActive] = useState(false);
+  const isGestureSeekingActive = useSharedValue(false);
+  const isVolumeGestureActive = useSharedValue(false);
+  const isBrightnessGestureActive = useSharedValue(false);
 
   const fadeAnim = useSharedValue(1);
   const controlsTimeout = useRef<ReturnType<typeof setTimeout> | null>(null);
@@ -72,9 +72,9 @@ export function Controls({
       if (
         !isDragging &&
         !menuOpen &&
-        !isGestureSeekingActive &&
-        !isVolumeGestureActive &&
-        !isBrightnessGestureActive
+        !isGestureSeekingActive.value &&
+        !isVolumeGestureActive.value &&
+        !isBrightnessGestureActive.value
       ) {
         scheduleOnRN(setShowControls, false);
       }
@@ -161,11 +161,8 @@ export function Controls({
         isDragging={isDragging}
         menuOpen={menuOpen}
         isGestureSeekingActive={isGestureSeekingActive}
-        setIsGestureSeekingActive={setIsGestureSeekingActive}
         isVolumeGestureActive={isVolumeGestureActive}
-        setIsVolumeGestureActive={setIsVolumeGestureActive}
         isBrightnessGestureActive={isBrightnessGestureActive}
-        setIsBrightnessGestureActive={setIsBrightnessGestureActive}
         hideControlsWithDelay={hideControlsWithDelay}
         clearControlsTimeout={clearControlsTimeout}
       />

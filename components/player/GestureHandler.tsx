@@ -45,12 +45,9 @@ type GestureHandlerProps = {
   fadeAnim: SharedValue<number>;
   isDragging: boolean;
   menuOpen: boolean;
-  isGestureSeekingActive: boolean;
-  setIsGestureSeekingActive: (active: boolean) => void;
-  isVolumeGestureActive: boolean;
-  setIsVolumeGestureActive: (active: boolean) => void;
-  isBrightnessGestureActive: boolean;
-  setIsBrightnessGestureActive: (active: boolean) => void;
+  isGestureSeekingActive: SharedValue<boolean>;
+  isVolumeGestureActive: SharedValue<boolean>;
+  isBrightnessGestureActive: SharedValue<boolean>;
   hideControlsWithDelay: () => void;
   clearControlsTimeout: () => void;
 };
@@ -66,11 +63,8 @@ export function GestureHandler({
   isDragging,
   menuOpen,
   isGestureSeekingActive,
-  setIsGestureSeekingActive,
   isVolumeGestureActive,
-  setIsVolumeGestureActive,
   isBrightnessGestureActive,
-  setIsBrightnessGestureActive,
   hideControlsWithDelay,
   clearControlsTimeout,
 }: GestureHandlerProps) {
@@ -103,15 +97,15 @@ export function GestureHandler({
   const totalTime = formatTimeWorklet(duration);
 
   const seekPreviewAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isGestureSeekingActive ? 1 : 0, { duration: 100 }),
+    opacity: withTiming(isGestureSeekingActive.value ? 1 : 0, { duration: 100 }),
   }));
 
   const volumePreviewAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isVolumeGestureActive ? 1 : 0, { duration: 100 }),
+    opacity: withTiming(isVolumeGestureActive.value ? 1 : 0, { duration: 100 }),
   }));
 
   const brightnessPreviewAnimatedStyle = useAnimatedStyle(() => ({
-    opacity: withTiming(isBrightnessGestureActive ? 1 : 0, { duration: 100 }),
+    opacity: withTiming(isBrightnessGestureActive.value ? 1 : 0, { duration: 100 }),
   }));
 
   useEffect(() => {
@@ -162,41 +156,41 @@ export function GestureHandler({
   );
 
   const handleGestureSeekStart = useCallback(() => {
-    setIsGestureSeekingActive(true);
+    isGestureSeekingActive.value = true;
     setShowControls(true);
-  }, [setIsGestureSeekingActive, setShowControls]);
+  }, [isGestureSeekingActive, setShowControls]);
 
   const handleGestureSeekEnd = useCallback(
     (finalTime: number) => {
       handleSeek(finalTime);
-      setIsGestureSeekingActive(false);
+      isGestureSeekingActive.value = false;
       hideControlsWithDelay();
     },
-    [handleSeek, setIsGestureSeekingActive, hideControlsWithDelay],
+    [handleSeek, isGestureSeekingActive, hideControlsWithDelay],
   );
 
   const handleVolumeGestureStart = useCallback(() => {
-    setIsVolumeGestureActive(true);
-  }, [setIsVolumeGestureActive]);
+    isVolumeGestureActive.value = true;
+  }, [isVolumeGestureActive]);
 
   const handleVolumeGestureEnd = useCallback(
     (finalVolume: number) => {
       handleVolumeChange(finalVolume);
-      setIsVolumeGestureActive(false);
+      isVolumeGestureActive.value = false;
     },
-    [handleVolumeChange, setIsVolumeGestureActive],
+    [handleVolumeChange, isVolumeGestureActive],
   );
 
   const handleBrightnessGestureStart = useCallback(() => {
-    setIsBrightnessGestureActive(true);
-  }, [setIsBrightnessGestureActive]);
+    isBrightnessGestureActive.value = true;
+  }, [isBrightnessGestureActive]);
 
   const handleBrightnessGestureEnd = useCallback(
     (finalBrightness: number) => {
       throttledBrightnessChange(finalBrightness);
-      setIsBrightnessGestureActive(false);
+      isBrightnessGestureActive.value = false;
     },
-    [throttledBrightnessChange, setIsBrightnessGestureActive],
+    [throttledBrightnessChange, isBrightnessGestureActive],
   );
 
   const handleSingleTap = () => {
@@ -233,11 +227,11 @@ export function GestureHandler({
         return;
       }
 
-      if (isVolumeGestureActive || isBrightnessGestureActive) {
+      if (isVolumeGestureActive.value || isBrightnessGestureActive.value) {
         return;
       }
 
-      if (!isGestureSeekingActive) {
+      if (!isGestureSeekingActive.value) {
         scheduleOnRN(handleGestureSeekStart);
       }
 
@@ -264,7 +258,7 @@ export function GestureHandler({
     .onEnd(() => {
       if (!duration) return;
 
-      if (isGestureSeekingActive) {
+      if (isGestureSeekingActive.value) {
         const finalTime = gestureSeekPreview.value;
         scheduleOnRN(handleGestureSeekEnd, finalTime);
       }
@@ -312,7 +306,7 @@ export function GestureHandler({
           return;
         }
 
-        if (!isBrightnessGestureActive) {
+        if (!isBrightnessGestureActive.value) {
           scheduleOnRN(handleBrightnessGestureStart);
         }
 
@@ -330,7 +324,7 @@ export function GestureHandler({
 
         scheduleOnRN(handleBrightnessChange, newBrightness);
       } else if (isRightSide) {
-        if (!isVolumeGestureActive) {
+        if (!isVolumeGestureActive.value) {
           scheduleOnRN(handleVolumeGestureStart);
         }
 
@@ -386,7 +380,11 @@ export function GestureHandler({
     .maxDistance(9999)
     .shouldCancelWhenOutside(false)
     .onStart(() => {
-      if (isGestureSeekingActive || isVolumeGestureActive || isBrightnessGestureActive) {
+      if (
+        isGestureSeekingActive.value ||
+        isVolumeGestureActive.value ||
+        isBrightnessGestureActive.value
+      ) {
         return;
       }
       if (onRateChange) scheduleOnRN(onRateChange, 3, { remember: false });
