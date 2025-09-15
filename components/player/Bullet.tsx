@@ -16,6 +16,7 @@ export function Bullet({
   fontFamily,
   fontOptions,
   isPlaying,
+  playbackRate,
 }: {
   width: number;
   data: ActiveBullet;
@@ -24,6 +25,7 @@ export function Bullet({
   fontFamily: string;
   fontOptions: string;
   isPlaying: boolean;
+  playbackRate: number;
 }) {
   const initTranslateX = useMemo(() => {
     const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
@@ -41,6 +43,7 @@ export function Bullet({
   const remainingDurationRef = useRef<number>(data.durationMs);
   const runStartedAtRef = useRef<number | null>(null);
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
+  const prevRateRef = useRef<number>(playbackRate);
 
   useEffect(() => {
     originalDurationRef.current = data.durationMs;
@@ -116,6 +119,68 @@ export function Bullet({
       if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
     };
   }, [isPlaying, startOrResume, pauseRun, translateX]);
+
+  useEffect(() => {
+    const oldRate = Math.max(0.25, prevRateRef.current || 1);
+    const newRate = Math.max(0.25, playbackRate || 1);
+    if (oldRate === newRate) return;
+
+    const scale = oldRate / newRate;
+
+    if (removeTimeoutRef.current) clearTimeout(removeTimeoutRef.current);
+
+    if (runStartedAtRef.current != null) {
+      const elapsed = Date.now() - runStartedAtRef.current;
+      runStartedAtRef.current = null;
+      remainingDurationRef.current = Math.max(0, remainingDurationRef.current - elapsed);
+    }
+
+    remainingDurationRef.current = Math.max(0, Math.round(remainingDurationRef.current * scale));
+
+    // 对滚动弹幕重启动画使其以新时长完成剩余距离
+    if (
+      data.mode === DANDAN_COMMENT_MODE.Scroll ||
+      data.mode === DANDAN_COMMENT_MODE.ScrollBottom
+    ) {
+      translateX.stopAnimation((currentX) => {
+        const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
+        const totalDistance = isLeftScroll
+          ? -(width + (data.textWidth || 0) + 300)
+          : width + (data.textWidth || 0) + 300;
+
+        const remaining = remainingDurationRef.current;
+        if (remaining <= 0) {
+          handleExpire();
+          return;
+        }
+
+        // 重新启动计时与移除调度
+        runStartedAtRef.current = Date.now();
+        scheduleFadeAndRemoval();
+
+        // 从当前位移到目标位移，耗时为缩放后的剩余时间
+        Animated.timing(translateX, {
+          toValue: totalDistance,
+          duration: Math.max(0, remaining),
+          easing: Easing.linear,
+          useNativeDriver: true,
+        }).start();
+      });
+    } else {
+      runStartedAtRef.current = Date.now();
+      scheduleFadeAndRemoval();
+    }
+
+    prevRateRef.current = newRate;
+  }, [
+    playbackRate,
+    data.mode,
+    data.textWidth,
+    width,
+    translateX,
+    handleExpire,
+    scheduleFadeAndRemoval,
+  ]);
 
   const style = useMemo(
     () => ({

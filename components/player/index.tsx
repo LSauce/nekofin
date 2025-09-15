@@ -42,6 +42,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [initialTime, setInitialTime] = useState<number>(-1);
   const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>(undefined);
   const [isBackground, setIsBackground] = useState(false);
+  const [rate, setRate] = useState(1);
+  const prevRateRef = useRef<number>(1);
 
   const player = useRef<LibVlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
@@ -190,6 +192,22 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }
   }, [isPlaying, player]);
 
+  const handleRateChange = useCallback(
+    (newRate: number | null, options?: { remember?: boolean }) => {
+      if (newRate == null) {
+        setRate(prevRateRef.current);
+        return;
+      }
+      if (options?.remember === false) {
+        setRate(newRate);
+        return;
+      }
+      prevRateRef.current = newRate;
+      setRate(newRate);
+    },
+    [],
+  );
+
   const handleBuffering = useCallback(() => {
     setIsBuffering(true);
 
@@ -269,6 +287,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           options={['network-caching=1000']}
           autoplay={true}
           time={initialTime}
+          rate={rate}
           tracks={selectedTracks}
           onBuffering={handleBuffering}
           onBackground={() => {
@@ -320,6 +339,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           isPlaying={!showLoading && !isStopped && isPlaying}
           comments={comments}
           seekTime={seekTime}
+          playbackRate={rate}
         />
       )}
 
@@ -339,6 +359,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         hasNextEpisode={hasNextEpisode}
         onPreviousEpisode={handlePreviousEpisode}
         onNextEpisode={handleNextEpisode}
+        onRateChange={handleRateChange}
       />
     </View>
   );

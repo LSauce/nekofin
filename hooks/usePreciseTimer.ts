@@ -5,6 +5,7 @@ type TimerOptions = {
   isRunning?: boolean;
   initialTime?: number;
   onTick?: (time: number) => void;
+  playbackRate?: number;
 };
 
 export function usePreciseTimer({
@@ -12,6 +13,7 @@ export function usePreciseTimer({
   isRunning = false,
   initialTime = 0,
   onTick,
+  playbackRate = 1,
 }: TimerOptions) {
   const [time, setTime] = useState(initialTime);
   const animationFrameRef = useRef<number | null>(null);
@@ -25,10 +27,13 @@ export function usePreciseTimer({
         lastTickTimeRef.current = timestamp;
       }
 
-      if (timestamp >= lastTickTimeRef.current + interval) {
-        lastTickTimeRef.current = timestamp;
+      const delta = timestamp - lastTickTimeRef.current;
+      if (delta >= interval) {
+        const ticks = Math.floor(delta / interval);
+        lastTickTimeRef.current += ticks * interval;
         setTime((prevTime) => {
-          const newTime = prevTime + interval;
+          const scaledIncrement = ticks * interval * Math.max(0.25, playbackRate);
+          const newTime = prevTime + scaledIncrement;
           if (onTick) {
             onTick(newTime);
           }
@@ -40,7 +45,7 @@ export function usePreciseTimer({
         animationFrameRef.current = requestAnimationFrame(step);
       }
     },
-    [interval, isRunning, onTick],
+    [interval, isRunning, onTick, playbackRate],
   );
 
   useEffect(() => {

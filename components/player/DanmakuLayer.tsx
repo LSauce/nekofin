@@ -15,6 +15,7 @@ type DanmakuLayerProps = {
   comments: DandanComment[];
   seekTime?: number;
   density?: number;
+  playbackRate?: number;
 } & Partial<DanmakuSettingsType>;
 
 export function DanmakuLayer({
@@ -23,6 +24,7 @@ export function DanmakuLayer({
   comments,
   seekTime,
   density = 1,
+  playbackRate = 1,
   opacity = defaultSettings.opacity,
   speed = defaultSettings.speed,
   fontSize = defaultSettings.fontSize,
@@ -37,6 +39,7 @@ export function DanmakuLayer({
   const { time: currentTimeMs, sync } = usePreciseTimer({
     interval: 100,
     isRunning: isPlaying,
+    playbackRate,
   });
 
   const videoTime = useCurrentTime({ time: currentTime });
@@ -104,15 +107,19 @@ export function DanmakuLayer({
     [fontSize, width],
   );
 
+  const defaultDurationMs = useMemo(() => {
+    return Math.max(800, Math.round(4000 / Math.max(0.25, playbackRate)));
+  }, [playbackRate]);
+
   // 根据文字长度调整速度（长弹幕更快），返回 px/s
   const computeEffectiveSpeed = useCallback(
     (textWidth: number): number => {
       const base = Math.max(50, speed);
       const ratio = Math.min(2, Math.max(0, textWidth / Math.max(1, width)));
       const factor = 1 + 0.4 * ratio;
-      return Math.min(base * factor, 900);
+      return Math.min(base * factor * Math.max(0.25, playbackRate), 900);
     },
-    [speed, width],
+    [speed, width, playbackRate],
   );
 
   const createDanmakuBullet = useCallback(
@@ -137,7 +144,7 @@ export function DanmakuLayer({
           return {
             ...baseParams,
             top: rowIndex * lineHeight,
-            durationMs: 4000,
+            durationMs: defaultDurationMs,
           };
 
         case DANDAN_COMMENT_MODE.Bottom:
@@ -145,7 +152,7 @@ export function DanmakuLayer({
           return {
             ...baseParams,
             top: bottomStart - (layout.bottomRows - 1 - rowIndex) * lineHeight,
-            durationMs: 4000,
+            durationMs: defaultDurationMs,
           };
 
         case DANDAN_COMMENT_MODE.Scroll:
@@ -168,18 +175,19 @@ export function DanmakuLayer({
           return {
             ...baseParams,
             top: 0,
-            durationMs: 4000,
+            durationMs: defaultDurationMs,
           };
       }
     },
     [
+      estimateTextWidth,
       lineHeight,
+      defaultDurationMs,
       height,
       heightRatio,
       layout.bottomRows,
-      width,
-      estimateTextWidth,
       computeEffectiveSpeed,
+      width,
     ],
   );
 
@@ -465,7 +473,9 @@ export function DanmakuLayer({
       const earlyDensityGraceSeconds = 8;
       const containerWidth = width;
       const containerHeight = height * heightRatio - 18;
-      const duration = Math.ceil(containerWidth / speed);
+      const duration = Math.ceil(
+        containerWidth / Math.max(1, speed * Math.max(0.25, playbackRate)),
+      );
       const lines = Math.floor(containerHeight / fontSize) - 1;
 
       const limit = (9 - danmakuDensityLimit * 2) * lines;
@@ -519,6 +529,7 @@ export function DanmakuLayer({
     height,
     heightRatio,
     speed,
+    playbackRate,
     fontSize,
   ]);
 
@@ -619,12 +630,16 @@ export function DanmakuLayer({
             const lateOffset = Math.max(0, toMs - scheduledMs);
             const maxOffset =
               c.mode === DANDAN_COMMENT_MODE.Top || c.mode === DANDAN_COMMENT_MODE.Bottom
-                ? 3700
+                ? Math.max(0, Math.round(3700 / Math.max(0.25, playbackRate)))
                 : Math.max(
                     0,
                     Math.max(
                       4000,
-                      Math.round(((width + estimateTextWidth(c.text) + 300) / speed) * 1000),
+                      Math.round(
+                        ((width + estimateTextWidth(c.text) + 300) /
+                          Math.max(1, speed * Math.max(0.25, playbackRate))) *
+                          1000,
+                      ),
                     ) - 300,
                   );
             const startOffsetMs = Math.min(lateOffset, maxOffset);
@@ -713,6 +728,7 @@ export function DanmakuLayer({
     pickScrollRow,
     createDanmakuBullet,
     estimateTextWidth,
+    playbackRate,
   ]);
 
   useEffect(() => {
@@ -738,6 +754,7 @@ export function DanmakuLayer({
           fontFamily={fontFamily}
           fontOptions={fontOptions}
           isPlaying={isPlaying}
+          playbackRate={playbackRate}
         />
       ))}
     </View>

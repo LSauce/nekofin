@@ -85,6 +85,9 @@ export function TopControls({
               }
               setMenuOpen(false);
             }}
+            onOpenMenu={() => {
+              setMenuOpen(true);
+            }}
             onCloseMenu={() => {
               setMenuOpen(false);
             }}
@@ -129,12 +132,7 @@ export function TopControls({
                 : []),
             ]}
           >
-            <TouchableOpacity
-              style={styles.danmakuButtonTouchable}
-              onPress={() => {
-                setMenuOpen(true);
-              }}
-            >
+            <TouchableOpacity style={styles.danmakuButtonTouchable}>
               <AntDesign name="setting" size={20} color="white" />
             </TouchableOpacity>
           </MenuView>

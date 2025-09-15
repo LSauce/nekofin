@@ -15,6 +15,7 @@ type ControlsProps = {
   currentTime: SharedValue<number>;
   onSeek: (position: number) => void;
   onPlayPause: () => void;
+  onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
   mediaTracks?: MediaTracks;
   selectedTracks?: Tracks;
   onAudioTrackChange?: (trackIndex: number) => void;
@@ -33,6 +34,7 @@ export function Controls({
   onSeek,
   title,
   onPlayPause,
+  onRateChange,
   mediaTracks,
   selectedTracks,
   onAudioTrackChange,
@@ -94,6 +96,7 @@ export function Controls({
   }, [hideControlsWithDelay]);
 
   useEffect(() => {
+    console.log('menuOpen', menuOpen);
     if (menuOpen) {
       if (controlsTimeout.current) {
         clearTimeout(controlsTimeout.current);
@@ -150,6 +153,7 @@ export function Controls({
         currentTime={currentTime}
         onSeek={onSeek}
         onPlayPause={onPlayPause}
+        onRateChange={onRateChange}
         showControls={showControls}
         setShowControls={setShowControls}
         fadeAnim={fadeAnim}

@@ -12,7 +12,7 @@ export default function Player() {
     ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
 
     return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.DEFAULT);
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
     };
   }, []);
 

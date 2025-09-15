@@ -52,6 +52,7 @@ type GestureHandlerProps = {
   currentTime: SharedValue<number>;
   onSeek: (position: number) => void;
   onPlayPause: () => void;
+  onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
   showControls: boolean;
   setShowControls: (show: boolean) => void;
   fadeAnim: SharedValue<number>;
@@ -72,6 +73,7 @@ export function GestureHandler({
   currentTime,
   onSeek,
   onPlayPause,
+  onRateChange,
   showControls,
   setShowControls,
   fadeAnim,
@@ -227,6 +229,7 @@ export function GestureHandler({
     } else {
       setShowControls(true);
       fadeAnim.value = withTiming(1, { duration: 200 });
+      hideControlsWithDelay();
     }
   };
 
@@ -400,9 +403,21 @@ export function GestureHandler({
       }
     });
 
+  const longPressGesture = Gesture.LongPress()
+    .minDuration(200)
+    .onStart(() => {
+      if (isGestureSeekingActive || isVolumeGestureActive || isBrightnessGestureActive) {
+        return;
+      }
+      if (onRateChange) scheduleOnRN(onRateChange, 3, { remember: false });
+    })
+    .onEnd((_event, _success) => {
+      if (onRateChange) scheduleOnRN(onRateChange, null);
+    });
+
   const tapGestures = Gesture.Exclusive(doubleTapGesture, tapGesture);
   const panGestures = Gesture.Exclusive(panGesture, sliderGesture);
-  const composed = Gesture.Simultaneous(panGestures, tapGestures);
+  const composed = Gesture.Simultaneous(panGestures, tapGestures, longPressGesture);
 
   return (
     <Fragment>

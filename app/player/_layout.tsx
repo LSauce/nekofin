@@ -27,6 +27,7 @@ export default function Layout() {
           autoHideHomeIndicator: true,
           title: '',
           orientation: 'landscape',
+          animation: 'fade',
         }}
       />
     </Stack>
