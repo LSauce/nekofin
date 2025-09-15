@@ -2,13 +2,14 @@ import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
 import { MediaTracks, Tracks } from 'expo-libvlc-player';
-import { useRouter } from 'expo-router';
+import { useNavigation, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
 
 type TopControlsProps = {
   title: string;
   showControls: boolean;
+  setShowControls: (show: boolean) => void;
   fadeAnim: SharedValue<number>;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
@@ -21,6 +22,7 @@ type TopControlsProps = {
 export function TopControls({
   title,
   showControls,
+  setShowControls,
   fadeAnim,
   menuOpen,
   setMenuOpen,
@@ -30,6 +32,7 @@ export function TopControls({
   onSubtitleTrackChange,
 }: TopControlsProps) {
   const router = useRouter();
+  const navigation = useNavigation();
 
   const audioTracks =
     mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
@@ -42,8 +45,14 @@ export function TopControls({
     };
   });
 
-  const handleBackPress = () => {
-    router.back();
+  const handleBackPress = async () => {
+    setShowControls(false);
+    navigation.setOptions({
+      orientation: 'portrait',
+    });
+    setTimeout(() => {
+      router.back();
+    }, 100);
   };
 
   const handleAudioTrackSelect = (trackIndex: number) => {

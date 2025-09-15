@@ -79,3 +79,5 @@ export const getCommentsByItem = async (item: MediaItem, originalTitle?: string 
 export function isNil(value: unknown): value is null | undefined {
   return value === null || value === undefined;
 }
+
+export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));

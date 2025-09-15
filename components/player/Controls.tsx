@@ -122,6 +122,7 @@ export function Controls({
       <TopControls
         title={title}
         showControls={showControls}
+        setShowControls={setShowControls}
         fadeAnim={fadeAnim}
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}

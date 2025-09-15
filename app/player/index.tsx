@@ -1,20 +1,30 @@
-import { VideoPlayer } from '@/components/player';
-import { useLocalSearchParams } from 'expo-router';
-import * as ScreenOrientation from 'expo-screen-orientation';
+import { sleep } from '@/lib/utils';
+import { useLocalSearchParams, useNavigation, useRouter } from 'expo-router';
 import { useEffect } from 'react';
+import { View } from 'react-native';
 
-export default function Player() {
+export default function HiddenScreen() {
   const { itemId } = useLocalSearchParams<{
     itemId: string;
   }>();
 
+  const router = useRouter();
+  const navigation = useNavigation();
+
   useEffect(() => {
-    ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.LANDSCAPE);
+    (async () => {
+      navigation.setOptions({
+        orientation: 'landscape',
+      });
+      await sleep(375);
+      router.replace({
+        pathname: '/player/content',
+        params: {
+          itemId,
+        },
+      });
+    })();
+  }, [router, itemId, navigation]);
 
-    return () => {
-      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
-    };
-  }, []);
-
-  return <VideoPlayer itemId={itemId} />;
+  return <View style={{ flex: 1, backgroundColor: 'black' }} />;
 }
