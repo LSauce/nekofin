@@ -126,20 +126,15 @@ export function GestureHandler({
 
   useEffect(() => {
     const initializeSystemValues = async () => {
-      try {
-        const systemBrightness = await Brightness.getBrightnessAsync();
-        setBrightness(systemBrightness);
-        brightnessSliderValue.value = systemBrightness;
+      const systemBrightness = await Brightness.getBrightnessAsync();
+      setBrightness(systemBrightness);
+      brightnessSliderValue.value = systemBrightness;
 
-        const { volume: systemVolume } = await VolumeManager.getVolume();
-        setVolume(systemVolume);
-        volumeSliderValue.value = systemVolume;
+      const { volume: systemVolume } = await VolumeManager.getVolume();
+      setVolume(systemVolume);
+      volumeSliderValue.value = systemVolume;
 
-        setIsInitialized(true);
-      } catch (error) {
-        console.warn('Failed to get system values:', error);
-        setIsInitialized(true);
-      }
+      setIsInitialized(true);
     };
 
     initializeSystemValues();
@@ -157,20 +152,12 @@ export function GestureHandler({
 
   const handleVolumeChange = useCallback(async (newVolume: number) => {
     setVolume(newVolume);
-    try {
-      await VolumeManager.setVolume(newVolume);
-    } catch (error) {
-      console.warn('Failed to set volume:', error);
-    }
+    await VolumeManager.setVolume(newVolume);
   }, []);
 
   const throttledBrightnessChange = useCallback(async (newBrightness: number) => {
     setBrightness(newBrightness);
-    try {
-      await Brightness.setBrightnessAsync(newBrightness);
-    } catch (error) {
-      console.warn('Failed to set brightness:', error);
-    }
+    await Brightness.setBrightnessAsync(newBrightness);
   }, []);
 
   const handleBrightnessChange = useCallback(

@@ -43,10 +43,7 @@ export function getJellyfinInstance() {
   return jellyfin;
 }
 
-export function getApiInstance() {
-  if (!apiInstance) {
-    throw new Error('API instance not set');
-  }
+export function getApiInstance(): Api | null {
   return apiInstance;
 }
 
@@ -501,20 +498,16 @@ export async function reportPlaybackProgress(
   isPaused: boolean = false,
   PlaySessionId: string,
 ) {
-  try {
-    await getPlaystateApi(api).reportPlaybackProgress({
-      playbackProgressInfo: {
-        ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks * 10000),
-        IsPaused: isPaused,
-        CanSeek: true,
-        PlaybackStartTimeTicks: Date.now() * 10000,
-        PlaySessionId,
-      },
-    });
-  } catch (error) {
-    console.warn('Error reporting playback progress:', error);
-  }
+  await getPlaystateApi(api).reportPlaybackProgress({
+    playbackProgressInfo: {
+      ItemId: itemId,
+      PositionTicks: Math.floor(positionTicks * 10000),
+      IsPaused: isPaused,
+      CanSeek: true,
+      PlaybackStartTimeTicks: Date.now() * 10000,
+      PlaySessionId,
+    },
+  });
 }
 
 export async function reportPlaybackStart(
@@ -523,19 +516,15 @@ export async function reportPlaybackStart(
   positionTicks: number = 0,
   PlaySessionId: string,
 ) {
-  try {
-    await getPlaystateApi(api).reportPlaybackStart({
-      playbackStartInfo: {
-        ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks * 10000),
-        CanSeek: true,
-        PlaybackStartTimeTicks: Date.now() * 10000,
-        PlaySessionId,
-      },
-    });
-  } catch (error) {
-    console.warn('Error reporting playback start:', error);
-  }
+  await getPlaystateApi(api).reportPlaybackStart({
+    playbackStartInfo: {
+      ItemId: itemId,
+      PositionTicks: Math.floor(positionTicks * 10000),
+      CanSeek: true,
+      PlaybackStartTimeTicks: Date.now() * 10000,
+      PlaySessionId,
+    },
+  });
 }
 
 export async function reportPlaybackStop(
@@ -544,17 +533,13 @@ export async function reportPlaybackStop(
   positionTicks: number,
   PlaySessionId: string,
 ) {
-  try {
-    await getPlaystateApi(api).reportPlaybackStopped({
-      playbackStopInfo: {
-        ItemId: itemId,
-        PositionTicks: Math.floor(positionTicks * 10000),
-        PlaySessionId,
-      },
-    });
-  } catch (error) {
-    console.warn('Error reporting playback stop:', error);
-  }
+  await getPlaystateApi(api).reportPlaybackStopped({
+    playbackStopInfo: {
+      ItemId: itemId,
+      PositionTicks: Math.floor(positionTicks * 10000),
+      PlaySessionId,
+    },
+  });
 }
 
 export type StreamInfo = {

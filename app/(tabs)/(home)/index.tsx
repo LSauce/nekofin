@@ -44,20 +44,16 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
       const latestByFolder: { folderId: string; items: MediaItem[]; name: string }[] = [];
       for (const folder of userViewItems) {
         if (!folder.id) continue;
-        try {
-          const latest = await mediaAdapter.getLatestItemsByFolder({
-            userId: currentServer.userId,
-            folderId: folder.id,
-            limit: 16,
-          });
-          latestByFolder.push({
-            folderId: folder.id,
-            items: latest.data.Items || [],
-            name: folder.name || '',
-          });
-        } catch (e) {
-          latestByFolder.push({ folderId: folder.id, items: [], name: folder.name || '' });
-        }
+        const latest = await mediaAdapter.getLatestItemsByFolder({
+          userId: currentServer.userId,
+          folderId: folder.id,
+          limit: 16,
+        });
+        latestByFolder.push({
+          folderId: folder.id,
+          items: latest.data.Items || [],
+          name: folder.name || '',
+        });
       }
 
       const sections: HomeSection[] = [];

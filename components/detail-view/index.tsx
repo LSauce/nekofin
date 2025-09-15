@@ -1,10 +1,11 @@
 import ParallaxScrollView from '@/components/ParallaxScrollView';
-import { useDetailBundle } from '@/hooks/useDetailBundle';
+import { DetailBundle, useDetailBundle } from '@/hooks/useDetailBundle';
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import { UseQueryResult } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
@@ -21,9 +22,10 @@ import { SeriesModeContent } from './series';
 export type DetailViewProps = {
   itemId: string;
   mode: 'series' | 'season' | 'movie' | 'episode';
+  query: UseQueryResult<DetailBundle, Error>;
 };
 
-function DetailViewContent({ itemId, mode }: DetailViewProps) {
+function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -31,8 +33,8 @@ function DetailViewContent({ itemId, mode }: DetailViewProps) {
   const { title, backgroundImageUrl, setItem } = useDetailView();
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const { data: bundle, isLoading, refetch } = query;
 
-  const { data: bundle, isLoading, refetch } = useDetailBundle(mode, itemId);
   const mediaAdapter = useMediaAdapter();
 
   const item = bundle?.item;
@@ -47,7 +49,7 @@ function DetailViewContent({ itemId, mode }: DetailViewProps) {
   useEffect(() => {
     if (!item) return;
     setIsFavorite(!!item.userData?.isFavorite);
-    setItem(item);
+    setItem?.(item);
   }, [item, setItem]);
 
   useEffect(() => {
@@ -57,21 +59,19 @@ function DetailViewContent({ itemId, mode }: DetailViewProps) {
           <TouchableOpacity
             onPress={async () => {
               if (!currentServer?.userId || !item?.id) return;
-              try {
-                if (isFavorite) {
-                  await mediaAdapter.removeFavoriteItem({
-                    userId: currentServer.userId,
-                    itemId: item.id!,
-                  });
-                  setIsFavorite(false);
-                } else {
-                  await mediaAdapter.addFavoriteItem({
-                    userId: currentServer.userId,
-                    itemId: item.id!,
-                  });
-                  setIsFavorite(true);
-                }
-              } catch (e) {}
+              if (isFavorite) {
+                await mediaAdapter.removeFavoriteItem({
+                  userId: currentServer.userId,
+                  itemId: item.id!,
+                });
+                setIsFavorite(false);
+              } else {
+                await mediaAdapter.addFavoriteItem({
+                  userId: currentServer.userId,
+                  itemId: item.id!,
+                });
+                setIsFavorite(true);
+              }
             }}
             style={{ marginLeft: 6 }}
           >
@@ -183,10 +183,12 @@ function DetailViewContent({ itemId, mode }: DetailViewProps) {
   );
 }
 
-export default function DetailView({ itemId, mode }: DetailViewProps) {
+export default function DetailView({ itemId, mode }: Omit<DetailViewProps, 'query'>) {
+  const query = useDetailBundle(mode, itemId);
+
   return (
-    <DetailViewProvider>
-      <DetailViewContent itemId={itemId} mode={mode} />
+    <DetailViewProvider itemId={itemId} mode={mode} query={query}>
+      <DetailViewContent itemId={itemId} mode={mode} query={query} />
     </DetailViewProvider>
   );
 }

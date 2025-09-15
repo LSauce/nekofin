@@ -158,6 +158,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getSystemInfo() {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getSystemInfo(api);
     return {
       serverName: result.data?.ServerName,
@@ -168,6 +169,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getPublicUsers() {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getPublicUsers(api);
     return (
       result.data?.map((user) => ({
@@ -183,6 +185,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   login({ username, password }: LoginParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     return jfLogin(api, username, password);
   }
 
@@ -197,6 +200,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getLatestItems(params: GetLatestItemsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getLatestItems(api, params.userId, params.limit, {
       includeItemTypes: params?.includeItemTypes
         ? convertItemTypesToJellyfin(params.includeItemTypes)
@@ -215,6 +219,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getLatestItemsByFolder({ userId, folderId, limit }: GetLatestItemsByFolderParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getLatestItemsByFolder(api, userId, folderId, limit);
     return {
       data: {
@@ -225,6 +230,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getNextUpItems({ userId, limit }: GetNextUpItemsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getNextUpItems(api, userId, limit);
     return {
       data: {
@@ -236,6 +242,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getNextUpItemsByFolder({ userId, folderId, limit }: GetNextUpItemsByFolderParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getNextUpItemsByFolder(api, userId, folderId, limit);
     return {
       data: {
@@ -247,6 +254,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getResumeItems({ userId, limit }: GetResumeItemsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getResumeItems(api, userId, limit);
     return {
       data: {
@@ -258,6 +266,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getFavoriteItems({ userId, limit }: GetFavoriteItemsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getFavoriteItems(api, userId, limit);
     return {
       data: {
@@ -278,6 +287,7 @@ class JellyfinAdapter implements MediaAdapter {
     tags,
   }: GetFavoriteItemsPagedParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getFavoriteItemsPaged(api, userId, startIndex, limit, {
       includeItemTypes: includeItemTypes ? convertItemTypesToJellyfin(includeItemTypes) : undefined,
       sortBy: sortBy ? convertSortByToJellyfin(sortBy) : undefined,
@@ -296,11 +306,13 @@ class JellyfinAdapter implements MediaAdapter {
 
   async logout() {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await logout(api);
   }
 
   async getUserInfo({ userId }: GetUserInfoParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getUserInfo(api, userId);
     return {
       id: result.data?.Id || '',
@@ -314,12 +326,14 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getItemDetail({ itemId, userId }: GetItemDetailParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getItemDetail(api, itemId, userId);
     return convertBaseItemDtoToMediaItem(result.data!);
   }
 
   async getItemMediaSources({ itemId }: GetItemMediaSourcesParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getItemMediaSources(api, itemId);
     return {
       mediaSources:
@@ -347,6 +361,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getUserView({ userId }: GetUserViewParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getUserView(api, userId);
     return result.data?.Items?.map(convertBaseItemDtoToMediaItem) || [];
   }
@@ -364,6 +379,7 @@ class JellyfinAdapter implements MediaAdapter {
     tags,
   }: GetAllItemsByFolderParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getAllItemsByFolder(
       api,
       userId,
@@ -389,6 +405,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getSeasonsBySeries({ seriesId, userId }: GetSeasonsBySeriesParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getSeasonsBySeries(api, seriesId, userId);
     return {
       data: {
@@ -399,6 +416,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getEpisodesBySeason({ seasonId, userId }: GetEpisodesBySeasonParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getEpisodesBySeason(api, seasonId, userId);
     return {
       data: {
@@ -409,6 +427,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getSimilarShows({ itemId, userId, limit }: GetSimilarShowsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getSimilarShows(api, itemId, userId, limit);
     return {
       data: {
@@ -419,6 +438,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getSimilarMovies({ itemId, userId, limit }: GetSimilarMoviesParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getSimilarMovies(api, itemId, userId, limit);
     return {
       data: {
@@ -429,6 +449,7 @@ class JellyfinAdapter implements MediaAdapter {
 
   async searchItems({ userId, searchTerm, limit, includeItemTypes }: SearchItemsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await searchItems(
       api,
       userId,
@@ -441,11 +462,13 @@ class JellyfinAdapter implements MediaAdapter {
 
   async getRecommendedSearchKeywords({ userId, limit }: GetRecommendedSearchKeywordsParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     return getRecommendedSearchKeywords(api, userId, limit);
   }
 
   async getAvailableFilters({ userId, parentId }: GetAvailableFiltersParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     const result = await getAvailableFilters(api, userId, parentId);
     return result;
   }
@@ -469,6 +492,7 @@ class JellyfinAdapter implements MediaAdapter {
     deviceId,
   }: GetStreamInfoParams & { deviceProfile: DeviceProfile }) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     return getStreamInfo({
       api,
       item: (item as MediaItem | null | undefined)?.raw as BaseItemDto,
@@ -487,21 +511,25 @@ class JellyfinAdapter implements MediaAdapter {
 
   async addFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await addFavoriteItem(api, userId, itemId);
   }
 
   async removeFavoriteItem({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await removeFavoriteItem(api, userId, itemId);
   }
 
   async markItemPlayed({ userId, itemId, datePlayed }: MarkItemPlayedParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await markItemPlayed(api, userId, itemId, datePlayed);
   }
 
   async markItemUnplayed({ userId, itemId }: UpdateFavoriteItemParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await markItemUnplayed(api, userId, itemId);
   }
 
@@ -512,16 +540,19 @@ class JellyfinAdapter implements MediaAdapter {
     PlaySessionId,
   }: ReportPlaybackProgressParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await reportPlaybackProgress(api, itemId, positionTicks, isPaused ?? false, PlaySessionId);
   }
 
   async reportPlaybackStart({ itemId, positionTicks, PlaySessionId }: ReportPlaybackStartParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await reportPlaybackStart(api, itemId, positionTicks ?? 0, PlaySessionId);
   }
 
   async reportPlaybackStop({ itemId, positionTicks, PlaySessionId }: ReportPlaybackStopParams) {
     const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
     await reportPlaybackStop(api, itemId, positionTicks, PlaySessionId);
   }
 }

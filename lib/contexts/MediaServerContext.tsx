@@ -68,52 +68,35 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
 
   const setCurrentServer = (server: MediaServerInfo) => {
     setCurrentServerId(server.id);
-    try {
-      storage.set(CURRENT_SERVER_ID_KEY, server.id);
-    } catch (error) {
-      console.error('Failed to persist current server id:', error);
-    }
+    storage.set(CURRENT_SERVER_ID_KEY, server.id);
   };
 
   const loadServers = async () => {
-    try {
-      const stored = storage.getString(STORAGE_KEY);
-      if (stored) {
-        const parsedServers = JSON.parse(stored) as MediaServerInfo[];
-        const normalizedServers = parsedServers.map((server) => ({
-          ...server,
-          address: normalizeServerAddress(server.address),
-        }));
-        setServers(normalizedServers);
-        try {
-          normalizedServers.forEach((s) => {
-            const adapter = getMediaAdapter(s.type);
-            adapter.createApiFromServerInfo({ serverInfo: s });
-          });
-        } catch (e) {
-          console.warn('Failed to prewarm api instances on load:', e);
-        }
-        const persistedId = storage.getString(CURRENT_SERVER_ID_KEY) || null;
-        if (persistedId && normalizedServers.some((s) => s.id === persistedId)) {
-          setCurrentServerId(persistedId);
-        } else if (normalizedServers.length > 0) {
-          setCurrentServerId(normalizedServers[0].id);
-        }
+    const stored = storage.getString(STORAGE_KEY);
+    if (stored) {
+      const parsedServers = JSON.parse(stored) as MediaServerInfo[];
+      const normalizedServers = parsedServers.map((server) => ({
+        ...server,
+        address: normalizeServerAddress(server.address),
+      }));
+      setServers(normalizedServers);
+      normalizedServers.forEach((s) => {
+        const adapter = getMediaAdapter(s.type);
+        adapter.createApiFromServerInfo({ serverInfo: s });
+      });
+      const persistedId = storage.getString(CURRENT_SERVER_ID_KEY) || null;
+      if (persistedId && normalizedServers.some((s) => s.id === persistedId)) {
+        setCurrentServerId(persistedId);
+      } else if (normalizedServers.length > 0) {
+        setCurrentServerId(normalizedServers[0].id);
       }
-    } catch (error) {
-      console.error('Failed to load servers:', error);
-    } finally {
-      setIsInitialized(true);
     }
+    setIsInitialized(true);
   };
 
   const saveServers = async (newServers: MediaServerInfo[]) => {
-    try {
-      storage.set(STORAGE_KEY, JSON.stringify(newServers));
-      setServers(newServers);
-    } catch (error) {
-      console.error('Failed to save servers:', error);
-    }
+    storage.set(STORAGE_KEY, JSON.stringify(newServers));
+    setServers(newServers);
   };
 
   const addServer = async (server: Omit<MediaServerInfo, 'id' | 'createdAt'>) => {
@@ -128,17 +111,9 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     const updatedServers = [...servers, newServer];
     await saveServers(updatedServers);
     setCurrentServerId(newServer.id);
-    try {
-      storage.set(CURRENT_SERVER_ID_KEY, newServer.id);
-    } catch (error) {
-      console.error('Failed to persist current server id on add:', error);
-    }
-    try {
-      const adapter = getMediaAdapter(newServer.type);
-      adapter.createApiFromServerInfo({ serverInfo: newServer });
-    } catch (e) {
-      console.warn('Failed to prewarm api instance on add:', e);
-    }
+    storage.set(CURRENT_SERVER_ID_KEY, newServer.id);
+    const adapter = getMediaAdapter(newServer.type);
+    adapter.createApiFromServerInfo({ serverInfo: newServer });
   };
 
   const authenticateAndAddServer = async ({
@@ -165,25 +140,17 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const removeServer = async (id: string) => {
     const updatedServers = servers.filter((server) => server.id !== id);
     await saveServers(updatedServers);
-    try {
-      const removed = servers.find((s) => s.id === id);
-      if (removed?.type === 'jellyfin') {
-        deleteCachedApiForServer(id);
-      }
-    } catch (e) {
-      console.warn('Failed to cleanup api cache on remove:', e);
+    const removed = servers.find((s) => s.id === id);
+    if (removed?.type === 'jellyfin') {
+      deleteCachedApiForServer(id);
     }
     if (currentServerId === id) {
       const next = updatedServers[0]?.id || null;
       setCurrentServerId(next);
-      try {
-        if (next) {
-          storage.set(CURRENT_SERVER_ID_KEY, next);
-        } else {
-          storage.delete(CURRENT_SERVER_ID_KEY);
-        }
-      } catch (error) {
-        console.error('Failed to update persisted current server id on remove:', error);
+      if (next) {
+        storage.set(CURRENT_SERVER_ID_KEY, next);
+      } else {
+        storage.delete(CURRENT_SERVER_ID_KEY);
       }
     }
   };
@@ -201,12 +168,8 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
     await saveServers(updatedServers);
     const updated = updatedServers.find((s) => s.id === id);
     if (updated) {
-      try {
-        const adapter = getMediaAdapter(updated.type);
-        adapter.createApiFromServerInfo({ serverInfo: updated });
-      } catch (e) {
-        console.warn('Failed to refresh api cache on update:', e);
-      }
+      const adapter = getMediaAdapter(updated.type);
+      adapter.createApiFromServerInfo({ serverInfo: updated });
     }
   };
 
@@ -222,20 +185,16 @@ export function MediaServerProvider({ children }: { children: React.ReactNode })
   const refreshServerInfo = async (id: string) => {
     const server = servers.find((s) => s.id === id);
     if (!server) return;
-    try {
-      const adapter = getMediaAdapter(server.type);
-      const api = adapter.createApiFromServerInfo({ serverInfo: server });
-      adapter.setGlobalApiInstance(api);
-      const system = await adapter.getSystemInfo();
-      const user = await adapter.getUserInfo({ userId: server.userId });
-      await updateServer(id, {
-        name: system.serverName || user.serverName || server.address,
-        username: user.name || server.username,
-        userAvatar: user.avatar || server.userAvatar,
-      });
-    } catch (error) {
-      console.error('Failed to refresh server info:', error);
-    }
+    const adapter = getMediaAdapter(server.type);
+    const api = adapter.createApiFromServerInfo({ serverInfo: server });
+    adapter.setGlobalApiInstance(api);
+    const system = await adapter.getSystemInfo();
+    const user = await adapter.getUserInfo({ userId: server.userId });
+    await updateServer(id, {
+      name: system.serverName || user.serverName || server.address,
+      username: user.name || server.username,
+      userAvatar: user.avatar || server.userAvatar,
+    });
   };
 
   const value: MediaServerContextType = {

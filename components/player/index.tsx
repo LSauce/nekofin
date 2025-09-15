@@ -73,12 +73,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     queryKey: ['comments', itemDetail?.id, seriesInfo?.originalTitle],
     queryFn: async () => {
       if (!itemDetail || !seriesInfo?.originalTitle) return [];
-      try {
-        return await getCommentsByItem(itemDetail, seriesInfo.originalTitle);
-      } catch (error) {
-        console.warn('Failed to load danmaku comments:', error);
-        return [];
-      }
+      return await getCommentsByItem(itemDetail, seriesInfo.originalTitle);
     },
     enabled: !!itemDetail && !!seriesInfo?.originalTitle,
     staleTime: 1000 * 60 * 5,

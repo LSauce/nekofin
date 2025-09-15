@@ -78,15 +78,11 @@ class EmbyAdapter implements MediaAdapter {
   }
 
   async discoverServers({ host }: DiscoverServersParams): Promise<RecommendedServerInfo[]> {
-    try {
-      const address = host.replace(/\/$/, '');
-      const res = await fetch(`${address}/System/Info/Public`);
-      if (!res.ok) return [];
-      const data = (await res.json()) as { ServerName?: string };
-      return [toRecommendedServerInfo(address, data?.ServerName || address)];
-    } catch {
-      return [];
-    }
+    const address = host.replace(/\/$/, '');
+    const res = await fetch(`${address}/System/Info/Public`);
+    if (!res.ok) return [];
+    const data = (await res.json()) as { ServerName?: string };
+    return [toRecommendedServerInfo(address, data?.ServerName || address)];
   }
 
   findBestServer({ servers }: FindBestServerParams): RecommendedServerInfo | null {

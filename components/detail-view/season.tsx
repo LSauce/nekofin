@@ -10,6 +10,7 @@ import { Text, TouchableOpacity, View } from 'react-native';
 import { EpisodeCard } from '../media/Card';
 import { ThemedText } from '../ThemedText';
 import { detailViewStyles, ItemOverview } from './common';
+import { useDetailView } from './DetailViewContext';
 
 export const SeasonModeContent = ({
   episodes,
@@ -22,6 +23,7 @@ export const SeasonModeContent = ({
   const queryClient = useQueryClient();
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const mediaAdapter = useMediaAdapter();
+  const { query } = useDetailView();
 
   return (
     <>
@@ -76,9 +78,7 @@ export const SeasonModeContent = ({
                       itemId: item.id!,
                     });
                   }
-                  await queryClient.invalidateQueries({
-                    queryKey: ['detail-bundle', 'season', item.parentId],
-                  });
+                  query?.refetch();
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}
               >
