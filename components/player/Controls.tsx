@@ -96,7 +96,6 @@ export function Controls({
   }, [hideControlsWithDelay]);
 
   useEffect(() => {
-    console.log('menuOpen', menuOpen);
     if (menuOpen) {
       if (controlsTimeout.current) {
         clearTimeout(controlsTimeout.current);
