@@ -63,7 +63,6 @@ export function GestureHandler({
   onRateChange,
   showControls,
   setShowControls,
-  fadeAnim,
   isDragging,
   menuOpen,
   isGestureSeekingActive,
@@ -91,6 +90,8 @@ export function GestureHandler({
   const gestureBrightnessOffset = useSharedValue(0);
   const volumeSliderValue = useSharedValue(1.0);
   const brightnessSliderValue = useSharedValue(1.0);
+
+  const sliderMode = useSharedValue<'brightness' | 'volume' | null>(null);
 
   const gestureSeekStartTime = useSharedValue(0);
   const gestureVolumeStartValue = useSharedValue(0);
@@ -176,30 +177,26 @@ export function GestureHandler({
 
   const handleVolumeGestureStart = useCallback(() => {
     setIsVolumeGestureActive(true);
-    setShowControls(true);
-  }, [setIsVolumeGestureActive, setShowControls]);
+  }, [setIsVolumeGestureActive]);
 
   const handleVolumeGestureEnd = useCallback(
     (finalVolume: number) => {
       handleVolumeChange(finalVolume);
       setIsVolumeGestureActive(false);
-      hideControlsWithDelay();
     },
-    [handleVolumeChange, setIsVolumeGestureActive, hideControlsWithDelay],
+    [handleVolumeChange, setIsVolumeGestureActive],
   );
 
   const handleBrightnessGestureStart = useCallback(() => {
     setIsBrightnessGestureActive(true);
-    setShowControls(true);
-  }, [setIsBrightnessGestureActive, setShowControls]);
+  }, [setIsBrightnessGestureActive]);
 
   const handleBrightnessGestureEnd = useCallback(
     (finalBrightness: number) => {
       throttledBrightnessChange(finalBrightness);
       setIsBrightnessGestureActive(false);
-      hideControlsWithDelay();
     },
-    [throttledBrightnessChange, setIsBrightnessGestureActive, hideControlsWithDelay],
+    [throttledBrightnessChange, setIsBrightnessGestureActive],
   );
 
   const handleSingleTap = () => {
@@ -208,16 +205,7 @@ export function GestureHandler({
     }
 
     clearControlsTimeout();
-
-    if (showControls) {
-      fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-        scheduleOnRN(setShowControls, false);
-      });
-    } else {
-      setShowControls(true);
-      fadeAnim.value = withTiming(1, { duration: 200 });
-      hideControlsWithDelay();
-    }
+    setShowControls(!showControls);
   };
 
   const handleDoubleTap = () => {
@@ -288,8 +276,6 @@ export function GestureHandler({
     .failOffsetX([-8, 8])
     .maxPointers(1)
     .onStart((event) => {
-      'worklet';
-
       const isLeftSide = event.x < screenWidth * 0.5;
       const isRightSide = event.x >= screenWidth * 0.5;
 
@@ -297,10 +283,12 @@ export function GestureHandler({
         if (!isInitialized) {
           return;
         }
+        sliderMode.value = 'brightness';
         gestureBrightnessStartValue.value = brightness;
         gestureBrightnessOffset.value = 0;
         gestureBrightnessPreview.value = brightness;
       } else if (isRightSide) {
+        sliderMode.value = 'volume';
         gestureVolumeStartValue.value = volume;
         gestureVolumeOffset.value = 0;
         gestureVolumePreview.value = volume;
@@ -309,8 +297,8 @@ export function GestureHandler({
     .onUpdate((event) => {
       'worklet';
 
-      const isLeftSide = event.x < screenWidth * 0.5;
-      const isRightSide = event.x >= screenWidth * 0.5;
+      const isLeftSide = sliderMode.value === 'brightness';
+      const isRightSide = sliderMode.value === 'volume';
 
       const deltaY = event.translationY;
       const deltaX = event.translationX;
@@ -359,14 +347,15 @@ export function GestureHandler({
       }
     })
     .onEnd(() => {
-      if (isVolumeGestureActive) {
+      if (sliderMode.value === 'volume') {
         const finalVolume = gestureVolumePreview.value;
         scheduleOnRN(handleVolumeGestureEnd, finalVolume);
       }
-      if (isBrightnessGestureActive) {
+      if (sliderMode.value === 'brightness') {
         const finalBrightness = gestureBrightnessPreview.value;
         scheduleOnRN(handleBrightnessGestureEnd, finalBrightness);
       }
+      sliderMode.value = null;
     });
 
   const doubleTapGesture = Gesture.Tap()
@@ -381,8 +370,10 @@ export function GestureHandler({
 
   const tapGesture = Gesture.Tap()
     .numberOfTaps(1)
-    .maxDuration(300)
-    .maxDelay(250)
+    .maxDuration(280)
+    .maxDelay(200)
+    .maxDeltaX(16)
+    .maxDeltaY(16)
     .requireExternalGestureToFail(doubleTapGesture)
     .onEnd((_event, success) => {
       if (success) {
@@ -392,6 +383,8 @@ export function GestureHandler({
 
   const longPressGesture = Gesture.LongPress()
     .minDuration(200)
+    .maxDistance(9999)
+    .shouldCancelWhenOutside(false)
     .onStart(() => {
       if (isGestureSeekingActive || isVolumeGestureActive || isBrightnessGestureActive) {
         return;
@@ -404,7 +397,7 @@ export function GestureHandler({
 
   const tapGestures = Gesture.Exclusive(doubleTapGesture, tapGesture);
   const panGestures = Gesture.Exclusive(panGesture, sliderGesture);
-  const composed = Gesture.Simultaneous(panGestures, tapGestures, longPressGesture);
+  const composed = Gesture.Race(longPressGesture, Gesture.Simultaneous(panGestures, tapGestures));
 
   return (
     <Fragment>

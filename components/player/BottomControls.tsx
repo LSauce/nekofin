@@ -2,7 +2,7 @@ import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { formatTimeWorklet } from '@/lib/utils';
 import Entypo from '@expo/vector-icons/Entypo';
 import { BlurView } from 'expo-blur';
-import { useCallback, useMemo } from 'react';
+import { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
 import Animated, {

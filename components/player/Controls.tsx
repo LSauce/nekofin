@@ -76,14 +76,11 @@ export function Controls({
         !isVolumeGestureActive &&
         !isBrightnessGestureActive
       ) {
-        fadeAnim.value = withTiming(0, { duration: 300 }, () => {
-          scheduleOnRN(setShowControls, false);
-        });
+        scheduleOnRN(setShowControls, false);
       }
     }, 3000);
   }, [
     clearControlsTimeout,
-    fadeAnim,
     isDragging,
     menuOpen,
     isGestureSeekingActive,
@@ -92,16 +89,11 @@ export function Controls({
   ]);
 
   useEffect(() => {
-    hideControlsWithDelay();
-  }, [hideControlsWithDelay]);
-
-  useEffect(() => {
     if (menuOpen) {
       if (controlsTimeout.current) {
         clearTimeout(controlsTimeout.current);
       }
       setShowControls(true);
-      fadeAnim.value = withTiming(1, { duration: 200 });
     } else {
       hideControlsWithDelay();
     }
@@ -114,6 +106,16 @@ export function Controls({
       }
     };
   }, []);
+
+  useEffect(() => {
+    if (showControls) {
+      fadeAnim.value = withTiming(1, { duration: 200 });
+      hideControlsWithDelay();
+    } else {
+      fadeAnim.value = withTiming(0, { duration: 300 });
+      clearControlsTimeout();
+    }
+  }, [showControls, fadeAnim, hideControlsWithDelay, clearControlsTimeout]);
 
   return (
     <Fragment>
