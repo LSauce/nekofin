@@ -18,6 +18,20 @@ export const ticksToMilliseconds = (ticks: number) => {
   return ticks / 10000;
 };
 
+export const formatTimeWorklet = (time: number) => {
+  'worklet';
+
+  const hours = Math.floor(time / 3600000);
+  const minutes = Math.floor((time % 3600000) / 60000);
+  const seconds = Math.floor((time % 60000) / 1000);
+
+  if (hours > 0) {
+    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  } else {
+    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
+  }
+};
+
 export const formatDurationFromTicks = (ticks?: number | null) => {
   if (!ticks) return '';
   const totalSeconds = Math.floor(ticksToSeconds(ticks));

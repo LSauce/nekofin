@@ -1,3 +1,4 @@
+import { formatTimeWorklet } from '@/lib/utils';
 import { BlurView } from 'expo-blur';
 import * as Brightness from 'expo-brightness';
 import { Fragment, useCallback, useEffect, useState } from 'react';
@@ -15,20 +16,6 @@ import { VolumeManager } from 'react-native-volume-manager';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { VerticalSlider } from './VerticalSlider';
-
-const formatTime = (time: number) => {
-  'worklet';
-
-  const hours = Math.floor(time / 3600000);
-  const minutes = Math.floor((time % 3600000) / 60000);
-  const seconds = Math.floor((time % 60000) / 1000);
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  } else {
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-};
 
 const throttleWorklet = (callback: () => void, delay: number) => {
   'worklet';
@@ -112,7 +99,7 @@ export function GestureHandler({
   const minimumValue = useSharedValue(0);
   const maximumValue = useSharedValue(1);
 
-  const totalTime = formatTime(duration);
+  const totalTime = formatTimeWorklet(duration);
 
   const seekPreviewAnimatedStyle = useAnimatedStyle(() => ({
     opacity: withTiming(isGestureSeekingActive ? 1 : 0, { duration: 100 }),
@@ -276,7 +263,7 @@ export function GestureHandler({
       gestureSeekPreview.value = time;
 
       setNativeProps(animatedTextInputRef, {
-        text: `${formatTime(newTime)} / ${totalTime}`,
+        text: `${formatTimeWorklet(newTime)} / ${totalTime}`,
       });
 
       const offsetSeconds = Math.round(timeChange / 1000);

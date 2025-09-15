@@ -1,4 +1,5 @@
 import { useCurrentTime } from '@/hooks/useCurrentTime';
+import { formatTimeWorklet } from '@/lib/utils';
 import Entypo from '@expo/vector-icons/Entypo';
 import { BlurView } from 'expo-blur';
 import { useCallback, useMemo } from 'react';
@@ -10,20 +11,6 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
-
-const formatTime = (time: number) => {
-  'worklet';
-
-  const hours = Math.floor(time / 3600000);
-  const minutes = Math.floor((time % 3600000) / 60000);
-  const seconds = Math.floor((time % 60000) / 1000);
-
-  if (hours > 0) {
-    return `${hours.toString().padStart(2, '0')}:${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  } else {
-    return `${minutes.toString().padStart(2, '0')}:${seconds.toString().padStart(2, '0')}`;
-  }
-};
 
 type BottomControlsProps = {
   isPlaying: boolean;
@@ -71,10 +58,6 @@ export function BottomControls({
   const progressValue = useSharedValue(0);
   const minimumValue = useSharedValue(0);
   const maximumValue = useSharedValue(1);
-
-  const totalTime = useMemo(() => {
-    return formatTime(duration);
-  }, [duration]);
 
   useDerivedValue(() => {
     if (!isDragging && duration > 0) {
@@ -164,7 +147,7 @@ export function BottomControls({
           </TouchableOpacity>
         </View>
         <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTime(currentTimeMs)}</Text>
+          <Text style={styles.timeText}>{formatTimeWorklet(currentTimeMs)}</Text>
         </View>
         <View style={styles.sliderContainer}>
           <Slider
@@ -174,7 +157,7 @@ export function BottomControls({
               borderRadius: 999,
             }}
             progress={progressValue}
-            bubble={(percent) => formatTime(percent * duration)}
+            bubble={(percent) => formatTimeWorklet(percent * duration)}
             minimumValue={minimumValue}
             maximumValue={maximumValue}
             onValueChange={handleSliderChange}
@@ -188,7 +171,7 @@ export function BottomControls({
           />
         </View>
         <View style={styles.timeContainer}>
-          <Text style={styles.timeText}>{formatTime(duration)}</Text>
+          <Text style={styles.timeText}>{formatTimeWorklet(duration)}</Text>
         </View>
       </View>
     </Animated.View>
