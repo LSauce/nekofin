@@ -379,22 +379,24 @@ export function GestureHandler({
       }
     });
 
-  const tapGesture = Gesture.Tap()
-    .numberOfTaps(1)
-    .maxDuration(300)
-    .onEnd((_event, success) => {
-      if (success) {
-        scheduleOnRN(handleSingleTap);
-      }
-    });
-
   const doubleTapGesture = Gesture.Tap()
     .numberOfTaps(2)
-    .maxDuration(100)
-    .maxDelay(200)
+    .maxDuration(250)
+    .maxDelay(250)
     .onEnd((_event, success) => {
       if (success) {
         scheduleOnRN(handleDoubleTap);
+      }
+    });
+
+  const tapGesture = Gesture.Tap()
+    .numberOfTaps(1)
+    .maxDuration(300)
+    .maxDelay(250)
+    .requireExternalGestureToFail(doubleTapGesture)
+    .onEnd((_event, success) => {
+      if (success) {
+        scheduleOnRN(handleSingleTap);
       }
     });
 
