@@ -20,9 +20,8 @@ export default function Layout() {
 
   return (
     <Stack>
-      <Stack.Screen name="index" options={{ headerShown: false, title: '', animation: 'fade' }} />
       <Stack.Screen
-        name="content"
+        name="index"
         options={{
           headerShown: false,
           autoHideHomeIndicator: true,
