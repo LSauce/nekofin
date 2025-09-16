@@ -2,15 +2,9 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getDeviceId, ticksToMilliseconds } from '@/lib/utils';
+import { TrackInfo, VlcPlayerView, VlcPlayerViewRef } from '@/modules';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
-import {
-  LibVlcPlayerView,
-  LibVlcPlayerViewRef,
-  Position,
-  type MediaInfo,
-  type Tracks,
-} from 'expo-libvlc-player';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
 import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
@@ -33,19 +27,34 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const router = useRouter();
   const mediaAdapter = useMediaAdapter();
 
-  const [mediaInfo, setMediaInfo] = useState<MediaInfo | null>(null);
+  const [mediaInfo, setMediaInfo] = useState<{
+    duration: number;
+    currentTime: number;
+  } | null>(null);
   const [isPlaying, setIsPlaying] = useState(false);
   const [isBuffering, setIsBuffering] = useState(true);
   const [isLoaded, setIsLoaded] = useState(false);
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
-  const [selectedTracks, setSelectedTracks] = useState<Tracks | undefined>(undefined);
-  const [isBackground, setIsBackground] = useState(false);
+  const [tracks, setTracks] = useState<
+    | {
+        audio?: TrackInfo[];
+        subtitle?: TrackInfo[];
+      }
+    | undefined
+  >(undefined);
+  const [selectedTracks, setSelectedTracks] = useState<
+    | {
+        audio?: TrackInfo;
+        subtitle?: TrackInfo;
+      }
+    | undefined
+  >(undefined);
   const [rate, setRate] = useState(1);
   const prevRateRef = useRef<number>(1);
 
-  const player = useRef<LibVlcPlayerViewRef>(null);
+  const player = useRef<VlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
 
   const { data: itemDetail } = useQuery({
@@ -96,7 +105,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     enabled: !!currentServer && !!itemDetail,
   });
 
-  const { syncPlaybackProgress, syncPlaybackStart } = usePlaybackSync({
+  const { syncPlaybackProgress } = usePlaybackSync({
     currentServer,
     itemDetail: itemDetail ?? null,
     currentTime,
@@ -120,10 +129,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     return isBuffering || !streamInfo?.url || !isLoaded;
   }, [isBuffering, streamInfo?.url, isLoaded]);
 
-  const bufferingTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
-
   const duration = useMemo(() => {
-    return ticksToMilliseconds(itemDetail?.runTimeTicks ?? 0) ?? mediaInfo?.length ?? 0;
+    return ticksToMilliseconds(itemDetail?.runTimeTicks ?? 0) ?? mediaInfo?.duration ?? 0;
   }, [mediaInfo, itemDetail?.runTimeTicks]);
 
   const formattedTitle = useMemo(() => {
@@ -184,6 +191,23 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     })();
   }, [isPlaying]);
 
+  useEffect(() => {
+    if (player.current) {
+      player.current.getAudioTracks().then((tracks) => {
+        setTracks((prev) => ({
+          ...prev,
+          audio: tracks ?? [],
+        }));
+      });
+      player.current.getSubtitleTracks().then((tracks) => {
+        setTracks((prev) => ({
+          ...prev,
+          subtitle: tracks ?? [],
+        }));
+      });
+    }
+  }, [player]);
+
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
       player.current?.pause();
@@ -208,52 +232,37 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     [],
   );
 
-  const handleBuffering = useCallback(() => {
-    setIsBuffering(true);
-
-    if (bufferingTimeoutRef.current) {
-      clearTimeout(bufferingTimeoutRef.current);
-    }
-
-    bufferingTimeoutRef.current = setTimeout(() => setIsBuffering(false), 1000);
-  }, []);
-
   const handleSeek = useCallback(
     (position: number) => {
       currentTime.value = position * duration;
-      player.current?.seek(position);
+      player.current?.seekTo(position * duration);
       setSeekTime(position * duration);
       setIsBuffering(false);
     },
     [currentTime, duration],
   );
 
-  const handlePositionChanged = useCallback(
-    ({ position: newPosition }: Position) => {
-      currentTime.value = newPosition * duration;
-      setIsBuffering(false);
-      setIsPlaying(true);
-
-      if (isPlaying) {
-        syncPlaybackProgress(newPosition * duration, false);
-      }
+  const handleAudioTrackChange = useCallback(
+    (trackIndex: number) => {
+      setSelectedTracks((prev) => ({
+        ...prev,
+        audio: tracks?.audio?.find((track) => track.index === trackIndex),
+      }));
+      player.current?.setAudioTrack(trackIndex);
     },
-    [currentTime, duration, isPlaying, syncPlaybackProgress],
+    [tracks?.audio],
   );
 
-  const handleAudioTrackChange = useCallback((trackIndex: number) => {
-    setSelectedTracks((prev) => ({
-      ...prev,
-      audio: trackIndex,
-    }));
-  }, []);
-
-  const handleSubtitleTrackChange = useCallback((trackIndex: number) => {
-    setSelectedTracks((prev) => ({
-      ...prev,
-      subtitle: trackIndex >= 0 ? trackIndex : undefined,
-    }));
-  }, []);
+  const handleSubtitleTrackChange = useCallback(
+    (trackIndex: number) => {
+      setSelectedTracks((prev) => ({
+        ...prev,
+        subtitle: tracks?.subtitle?.find((track) => track.index === trackIndex),
+      }));
+      player.current?.setSubtitleTrack(trackIndex);
+    },
+    [tracks?.subtitle],
+  );
 
   const handlePreviousEpisode = useCallback(() => {
     if (previousEpisode?.id) {
@@ -280,53 +289,61 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   return (
     <View style={styles.container}>
       {streamInfo?.url && initialTime >= 0 && (
-        <LibVlcPlayerView
+        <VlcPlayerView
           ref={player}
           style={styles.video}
-          source={streamInfo.url}
-          options={['--network-caching=100', '--avcodec-hw=any']}
-          autoplay={true}
-          time={initialTime}
-          rate={rate}
-          tracks={selectedTracks}
-          onBuffering={handleBuffering}
-          onBackground={() => {
-            setIsBackground(true);
+          source={{
+            uri: streamInfo.url,
+            isNetwork: true,
+            startPosition: initialTime,
+            autoplay: true,
           }}
-          playInBackground
-          onPlaying={() => {
-            setIsBuffering(false);
-            setIsStopped(false);
+          progressUpdateInterval={500}
+          onVideoProgress={(e) => {
+            const { duration, currentTime: newCurrentTime } = e.nativeEvent;
 
-            syncPlaybackStart(currentTime.value);
-          }}
-          onPaused={() => {
-            setIsBuffering(false);
-            setIsPlaying(false);
-            setIsStopped(false);
-
-            syncPlaybackProgress(currentTime.value, true);
-          }}
-          onPositionChanged={handlePositionChanged}
-          onFirstPlay={(mediaInfo) => {
             setIsLoaded(true);
-            setMediaInfo(mediaInfo);
-          }}
-          onEndReached={() => {
-            setIsPlaying(false);
-            setIsStopped(true);
-            syncPlaybackProgress(currentTime.value, true);
 
-            if (hasNextEpisode) {
-              setTimeout(() => {
-                handleNextEpisode();
-              }, 1000);
+            setMediaInfo({
+              duration,
+              currentTime: newCurrentTime,
+            });
+            currentTime.value = newCurrentTime;
+
+            syncPlaybackProgress(newCurrentTime, false);
+
+            setIsBuffering(false);
+            setIsPlaying(true);
+            setIsStopped(false);
+          }}
+          onVideoStateChange={async (e) => {
+            const { state, isBuffering, isPlaying } = e.nativeEvent;
+            if (state === 'Playing') {
+              setIsPlaying(true);
+              return;
+            }
+
+            if (state === 'Paused') {
+              setIsPlaying(false);
+              return;
+            }
+
+            if (isPlaying) {
+              setIsPlaying(true);
+              setIsBuffering(false);
+            } else if (isBuffering) {
+              setIsBuffering(true);
             }
           }}
-          onEncounteredError={(error) => {
-            console.warn('Encountered error', error);
+          onVideoError={async (e) => {
+            const { state } = e.nativeEvent;
+            if (state === 'Error') {
+              setIsBuffering(false);
+              setIsPlaying(false);
+              setIsStopped(true);
 
-            Alert.alert('播放失败', `请尝试重新播放: ${error.error}`);
+              Alert.alert('Error', `Error: ${state}`);
+            }
           }}
         />
       )}
@@ -351,7 +368,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onSeek={handleSeek}
         title={formattedTitle}
         onPlayPause={handlePlayPause}
-        mediaTracks={mediaInfo?.tracks}
+        tracks={tracks}
         selectedTracks={selectedTracks}
         onAudioTrackChange={handleAudioTrackChange}
         onSubtitleTrackChange={handleSubtitleTrackChange}

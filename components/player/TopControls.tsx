@@ -1,7 +1,7 @@
+import { TrackInfo } from '@/modules';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
-import { MediaTracks, Tracks } from 'expo-libvlc-player';
 import { useNavigation, useRouter } from 'expo-router';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
 import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
@@ -13,8 +13,14 @@ type TopControlsProps = {
   fadeAnim: SharedValue<number>;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
-  mediaTracks?: MediaTracks;
-  selectedTracks?: Tracks;
+  tracks?: {
+    audio?: TrackInfo[];
+    subtitle?: TrackInfo[];
+  };
+  selectedTracks?: {
+    audio?: TrackInfo;
+    subtitle?: TrackInfo;
+  };
   onAudioTrackChange?: (trackIndex: number) => void;
   onSubtitleTrackChange?: (trackIndex: number) => void;
 };
@@ -26,7 +32,7 @@ export function TopControls({
   fadeAnim,
   menuOpen,
   setMenuOpen,
-  mediaTracks,
+  tracks,
   selectedTracks,
   onAudioTrackChange,
   onSubtitleTrackChange,
@@ -35,9 +41,9 @@ export function TopControls({
   const navigation = useNavigation();
 
   const audioTracks =
-    mediaTracks?.audio.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
+    tracks?.audio?.filter((track) => track.index !== -1).sort((a, b) => a.index - b.index) ?? [];
   const subtitleTracks =
-    mediaTracks?.subtitle.filter((track) => track.id !== -1).sort((a, b) => a.id - b.id) ?? [];
+    tracks?.subtitle?.filter((track) => track.index !== -1).sort((a, b) => a.index - b.index) ?? [];
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -107,10 +113,12 @@ export function TopControls({
                       id: 'audio',
                       title: '音轨选择',
                       subactions: audioTracks.map((track) => ({
-                        id: `audio_${track.id}`,
+                        id: `audio_${track.index}`,
                         title: track.name,
                         state:
-                          selectedTracks?.audio === track.id ? ('on' as const) : ('off' as const),
+                          selectedTracks?.audio?.index === track.index
+                            ? ('on' as const)
+                            : ('off' as const),
                       })),
                     },
                   ]
@@ -125,13 +133,15 @@ export function TopControls({
                           id: 'subtitle_-1',
                           title: '关闭字幕',
                           state:
-                            selectedTracks?.subtitle === -1 ? ('on' as const) : ('off' as const),
+                            selectedTracks?.subtitle?.index === -1
+                              ? ('on' as const)
+                              : ('off' as const),
                         },
                         ...subtitleTracks.map((track) => ({
-                          id: `subtitle_${track.id}`,
+                          id: `subtitle_${track.index}`,
                           title: track.name,
                           state:
-                            selectedTracks?.subtitle === track.id
+                            selectedTracks?.subtitle?.index === track.index
                               ? ('on' as const)
                               : ('off' as const),
                         })),
