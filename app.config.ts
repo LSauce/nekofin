@@ -19,6 +19,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
       infoPlist: {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true,
+          UIBackgroundModes: ['audio', 'fetch'],
         },
       },
     },
@@ -63,13 +64,6 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
         },
       ],
       [
-        'expo-libvlc-player',
-        {
-          localNetworkPermission: 'Allow nekofin to access your local network',
-          supportsBackgroundPlayback: true,
-        },
-      ],
-      [
         'expo-screen-orientation',
         {
           initialOrientation: 'DEFAULT',
@@ -95,17 +89,19 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
           },
           android: {
             reactNativeReleaseLevel: 'experimental',
+            useAndroidX: true,
           },
         },
       ],
       'expo-font',
       'expo-web-browser',
       [
-        './plugins/withAbiFilters.ts',
+        './plugins/withAbiFilters',
         {
           abiFilters: ['arm64-v8a'],
         },
       ],
+      './plugins/withAndroidPip',
     ],
     experiments: {
       typedRoutes: true,
