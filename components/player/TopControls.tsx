@@ -1,4 +1,4 @@
-import { TrackInfo } from '@/modules';
+import { MediaTrack, MediaTracks } from '@/modules';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
@@ -13,14 +13,8 @@ type TopControlsProps = {
   fadeAnim: SharedValue<number>;
   menuOpen: boolean;
   setMenuOpen: (open: boolean) => void;
-  tracks?: {
-    audio?: TrackInfo[];
-    subtitle?: TrackInfo[];
-  };
-  selectedTracks?: {
-    audio?: TrackInfo;
-    subtitle?: TrackInfo;
-  };
+  tracks?: MediaTracks;
+  selectedTracks?: MediaTrack;
   onAudioTrackChange?: (trackIndex: number) => void;
   onSubtitleTrackChange?: (trackIndex: number) => void;
 };

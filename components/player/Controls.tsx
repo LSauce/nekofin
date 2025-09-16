@@ -1,4 +1,4 @@
-import { TrackInfo } from '@/modules';
+import { MediaTrack, MediaTracks } from '@/modules';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -16,14 +16,8 @@ type ControlsProps = {
   onSeek: (position: number) => void;
   onPlayPause: () => void;
   onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
-  tracks?: {
-    audio?: TrackInfo[];
-    subtitle?: TrackInfo[];
-  };
-  selectedTracks?: {
-    audio?: TrackInfo;
-    subtitle?: TrackInfo;
-  };
+  tracks?: MediaTracks;
+  selectedTracks?: MediaTrack;
   onAudioTrackChange?: (trackIndex: number) => void;
   onSubtitleTrackChange?: (trackIndex: number) => void;
   hasPreviousEpisode?: boolean;

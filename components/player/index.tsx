@@ -2,7 +2,7 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
-import { TrackInfo, VlcPlayerView, VlcPlayerViewRef } from '@/modules';
+import { MediaTrack, MediaTracks, VlcPlayerView, VlcPlayerViewRef } from '@/modules';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
@@ -37,20 +37,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [isStopped, setIsStopped] = useState(false);
   const [seekTime, setSeekTime] = useState(0);
   const [initialTime, setInitialTime] = useState<number>(-1);
-  const [tracks, setTracks] = useState<
-    | {
-        audio?: TrackInfo[];
-        subtitle?: TrackInfo[];
-      }
-    | undefined
-  >(undefined);
-  const [selectedTracks, setSelectedTracks] = useState<
-    | {
-        audio?: TrackInfo;
-        subtitle?: TrackInfo;
-      }
-    | undefined
-  >(undefined);
+  const [tracks, setTracks] = useState<MediaTracks | undefined>(undefined);
+  const [selectedTracks, setSelectedTracks] = useState<MediaTrack | undefined>(undefined);
   const [rate, setRate] = useState(1);
   const prevRateRef = useRef<number>(1);
 
@@ -192,21 +180,17 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   }, [isPlaying]);
 
   useEffect(() => {
-    if (player.current) {
-      player.current.getAudioTracks().then((tracks) => {
-        setTracks((prev) => ({
-          ...prev,
-          audio: tracks ?? [],
-        }));
-      });
-      player.current.getSubtitleTracks().then((tracks) => {
-        setTracks((prev) => ({
-          ...prev,
-          subtitle: tracks ?? [],
-        }));
-      });
-    }
-  }, [player]);
+    (async () => {
+      if (!isLoaded) return;
+      const audioTracks = await player.current?.getAudioTracks();
+      const subtitleTracks = await player.current?.getSubtitleTracks();
+      setTracks((prev) => ({
+        ...prev,
+        audio: audioTracks ?? [],
+        subtitle: subtitleTracks ?? [],
+      }));
+    })();
+  }, [player, isLoaded]);
 
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -337,6 +321,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             } else if (isBuffering) {
               setIsBuffering(true);
             }
+          }}
+          onVideoLoadEnd={() => {
+            setIsLoaded(true);
           }}
           onVideoError={async (e) => {
             const { state } = e.nativeEvent;

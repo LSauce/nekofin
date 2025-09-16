@@ -1,5 +1,7 @@
 import {
   ChapterInfo,
+  MediaTrack,
+  MediaTracks,
   PlaybackStatePayload,
   ProgressUpdatePayload,
   TrackInfo,
@@ -22,6 +24,8 @@ export {
   VideoStateChangePayload,
   VideoProgressPayload,
   VlcPlayerSource,
+  MediaTrack,
+  MediaTracks,
   TrackInfo,
   ChapterInfo,
 };

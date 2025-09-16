@@ -53,6 +53,16 @@ export type TrackInfo = {
   language?: string;
 };
 
+export type MediaTrack = {
+  audio?: TrackInfo;
+  subtitle?: TrackInfo;
+};
+
+export type MediaTracks = {
+  audio?: TrackInfo[];
+  subtitle?: TrackInfo[];
+};
+
 export type ChapterInfo = {
   name: string;
   timeOffset: number;
