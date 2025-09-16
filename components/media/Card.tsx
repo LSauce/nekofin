@@ -318,7 +318,7 @@ const styles = StyleSheet.create({
   },
   cardTitle: {
     fontSize: 16,
-    fontWeight: 'semibold',
+    fontWeight: '600',
     marginTop: 8,
     marginHorizontal: 8,
   },

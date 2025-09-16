@@ -284,7 +284,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
           ref={player}
           style={styles.video}
           source={streamInfo.url}
-          options={['--network-caching=1000']}
+          options={['--network-caching=100', '--avcodec-hw=any']}
           autoplay={true}
           time={initialTime}
           rate={rate}
