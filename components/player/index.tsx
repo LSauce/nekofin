@@ -1,7 +1,7 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getDeviceId, ticksToMilliseconds } from '@/lib/utils';
+import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
 import { TrackInfo, VlcPlayerView, VlcPlayerViewRef } from '@/modules';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
@@ -176,7 +176,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   useEffect(() => {
     if (itemDetail?.userData?.playbackPositionTicks !== undefined) {
       const startTimeMs = Math.round(itemDetail.userData.playbackPositionTicks! / 10000);
-      setInitialTime(startTimeMs);
+      setInitialTime(ticksToSeconds(itemDetail.userData.playbackPositionTicks!));
       currentTime.value = startTimeMs;
     }
   }, [itemDetail, currentTime]);
@@ -220,14 +220,17 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     (newRate: number | null, options?: { remember?: boolean }) => {
       if (newRate == null) {
         setRate(prevRateRef.current);
+        player.current?.setRate(prevRateRef.current);
         return;
       }
       if (options?.remember === false) {
         setRate(newRate);
+        player.current?.setRate(newRate);
         return;
       }
       prevRateRef.current = newRate;
       setRate(newRate);
+      player.current?.setRate(newRate);
     },
     [],
   );

@@ -1,6 +1,5 @@
 package expo.modules.vlcplayer
 
-import androidx.core.os.bundleOf
 import expo.modules.kotlin.modules.Module
 import expo.modules.kotlin.modules.ModuleDefinition
 
@@ -77,6 +76,10 @@ class VlcPlayerModule : Module() {
 
       AsyncFunction("setVideoScaleFactor") { view: VlcPlayerView, scaleFactor: Float ->
         view.setVideoScaleFactor(scaleFactor)
+      }
+
+      AsyncFunction("setRate") { view: VlcPlayerView, rate: Float ->
+        view.setRate(rate)
       }
     }
   }

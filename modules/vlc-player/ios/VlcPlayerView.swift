@@ -117,7 +117,7 @@ class VlcPlayerView: ExpoView {
                 self.onVideoError?(["error": "Invalid or empty URI"])
                 return
             }
-            
+
             self.isTranscoding = uri.contains("m3u8")
 
             if !self.isTranscoding, self.startPosition > 0 {
@@ -263,6 +263,13 @@ class VlcPlayerView: ExpoView {
         }
     }
 
+    @objc func setRate(_ rate: Float) {
+        DispatchQueue.main.async {
+            self.mediaPlayer?.rate = rate
+            print("Set playback rate: \(rate)")
+        }
+    }
+
     @objc func stop(completion: (() -> Void)? = nil) {
         guard !isStopping else {
             completion?()
@@ -314,7 +321,7 @@ class VlcPlayerView: ExpoView {
 
         let currentTimeMs = player.time.intValue
         let durationMs = player.media?.length.intValue ?? 0
-        
+
 
         print("Debug: Current time: \(currentTimeMs)")
         if currentTimeMs >= 0 && currentTimeMs < durationMs {
