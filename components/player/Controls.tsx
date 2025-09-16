@@ -1,4 +1,4 @@
-import { MediaTracks, Tracks } from 'expo-libvlc-player';
+import { MediaTrack, MediaTracks } from '@/modules';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -16,8 +16,8 @@ type ControlsProps = {
   onSeek: (position: number) => void;
   onPlayPause: () => void;
   onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
-  mediaTracks?: MediaTracks;
-  selectedTracks?: Tracks;
+  tracks?: MediaTracks;
+  selectedTracks?: MediaTrack;
   onAudioTrackChange?: (trackIndex: number) => void;
   onSubtitleTrackChange?: (trackIndex: number) => void;
   hasPreviousEpisode?: boolean;
@@ -35,7 +35,7 @@ export function Controls({
   title,
   onPlayPause,
   onRateChange,
-  mediaTracks,
+  tracks,
   selectedTracks,
   onAudioTrackChange,
   onSubtitleTrackChange,
@@ -126,7 +126,7 @@ export function Controls({
         fadeAnim={fadeAnim}
         menuOpen={menuOpen}
         setMenuOpen={setMenuOpen}
-        mediaTracks={mediaTracks}
+        tracks={tracks}
         selectedTracks={selectedTracks}
         onAudioTrackChange={onAudioTrackChange}
         onSubtitleTrackChange={onSubtitleTrackChange}

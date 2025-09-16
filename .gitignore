@@ -46,3 +46,5 @@ app-example
 *.ipa
 build*.apk
 build*.sh
+
+modules/vlc-player/android/build
