@@ -77,6 +77,9 @@ export const SliderSetting: React.FC<SliderSettingProps> = ({
             const calculatedValue = calculateValue(progress);
             return formatValue ? formatValue(calculatedValue) : calculatedValue.toString();
           }}
+          bubbleTextStyle={{
+            fontFamily: 'Roboto',
+          }}
           onValueChange={(progress) => {
             progressValue.value = progress;
             onValueChange?.(progress);

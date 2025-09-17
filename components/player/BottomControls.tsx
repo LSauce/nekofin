@@ -158,6 +158,9 @@ export function BottomControls({
             }}
             progress={progressValue}
             bubble={(percent) => formatTimeWorklet(percent * duration)}
+            bubbleTextStyle={{
+              fontFamily: 'Roboto',
+            }}
             minimumValue={minimumValue}
             maximumValue={maximumValue}
             onValueChange={handleSliderChange}
