@@ -41,7 +41,7 @@ export function Section({
                 <View
                   style={[
                     styles.separator,
-                    separatorInsetLeft ? { marginLeft: separatorInsetLeft } : null,
+                    separatorInsetLeft ? { marginLeft: separatorInsetLeft, marginRight: 16 } : null,
                     { backgroundColor: separatorColor },
                   ]}
                 />
@@ -67,8 +67,9 @@ const styles = StyleSheet.create({
   },
   groupContainer: {
     marginHorizontal: 16,
-    borderRadius: 12,
+    borderRadius: 24,
     overflow: 'hidden',
+    borderCurve: 'continuous',
   },
   separator: {
     height: StyleSheet.hairlineWidth,

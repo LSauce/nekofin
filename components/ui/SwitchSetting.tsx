@@ -1,4 +1,3 @@
-import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import React from 'react';
 import { Switch, View } from 'react-native';
 
@@ -28,7 +27,6 @@ export const SwitchSetting: React.FC<SwitchSettingProps> = ({
             alignItems: 'center',
             justifyContent: 'center',
             height: 24,
-            paddingRight: isGreaterThanOrEqual26 ? 12 : 0,
           }}
         >
           <Switch value={value} onValueChange={onValueChange} />
