@@ -1,12 +1,12 @@
+import { StrokeTextView } from '@/modules/stroke-text';
 import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, StyleSheet, TextStyle } from 'react-native';
+import { Animated, Easing, TextStyle } from 'react-native';
 
-import StrokeText from '../StrokeText';
 import { ActiveBullet } from './DanmakuTypes';
 
 const STROKE_COLOR = '#000';
-const STROKE_WIDTH = 0.65;
+const STROKE_WIDTH = 1.8;
 
 export function Bullet({
   width,
@@ -14,7 +14,7 @@ export function Bullet({
   onExpire,
   fontSize,
   fontFamily,
-  fontOptions,
+  fontWeight,
   isPlaying,
   playbackRate,
 }: {
@@ -23,7 +23,7 @@ export function Bullet({
   onExpire: (id: number) => void;
   fontSize: number;
   fontFamily: string;
-  fontOptions: string;
+  fontWeight: TextStyle['fontWeight'];
   isPlaying: boolean;
   playbackRate: number;
 }) {
@@ -200,46 +200,21 @@ export function Bullet({
     [data.top, data.mode, width, translateX],
   );
 
-  const textStyle = useMemo(
-    () => [
-      {
-        fontSize,
-        fontFamily: fontFamily.replace(/"/g, ''),
-        ...(fontOptions && {
-          fontStyle: fontOptions.includes('italic') ? 'italic' : 'normal',
-        }),
-        fontWeight: fontOptions?.includes('bold') ? 'bold' : '600',
-      } as TextStyle,
-    ],
-    [fontSize, fontFamily, fontOptions],
-  );
-
   const isTopOrBottom =
     data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom;
 
   return (
-    <Animated.View
-      style={[style, isTopOrBottom ? styles.centerRow : { width: '500%' }]}
-      renderToHardwareTextureAndroid
-      needsOffscreenAlphaCompositing={false}
-    >
-      <StrokeText
+    <Animated.View style={[style, { width: '100%' }]} renderToHardwareTextureAndroid>
+      <StrokeTextView
         text={data.text}
-        style={[textStyle, { color: data.colorHex }]}
+        color={data.colorHex}
         strokeColor={STROKE_COLOR}
         strokeWidth={STROKE_WIDTH}
+        fontSize={fontSize}
+        fontWeight={fontWeight}
+        fontFamily={fontFamily}
+        textAlign={isTopOrBottom ? 'center' : 'left'}
       />
     </Animated.View>
   );
 }
-
-const styles = StyleSheet.create({
-  centerRow: {
-    left: 0,
-    width: '100%',
-    alignItems: 'center',
-  },
-  textContainer: {
-    alignItems: 'center',
-  },
-});
