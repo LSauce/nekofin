@@ -1,4 +1,4 @@
-import { MediaTrack, MediaTracks } from '@/modules';
+import { MediaTrack, MediaTracks } from '@/modules/vlc-player';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';

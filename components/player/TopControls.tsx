@@ -1,4 +1,4 @@
-import { MediaTrack, MediaTracks } from '@/modules';
+import { MediaTrack, MediaTracks } from '@/modules/vlc-player';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';

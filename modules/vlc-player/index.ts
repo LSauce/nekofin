@@ -11,8 +11,8 @@ import {
   VlcPlayerSource,
   VlcPlayerViewProps,
   VlcPlayerViewRef,
-} from './VlcPlayer.types';
-import VlcPlayerView from './VlcPlayerView';
+} from './src/VlcPlayer.types';
+import VlcPlayerView from './src/VlcPlayerView';
 
 export {
   VlcPlayerView,

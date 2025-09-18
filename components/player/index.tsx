@@ -3,7 +3,7 @@ import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
 import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
-import { MediaTrack, MediaTracks, VlcPlayerView, VlcPlayerViewRef } from '@/modules';
+import { MediaTrack, MediaTracks, VlcPlayerView, VlcPlayerViewRef } from '@/modules/vlc-player';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
@@ -306,7 +306,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             setIsStopped(false);
           }}
           onVideoStateChange={async (e) => {
-            const { state, isBuffering, isPlaying } = e.nativeEvent;
+            const { state } = e.nativeEvent;
             if (state === 'Playing') {
               setIsPlaying(true);
               return;
@@ -317,11 +317,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
               return;
             }
 
-            if (isPlaying) {
-              setIsPlaying(true);
-              setIsBuffering(false);
-            } else if (isBuffering) {
+            if (state === 'Buffering') {
               setIsBuffering(true);
+              return;
             }
           }}
           onVideoLoadEnd={() => {
