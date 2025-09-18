@@ -1,10 +1,10 @@
 import { getSystemColor } from '@/constants/SystemColor';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useSettingsColors } from '@/hooks/useSettingsColors';
-import React, { useEffect } from 'react';
-import { StyleSheet, Text, View } from 'react-native';
-import { Slider } from 'react-native-awesome-slider';
-import { useSharedValue } from 'react-native-reanimated';
+import { Slider as AndroidSlider } from '@expo/ui/jetpack-compose';
+import { Host, Slider as IOSSlider } from '@expo/ui/swift-ui';
+import React, { useMemo } from 'react';
+import { Platform, StyleSheet, Text, View } from 'react-native';
 
 import { SettingsRow } from './SettingsRow';
 
@@ -34,21 +34,15 @@ export const SliderSetting: React.FC<SliderSettingProps> = ({
   const theme = useColorScheme() ?? 'light';
   const { accentColor } = useSettingsColors();
 
-  const progressValue = useSharedValue((value - min) / (max - min));
-  const minValue = useSharedValue(min);
-  const maxValue = useSharedValue(max);
-
-  useEffect(() => {
-    progressValue.value = (value - min) / (max - min);
-  }, [value, min, max, progressValue]);
-
   const maximumTrackTintColor = getSystemColor('systemGray5', theme);
 
-  const calculateValue = (progress: number) => {
-    const rawValue = min + progress * (max - min);
-    const steppedValue = Math.round(rawValue / step) * step;
-    return Math.max(min, Math.min(max, steppedValue));
-  };
+  const clampAndStep = useMemo(() => {
+    return (raw: number) => {
+      const clamped = Math.max(min, Math.min(max, raw));
+      const stepped = Math.round((clamped - min) / step) * step + min;
+      return Math.max(min, Math.min(max, Number(stepped.toFixed(6))));
+    };
+  }, [min, max, step]);
 
   return (
     <View style={styles.container}>
@@ -64,36 +58,30 @@ export const SliderSetting: React.FC<SliderSettingProps> = ({
         containerStyle={styles.rowContainer}
       />
       <View style={styles.sliderWrapper}>
-        <Slider
-          style={styles.slider}
-          containerStyle={{
-            overflow: 'hidden',
-            borderRadius: 999,
-          }}
-          progress={progressValue}
-          minimumValue={minValue}
-          maximumValue={maxValue}
-          bubble={(progress) => {
-            const calculatedValue = calculateValue(progress);
-            return formatValue ? formatValue(calculatedValue) : calculatedValue.toString();
-          }}
-          bubbleTextStyle={{
-            fontFamily: 'Roboto',
-          }}
-          onValueChange={(progress) => {
-            progressValue.value = progress;
-            onValueChange?.(progress);
-          }}
-          onSlidingComplete={(progress) => {
-            const calculatedValue = calculateValue(progress);
-            onSlidingComplete?.(calculatedValue);
-          }}
-          theme={{
-            minimumTrackTintColor: accentColor,
-            maximumTrackTintColor: maximumTrackTintColor,
-            bubbleBackgroundColor: accentColor,
-          }}
-        />
+        {Platform.OS === 'ios' ? (
+          <Host style={{ minHeight: 40 }}>
+            <IOSSlider
+              value={value}
+              onValueChange={(next) => {
+                const v = clampAndStep(next);
+                onValueChange?.(v);
+                onSlidingComplete?.(v);
+              }}
+              color={accentColor}
+            />
+          </Host>
+        ) : (
+          <AndroidSlider
+            style={{ minHeight: 40 }}
+            value={value}
+            onValueChange={(next) => {
+              const v = clampAndStep(next);
+              onValueChange?.(v);
+              onSlidingComplete?.(v);
+            }}
+            color={accentColor}
+          />
+        )}
       </View>
     </View>
   );
