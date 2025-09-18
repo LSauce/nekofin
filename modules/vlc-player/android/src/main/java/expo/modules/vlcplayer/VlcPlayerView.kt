@@ -51,6 +51,7 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
   private val onVideoStateChange by EventDispatcher()
   private val onVideoLoadEnd by EventDispatcher()
   private val onPipStarted by EventDispatcher()
+  private val onMediaStatsChange by EventDispatcher()
 
   private var startPosition: Int? = 0
   private var isMediaReady: Boolean = false
@@ -63,6 +64,7 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
   private val updateProgressRunnable = object : Runnable {
     override fun run() {
       updateVideoProgress()
+      updateMediaStats()
       handler.postDelayed(this, updateInterval)
     }
   }
@@ -361,6 +363,43 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
   fun setRate(rate: Float) {
     log.debug("Setting playback rate: $rate")
     mediaPlayer?.rate = rate
+  }
+
+  private var lastMediaStats: Map<String, Any>? = null
+
+  private fun updateMediaStats() {
+    val m = media ?: return
+    val stats = m.getStats() ?: return
+
+    val currentStats: Map<String, Any> = mapOf(
+      "readBytes" to stats.readBytes.toLong(),
+      "inputBitrate" to stats.inputBitrate.toFloat(),
+      "demuxReadBytes" to stats.demuxReadBytes.toLong(),
+      "demuxBitrate" to stats.demuxBitrate.toFloat(),
+      "demuxCorrupted" to stats.demuxCorrupted.toLong(),
+      "demuxDiscontinuity" to stats.demuxDiscontinuity.toLong(),
+      "decodedVideo" to stats.decodedVideo.toLong(),
+      "decodedAudio" to stats.decodedAudio.toLong(),
+      "displayedPictures" to stats.displayedPictures.toLong(),
+      "lostPictures" to stats.lostPictures.toLong(),
+      "playedAudioBuffers" to stats.playedAbuffers.toLong(),
+      "lostAudioBuffers" to stats.lostAbuffers.toLong(),
+      "sentPackets" to stats.sentPackets.toLong(),
+      "sentBytes" to stats.sentBytes.toLong(),
+      "sendBitrate" to stats.sendBitrate.toFloat()
+    )
+
+    val unchanged = lastMediaStats?.let { it == currentStats } ?: false
+    if (unchanged) return
+
+    lastMediaStats = currentStats
+
+    onMediaStatsChange(
+      mapOf(
+        "target" to "null",
+        "stats" to currentStats
+      )
+    )
   }
 
   private fun setInitialExternalSubtitles() {
