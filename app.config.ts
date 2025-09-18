@@ -19,8 +19,9 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
       infoPlist: {
         NSAppTransportSecurity: {
           NSAllowsArbitraryLoads: true,
-          UIBackgroundModes: ['audio', 'fetch'],
         },
+        UIBackgroundModes: ['audio', 'fetch'],
+        NSLocalNetworkUsageDescription: 'This app needs access to the internet to play media.',
       },
     },
     android: {

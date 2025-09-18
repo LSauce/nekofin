@@ -5,6 +5,7 @@ import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { MenuView } from '@react-native-menu/menu';
 import { BlurView } from 'expo-blur';
 import * as Network from 'expo-network';
+import { useNetworkState } from 'expo-network';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
@@ -40,7 +41,7 @@ export function TopControls({
   const router = useRouter();
   const navigation = useNavigation();
   const [now, setNow] = useState<string>('');
-  const [networkType, setNetworkType] = useState<Network.NetworkStateType | null>(null);
+  const { type: networkType } = useNetworkState();
 
   const audioTracks =
     tracks?.audio?.filter((track) => track.index !== -1).sort((a, b) => a.index - b.index) ?? [];
@@ -64,22 +65,6 @@ export function TopControls({
     const id = setInterval(update, 60_000);
     return () => {
       clearInterval(id);
-    };
-  }, []);
-
-  useEffect(() => {
-    const fetchInitialState = async () => {
-      const s = await Network.getNetworkStateAsync();
-      setNetworkType(s.type ?? null);
-    };
-    fetchInitialState();
-
-    const subscription = Network.addNetworkStateListener(({ type }) => {
-      setNetworkType(type ?? null);
-    });
-
-    return () => {
-      subscription.remove();
     };
   }, []);
 
