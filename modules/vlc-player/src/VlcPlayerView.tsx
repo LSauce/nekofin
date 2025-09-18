@@ -103,6 +103,7 @@ const VlcPlayerView = React.forwardRef<VlcPlayerViewRef, VlcPlayerViewProps>((pr
     onVideoLoadEnd,
     onVideoError,
     onPipStarted,
+    onMediaStatsChange,
     ...otherProps
   } = props;
 
@@ -130,6 +131,7 @@ const VlcPlayerView = React.forwardRef<VlcPlayerViewRef, VlcPlayerViewProps>((pr
       onVideoProgress={onVideoProgress}
       onVideoError={onVideoError}
       onPipStarted={onPipStarted}
+      onMediaStatsChange={onMediaStatsChange}
     />
   );
 });

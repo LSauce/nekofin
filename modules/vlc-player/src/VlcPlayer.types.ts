@@ -36,6 +36,31 @@ export type VideoStateChangePayload = PlaybackStatePayload;
 
 export type VideoProgressPayload = ProgressUpdatePayload;
 
+export type MediaStats = {
+  readBytes: number;
+  inputBitrate: number;
+  demuxReadBytes: number;
+  demuxBitrate: number;
+  demuxCorrupted: number;
+  demuxDiscontinuity: number;
+  decodedVideo: number;
+  decodedAudio: number;
+  displayedPictures: number;
+  lostPictures: number;
+  playedAudioBuffers: number;
+  lostAudioBuffers: number;
+  sentPackets: number;
+  sentBytes: number;
+  sendBitrate: number;
+};
+
+export type MediaStatsPayload = {
+  nativeEvent: {
+    target: number;
+    stats: MediaStats;
+  };
+};
+
 export type VlcPlayerSource = {
   uri: string;
   type?: string;
@@ -83,6 +108,7 @@ export type VlcPlayerViewProps = {
   onVideoLoadEnd?: (event: VideoLoadStartPayload) => void;
   onVideoError?: (event: PlaybackStatePayload) => void;
   onPipStarted?: (event: PipStartedPayload) => void;
+  onMediaStatsChange?: (event: MediaStatsPayload) => void;
 };
 
 export interface VlcPlayerViewRef {

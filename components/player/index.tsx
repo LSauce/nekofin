@@ -2,23 +2,36 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
-import { getCommentsByItem, getDeviceId, ticksToMilliseconds, ticksToSeconds } from '@/lib/utils';
-import { MediaTrack, MediaTracks, VlcPlayerView, VlcPlayerViewRef } from '@/modules/vlc-player';
+import {
+  formatBitrate,
+  getCommentsByItem,
+  getDeviceId,
+  ticksToMilliseconds,
+  ticksToSeconds,
+} from '@/lib/utils';
+import {
+  MediaStats,
+  MediaTrack,
+  MediaTracks,
+  VlcPlayerView,
+  VlcPlayerViewRef,
+} from '@/modules/vlc-player';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { ActivityIndicator, Alert, StyleSheet, View } from 'react-native';
+import { ActivityIndicator, Alert, StyleSheet, Text, View } from 'react-native';
 import { useSharedValue } from 'react-native-reanimated';
 
 import { usePlaybackSync } from '../../hooks/usePlaybackSync';
 import { Controls } from './Controls';
 import { DanmakuLayer } from './DanmakuLayer';
 
-const LoadingIndicator = () => {
+const LoadingIndicator = ({ title }: { title?: string }) => {
   return (
     <View style={[StyleSheet.absoluteFill, styles.bufferingOverlay]} pointerEvents="none">
       <ActivityIndicator size="large" color="#fff" />
+      {title && <Text style={styles.loadingTitle}>{title}</Text>}
     </View>
   );
 };
@@ -43,6 +56,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [selectedTracks, setSelectedTracks] = useState<MediaTrack | undefined>(undefined);
   const [rate, setRate] = useState(1);
   const prevRateRef = useRef<number>(1);
+  const [mediaStats, setMediaStats] = useState<MediaStats | null>(null);
 
   const player = useRef<VlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
@@ -288,6 +302,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             autoplay: true,
           }}
           progressUpdateInterval={500}
+          videoAspectRatio="16:9"
           onVideoProgress={(e) => {
             const { duration, currentTime: newCurrentTime } = e.nativeEvent;
 
@@ -335,10 +350,18 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
               Alert.alert('Error', `Error: ${state}`);
             }
           }}
+          onMediaStatsChange={(e) => {
+            const { stats } = e.nativeEvent;
+            setMediaStats(stats);
+          }}
         />
       )}
 
-      {showLoading && <LoadingIndicator />}
+      {showLoading && (
+        <LoadingIndicator
+          title={mediaStats?.inputBitrate ? formatBitrate(mediaStats.inputBitrate) : undefined}
+        />
+      )}
 
       {comments.length > 0 && initialTime >= 0 && (
         <DanmakuLayer
@@ -380,160 +403,22 @@ const styles = StyleSheet.create({
     height: '100%',
     width: '100%',
   },
-  titleContainer: {
-    position: 'absolute',
-    top: 10,
-    left: 100,
-    right: 100,
-    alignItems: 'center',
-    zIndex: 10,
-  },
-  title: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-    textAlign: 'center',
-    shadowColor: '#000',
-    shadowOffset: { width: 0, height: 2 },
-    shadowOpacity: 0.25,
-    shadowRadius: 3.84,
-    elevation: 5,
-  },
   video: {
     height: '100%',
     width: '100%',
-  },
-  backButton: {
-    position: 'absolute',
-    top: 50,
-    left: 100,
-    zIndex: 10,
-  },
-  backButtonBlur: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-  },
-  backButtonTouchable: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  danmakuButton: {
-    position: 'absolute',
-    top: 50,
-    right: 100,
-    zIndex: 10,
-  },
-  danmakuButtonBlur: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    overflow: 'hidden',
-    display: 'flex',
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  danmakuButtonTouchable: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  backButtonText: {
-    color: '#fff',
-    fontSize: 24,
-    fontWeight: 'bold',
-  },
-  floatingControls: {
-    position: 'absolute',
-    bottom: 30,
-    left: 100,
-    right: 100,
-    zIndex: 10,
-    padding: 8,
-  },
-  floatingControlsBlur: {
-    borderRadius: 20,
-    overflow: 'hidden',
-  },
-  progressContainer: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-    gap: 10,
-    paddingRight: 16,
-  },
-  sliderContainer: {
-    flex: 1,
-    height: 40,
-    justifyContent: 'center',
-  },
-  slider: {
-    width: '100%',
-    height: 40,
-  },
-  customTrack: {
-    height: 4,
-    borderRadius: 2,
-    overflow: 'hidden',
-  },
-  sliderContainerStyle: {
-    borderRadius: 16,
-  },
-  controlsRow: {
-    flexDirection: 'row',
-    justifyContent: 'space-between',
-    alignItems: 'center',
-  },
-  timeContainer: {
-    minWidth: 60,
-    alignItems: 'center',
-  },
-  timeText: {
-    color: '#fff',
-    fontSize: 14,
-    fontWeight: '500',
-  },
-  playPauseButton: {
-    width: 40,
-    height: 40,
-    borderRadius: 20,
-    justifyContent: 'center',
-    alignItems: 'center',
-  },
-  playPauseText: {
-    color: '#fff',
-    fontSize: 20,
-    fontWeight: 'bold',
-  },
-  touchOverlay: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    zIndex: 5,
   },
   bufferingOverlay: {
     alignItems: 'center',
     justifyContent: 'center',
     zIndex: 20,
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
   },
-  debugContainer: {
-    position: 'absolute',
-    top: 100,
-    left: 100,
-    right: 0,
-    bottom: 0,
-  },
-  debugText: {
-    color: '#fff',
+  loadingTitle: {
+    marginTop: 16,
     fontSize: 14,
-    fontWeight: '500',
+    fontWeight: 'bold',
+    color: '#fff',
   },
 });

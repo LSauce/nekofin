@@ -19,11 +19,13 @@ class VlcPlayerView: ExpoView {
     private var externalSubtitles: [[String: String]]?
     private var externalTrack: [String: String]?
     private var progressTimer: DispatchSourceTimer?
+    private var statsTimer: DispatchSourceTimer?
     private var isStopping: Bool = false  // Define isStopping here
     private var lastProgressCall = Date().timeIntervalSince1970
     var hasSource = false
     var isTranscoding = false
     private var initialSeekPerformed: Bool = false
+    private var lastMediaStats: [String: Any]?
 
     // MARK: - Initialization
 
@@ -153,6 +155,7 @@ class VlcPlayerView: ExpoView {
             self.mediaPlayer?.media = media
             self.setInitialExternalSubtitles()
             self.hasSource = true
+            self.startStatsTimer()
             if autoplay {
                 print("Playing...")
                 self.play()
@@ -270,6 +273,61 @@ class VlcPlayerView: ExpoView {
         }
     }
 
+    private func startStatsTimer() {
+        stopStatsTimer()
+
+        statsTimer = DispatchSource.makeTimerSource(queue: DispatchQueue.main)
+        statsTimer?.schedule(deadline: .now(), repeating: .seconds(1))
+        statsTimer?.setEventHandler { [weak self] in
+            self?.updateMediaStats()
+        }
+        statsTimer?.resume()
+    }
+
+    private func stopStatsTimer() {
+        statsTimer?.cancel()
+        statsTimer = nil
+    }
+
+    private func updateMediaStats() {
+        guard let player = self.mediaPlayer,
+              let media = player.media else { return }
+
+        let stats = media.statistics
+
+        let currentStats: [String: Any] = [
+            "readBytes": Int64(stats.readBytes),
+            "inputBitrate": Float(stats.inputBitrate),
+            "demuxReadBytes": Int64(stats.demuxReadBytes),
+            "demuxBitrate": Float(stats.demuxBitrate),
+            "demuxCorrupted": Int64(stats.demuxCorrupted),
+            "demuxDiscontinuity": Int64(stats.demuxDiscontinuity),
+            "decodedVideo": Int64(stats.decodedVideo),
+            "decodedAudio": Int64(stats.decodedAudio),
+            "displayedPictures": Int64(stats.displayedPictures),
+            "lostPictures": Int64(stats.lostPictures),
+            "playedAudioBuffers": Int64(stats.playedAudioBuffers),
+            "lostAudioBuffers": Int64(stats.lostAudioBuffers),
+            "sentPackets": Int64(stats.sentPackets),
+            "sentBytes": Int64(stats.sentBytes),
+            "sendBitrate": Float(stats.sendBitrate)
+        ]
+
+        if let lastStats = lastMediaStats {
+            let isSame = NSDictionary(dictionary: currentStats).isEqual(to: lastStats)
+            if isSame {
+                return
+            }
+        }
+
+        lastMediaStats = currentStats
+
+        self.onMediaStatsChange?([
+            "target": self.reactTag ?? NSNull(),
+            "stats": currentStats
+        ])
+    }
+
     @objc func stop(completion: (() -> Void)? = nil) {
         guard !isStopping else {
             completion?()
@@ -300,6 +358,9 @@ class VlcPlayerView: ExpoView {
     private func performStop(completion: (() -> Void)? = nil) {
         // Stop the media player
         mediaPlayer?.stop()
+
+        // Stop timers
+        stopStatsTimer()
 
         // Remove observer
         NotificationCenter.default.removeObserver(self)
@@ -345,6 +406,7 @@ class VlcPlayerView: ExpoView {
     @objc var onVideoLoadEnd: RCTDirectEventBlock?
     @objc var onVideoError: RCTDirectEventBlock?
     @objc var onPipStarted: RCTDirectEventBlock?
+    @objc var onMediaStatsChange: RCTDirectEventBlock?
 
     // MARK: - Deinitialization
 

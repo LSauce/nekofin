@@ -81,3 +81,14 @@ export function isNil(value: unknown): value is null | undefined {
 }
 
 export const sleep = (ms: number) => new Promise<void>((resolve) => setTimeout(resolve, ms));
+
+export const formatBitrate = (mbps: number): string => {
+  const KBps = (mbps * 1000) / 8; // KB/s
+  const MBps = mbps / 8; // MB/s
+
+  if (MBps >= 1) {
+    return `${MBps.toFixed(2)} MB/s`;
+  } else {
+    return `${KBps.toFixed(2)} KB/s`;
+  }
+};

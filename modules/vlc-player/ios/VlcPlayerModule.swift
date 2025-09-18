@@ -23,7 +23,8 @@ public class VlcPlayerModule: Module {
                 "onVideoLoadEnd",
                 "onVideoProgress",
                 "onVideoError",
-                "onPipStarted"
+                "onPipStarted",
+                "onMediaStatsChange"
             )
 
             AsyncFunction("startPictureInPicture") { (view: VlcPlayerView) in
