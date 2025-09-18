@@ -1,4 +1,4 @@
-import { MediaTrack, MediaTracks } from '@/modules/vlc-player';
+import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
 import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -24,6 +24,7 @@ type ControlsProps = {
   hasNextEpisode?: boolean;
   onPreviousEpisode?: () => void;
   onNextEpisode?: () => void;
+  mediaStats?: MediaStats | null;
 };
 
 export function Controls({
@@ -43,6 +44,7 @@ export function Controls({
   hasNextEpisode,
   onPreviousEpisode,
   onNextEpisode,
+  mediaStats,
 }: ControlsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -130,6 +132,7 @@ export function Controls({
         selectedTracks={selectedTracks}
         onAudioTrackChange={onAudioTrackChange}
         onSubtitleTrackChange={onSubtitleTrackChange}
+        mediaStats={mediaStats ?? undefined}
       />
 
       <BottomControls

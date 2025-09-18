@@ -391,6 +391,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onPreviousEpisode={handlePreviousEpisode}
         onNextEpisode={handleNextEpisode}
         onRateChange={handleRateChange}
+        mediaStats={mediaStats}
       />
     </View>
   );

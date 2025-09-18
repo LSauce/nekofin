@@ -35,11 +35,6 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
         'android.permission.FOREGROUND_SERVICE_MEDIA_PLAYBACK',
       ],
     },
-    web: {
-      bundler: 'metro',
-      output: 'static',
-      favicon: './assets/images/favicon.png',
-    },
     plugins: [
       'expo-router',
       [
