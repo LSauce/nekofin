@@ -6,7 +6,7 @@ import { Animated, Easing, TextStyle } from 'react-native';
 import { ActiveBullet } from './DanmakuTypes';
 
 const STROKE_COLOR = '#000';
-const STROKE_WIDTH = 1.8;
+const STROKE_WIDTH = 1.6;
 
 export function Bullet({
   width,
