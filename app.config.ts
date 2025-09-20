@@ -13,6 +13,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
     userInterfaceStyle: 'automatic',
     newArchEnabled: true,
     ios: {
+      icon: './assets/images/nekofin.icon',
       requireFullScreen: true,
       supportsTablet: true,
       bundleIdentifier: 'com.lonzzi.nekofin',
