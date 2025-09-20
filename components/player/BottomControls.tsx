@@ -6,47 +6,31 @@ import { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
 import Animated, {
-  SharedValue,
   useAnimatedStyle,
   useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
 
-type BottomControlsProps = {
-  isPlaying: boolean;
-  isLoading: boolean;
-  duration: number;
-  currentTime: SharedValue<number>;
-  onSeek: (position: number) => void;
-  onPlayPause: () => void;
-  hasPreviousEpisode?: boolean;
-  hasNextEpisode?: boolean;
-  onPreviousEpisode?: () => void;
-  onNextEpisode?: () => void;
-  showControls: boolean;
-  fadeAnim: SharedValue<number>;
-  isDragging: boolean;
-  setIsDragging: (dragging: boolean) => void;
-  hideControlsWithDelay: () => void;
-};
+import { usePlayer } from './PlayerContext';
 
-export function BottomControls({
-  isPlaying,
-  isLoading,
-  duration,
-  currentTime,
-  onSeek,
-  onPlayPause,
-  hasPreviousEpisode,
-  hasNextEpisode,
-  onPreviousEpisode,
-  onNextEpisode,
-  showControls,
-  fadeAnim,
-  isDragging,
-  setIsDragging,
-  hideControlsWithDelay,
-}: BottomControlsProps) {
+export function BottomControls() {
+  const {
+    isPlaying,
+    isLoading,
+    duration,
+    currentTime,
+    onSeek,
+    onPlayPause,
+    hasPreviousEpisode,
+    hasNextEpisode,
+    onPreviousEpisode,
+    onNextEpisode,
+    showControls,
+    fadeAnim,
+    isDragging,
+    setIsDragging,
+    hideControlsWithDelay,
+  } = usePlayer();
   const currentTimeMs = useCurrentTime({ time: currentTime });
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {

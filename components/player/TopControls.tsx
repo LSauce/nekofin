@@ -1,5 +1,4 @@
 import { formatBitrate } from '@/lib/utils';
-import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { MenuView } from '@react-native-menu/menu';
@@ -9,35 +8,23 @@ import { useNetworkState } from 'expo-network';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity } from 'react-native';
-import Animated, { SharedValue, useAnimatedStyle } from 'react-native-reanimated';
+import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
-type TopControlsProps = {
-  title: string;
-  showControls: boolean;
-  setShowControls: (show: boolean) => void;
-  fadeAnim: SharedValue<number>;
-  menuOpen: boolean;
-  setMenuOpen: (open: boolean) => void;
-  tracks?: MediaTracks;
-  selectedTracks?: MediaTrack;
-  onAudioTrackChange?: (trackIndex: number) => void;
-  onSubtitleTrackChange?: (trackIndex: number) => void;
-  mediaStats?: MediaStats;
-};
+import { usePlayer } from './PlayerContext';
 
-export function TopControls({
-  title,
-  showControls,
-  setShowControls,
-  fadeAnim,
-  menuOpen,
-  setMenuOpen,
-  tracks,
-  selectedTracks,
-  onAudioTrackChange,
-  onSubtitleTrackChange,
-  mediaStats,
-}: TopControlsProps) {
+export function TopControls() {
+  const {
+    title,
+    showControls,
+    setShowControls,
+    fadeAnim,
+    setMenuOpen,
+    tracks,
+    selectedTracks,
+    onAudioTrackChange,
+    onSubtitleTrackChange,
+    mediaStats,
+  } = usePlayer();
   const router = useRouter();
   const navigation = useNavigation();
   const [now, setNow] = useState<string>('');

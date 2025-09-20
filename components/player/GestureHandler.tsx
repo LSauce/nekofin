@@ -6,7 +6,6 @@ import { StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
 import Animated, {
   setNativeProps,
-  SharedValue,
   useAnimatedRef,
   useAnimatedStyle,
   useSharedValue,
@@ -15,6 +14,7 @@ import Animated, {
 import { VolumeManager } from 'react-native-volume-manager';
 import { scheduleOnRN } from 'react-native-worklets';
 
+import { usePlayer } from './PlayerContext';
 import { VerticalSlider } from './VerticalSlider';
 
 const throttleWorklet = (callback: () => void, delay: number) => {
@@ -34,40 +34,22 @@ const throttleWorklet = (callback: () => void, delay: number) => {
   };
 };
 
-type GestureHandlerProps = {
-  duration: number;
-  currentTime: SharedValue<number>;
-  onSeek: (position: number) => void;
-  onPlayPause: () => void;
-  onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
-  showControls: boolean;
-  setShowControls: (show: boolean) => void;
-  fadeAnim: SharedValue<number>;
-  isDragging: boolean;
-  menuOpen: boolean;
-  isGestureSeekingActive: SharedValue<boolean>;
-  isVolumeGestureActive: SharedValue<boolean>;
-  isBrightnessGestureActive: SharedValue<boolean>;
-  hideControlsWithDelay: () => void;
-  clearControlsTimeout: () => void;
-};
-
-export function GestureHandler({
-  duration,
-  currentTime,
-  onSeek,
-  onPlayPause,
-  onRateChange,
-  showControls,
-  setShowControls,
-  isDragging,
-  menuOpen,
-  isGestureSeekingActive,
-  isVolumeGestureActive,
-  isBrightnessGestureActive,
-  hideControlsWithDelay,
-  clearControlsTimeout,
-}: GestureHandlerProps) {
+export function GestureHandler() {
+  const {
+    duration,
+    currentTime,
+    onSeek,
+    onPlayPause,
+    onRateChange,
+    showControls,
+    setShowControls,
+    menuOpen,
+    isGestureSeekingActive,
+    isVolumeGestureActive,
+    isBrightnessGestureActive,
+    hideControlsWithDelay,
+    clearControlsTimeout,
+  } = usePlayer();
   const { width: screenWidth } = useWindowDimensions();
   const [volume, setVolume] = useState(1.0);
   const [brightness, setBrightness] = useState(1.0);

@@ -1,10 +1,11 @@
 import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
-import { Fragment, useCallback, useEffect, useRef, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BottomControls } from './BottomControls';
 import { GestureHandler } from './GestureHandler';
+import { PlayerContext } from './PlayerContext';
 import { TopControls } from './TopControls';
 
 type ControlsProps = {
@@ -119,57 +120,43 @@ export function Controls({
     }
   }, [showControls, fadeAnim, hideControlsWithDelay, clearControlsTimeout]);
 
+  const contextValue = {
+    title,
+    isPlaying,
+    isLoading,
+    duration,
+    currentTime,
+    onSeek,
+    onPlayPause,
+    onRateChange,
+    tracks,
+    selectedTracks,
+    onAudioTrackChange,
+    onSubtitleTrackChange,
+    hasPreviousEpisode,
+    hasNextEpisode,
+    onPreviousEpisode,
+    onNextEpisode,
+    mediaStats: mediaStats ?? null,
+    showControls,
+    setShowControls,
+    fadeAnim,
+    menuOpen,
+    setMenuOpen,
+    isDragging,
+    setIsDragging,
+    isGestureSeekingActive,
+    isVolumeGestureActive,
+    isBrightnessGestureActive,
+    hideControlsWithDelay,
+    clearControlsTimeout,
+  };
+
   return (
-    <Fragment>
-      <TopControls
-        title={title}
-        showControls={showControls}
-        setShowControls={setShowControls}
-        fadeAnim={fadeAnim}
-        menuOpen={menuOpen}
-        setMenuOpen={setMenuOpen}
-        tracks={tracks}
-        selectedTracks={selectedTracks}
-        onAudioTrackChange={onAudioTrackChange}
-        onSubtitleTrackChange={onSubtitleTrackChange}
-        mediaStats={mediaStats ?? undefined}
-      />
-
-      <BottomControls
-        isPlaying={isPlaying}
-        isLoading={isLoading}
-        duration={duration}
-        currentTime={currentTime}
-        onSeek={onSeek}
-        onPlayPause={onPlayPause}
-        hasPreviousEpisode={hasPreviousEpisode}
-        hasNextEpisode={hasNextEpisode}
-        onPreviousEpisode={onPreviousEpisode}
-        onNextEpisode={onNextEpisode}
-        showControls={showControls}
-        fadeAnim={fadeAnim}
-        isDragging={isDragging}
-        setIsDragging={setIsDragging}
-        hideControlsWithDelay={hideControlsWithDelay}
-      />
-
-      <GestureHandler
-        duration={duration}
-        currentTime={currentTime}
-        onSeek={onSeek}
-        onPlayPause={onPlayPause}
-        onRateChange={onRateChange}
-        showControls={showControls}
-        setShowControls={setShowControls}
-        fadeAnim={fadeAnim}
-        isDragging={isDragging}
-        menuOpen={menuOpen}
-        isGestureSeekingActive={isGestureSeekingActive}
-        isVolumeGestureActive={isVolumeGestureActive}
-        isBrightnessGestureActive={isBrightnessGestureActive}
-        hideControlsWithDelay={hideControlsWithDelay}
-        clearControlsTimeout={clearControlsTimeout}
-      />
-    </Fragment>
+    <PlayerContext.Provider value={contextValue}>
+      <TopControls />
+      <BottomControls />
+      <GestureHandler />
+    </PlayerContext.Provider>
   );
 }
