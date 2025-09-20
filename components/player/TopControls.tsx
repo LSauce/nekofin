@@ -113,81 +113,91 @@ export function TopControls() {
         {!!now && <Text style={[styles.textShadow, styles.clockText]}>{now}</Text>}
       </Animated.View>
 
-      <Animated.View
-        style={[styles.danmakuButton, fadeAnimatedStyle]}
-        pointerEvents={showControls ? 'auto' : 'none'}
-      >
-        <BlurView tint="dark" intensity={100} style={styles.danmakuButtonBlur}>
-          <MenuView
-            isAnchoredToRight
-            onPressAction={({ nativeEvent }) => {
-              const key = nativeEvent.event;
-              if (key.startsWith('audio_')) {
-                const trackIndex = parseInt(key.replace('audio_', ''));
-                handleAudioTrackSelect(trackIndex);
-              } else if (key.startsWith('subtitle_')) {
-                const trackIndex = parseInt(key.replace('subtitle_', ''));
-                handleSubtitleTrackSelect(trackIndex);
-              }
-              setMenuOpen(false);
-            }}
-            onOpenMenu={() => {
-              setMenuOpen(true);
-            }}
-            onCloseMenu={() => {
-              setMenuOpen(false);
-            }}
-            actions={[
-              ...(audioTracks.length > 0
-                ? [
-                    {
-                      id: 'audio',
-                      title: '音轨选择',
-                      subactions: audioTracks.map((track) => ({
-                        id: `audio_${track.index}`,
-                        title: track.name,
-                        state:
-                          selectedTracks?.audio?.index === track.index
-                            ? ('on' as const)
-                            : ('off' as const),
-                      })),
-                    },
-                  ]
-                : []),
-              ...(subtitleTracks.length > 0
-                ? [
-                    {
-                      id: 'subtitle',
-                      title: '字幕选择',
-                      subactions: [
-                        {
-                          id: 'subtitle_-1',
-                          title: '关闭字幕',
-                          state:
-                            selectedTracks?.subtitle?.index === -1
-                              ? ('on' as const)
-                              : ('off' as const),
-                        },
-                        ...subtitleTracks.map((track) => ({
-                          id: `subtitle_${track.index}`,
-                          title: track.name,
-                          state:
-                            selectedTracks?.subtitle?.index === track.index
-                              ? ('on' as const)
-                              : ('off' as const),
-                        })),
-                      ],
-                    },
-                  ]
-                : []),
-            ]}
-          >
-            <TouchableOpacity style={styles.danmakuButtonTouchable}>
-              <AntDesign name="setting" size={20} color="white" />
-            </TouchableOpacity>
-          </MenuView>
-        </BlurView>
-      </Animated.View>
+      {audioTracks.length > 0 && (
+        <Animated.View
+          style={[styles.audioButton, fadeAnimatedStyle]}
+          pointerEvents={showControls ? 'auto' : 'none'}
+        >
+          <BlurView tint="dark" intensity={100} style={styles.controlButtonBlur}>
+            <MenuView
+              isAnchoredToRight
+              onPressAction={({ nativeEvent }) => {
+                const key = nativeEvent.event;
+                if (key.startsWith('audio_')) {
+                  const trackIndex = parseInt(key.replace('audio_', ''));
+                  handleAudioTrackSelect(trackIndex);
+                }
+                setMenuOpen(false);
+              }}
+              onOpenMenu={() => {
+                setMenuOpen(true);
+              }}
+              onCloseMenu={() => {
+                setMenuOpen(false);
+              }}
+              title="音轨选择"
+              actions={audioTracks.map((track) => ({
+                id: `audio_${track.index}`,
+                title: track.name,
+                state:
+                  selectedTracks?.audio?.index === track.index ? ('on' as const) : ('off' as const),
+              }))}
+            >
+              <TouchableOpacity style={styles.controlButtonTouchable}>
+                <MaterialIcons name="audiotrack" size={20} color="white" />
+              </TouchableOpacity>
+            </MenuView>
+          </BlurView>
+        </Animated.View>
+      )}
+
+      {subtitleTracks.length > 0 && (
+        <Animated.View
+          style={[styles.subtitleButton, fadeAnimatedStyle]}
+          pointerEvents={showControls ? 'auto' : 'none'}
+        >
+          <BlurView tint="dark" intensity={100} style={styles.controlButtonBlur}>
+            <MenuView
+              isAnchoredToRight
+              onPressAction={({ nativeEvent }) => {
+                const key = nativeEvent.event;
+                if (key.startsWith('subtitle_')) {
+                  const trackIndex = parseInt(key.replace('subtitle_', ''));
+                  handleSubtitleTrackSelect(trackIndex);
+                }
+                setMenuOpen(false);
+              }}
+              onOpenMenu={() => {
+                setMenuOpen(true);
+              }}
+              onCloseMenu={() => {
+                setMenuOpen(false);
+              }}
+              title="字幕选择"
+              actions={[
+                {
+                  id: 'subtitle_-1',
+                  title: '关闭字幕',
+                  state:
+                    selectedTracks?.subtitle?.index === -1 ? ('on' as const) : ('off' as const),
+                },
+                ...subtitleTracks.map((track) => ({
+                  id: `subtitle_${track.index}`,
+                  title: track.name,
+                  state:
+                    selectedTracks?.subtitle?.index === track.index
+                      ? ('on' as const)
+                      : ('off' as const),
+                })),
+              ]}
+            >
+              <TouchableOpacity style={styles.controlButtonTouchable}>
+                <MaterialIcons name="subtitles" size={20} color="white" />
+              </TouchableOpacity>
+            </MenuView>
+          </BlurView>
+        </Animated.View>
+      )}
 
       {!!title && (
         <Animated.View style={[styles.titleContainer, fadeAnimatedStyle]} pointerEvents="none">
@@ -258,10 +268,16 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  danmakuButton: {
+  audioButton: {
     position: 'absolute',
     top: 50,
     right: 100,
+    zIndex: 10,
+  },
+  subtitleButton: {
+    position: 'absolute',
+    top: 50,
+    right: 160,
     zIndex: 10,
   },
   clockContainer: {
@@ -276,7 +292,7 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'right',
   },
-  danmakuButtonBlur: {
+  controlButtonBlur: {
     width: 44,
     height: 44,
     borderRadius: 22,
@@ -285,7 +301,7 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  danmakuButtonTouchable: {
+  controlButtonTouchable: {
     width: 44,
     height: 44,
     borderRadius: 22,
