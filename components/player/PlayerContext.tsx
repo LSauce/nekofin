@@ -11,6 +11,7 @@ export type PlayerContextValue = {
   onSeek: (position: number) => void;
   onPlayPause: () => void;
   onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
+  rate: number;
   tracks?: MediaTracks;
   selectedTracks?: MediaTrack;
   onAudioTrackChange?: (trackIndex: number) => void;

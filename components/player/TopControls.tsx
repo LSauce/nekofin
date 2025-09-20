@@ -7,7 +7,7 @@ import * as Network from 'expo-network';
 import { useNetworkState } from 'expo-network';
 import { useNavigation, useRouter } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
 import { usePlayer } from './PlayerContext';
@@ -23,6 +23,8 @@ export function TopControls() {
     selectedTracks,
     onAudioTrackChange,
     onSubtitleTrackChange,
+    onRateChange,
+    rate,
     mediaStats,
   } = usePlayer();
   const router = useRouter();
@@ -73,6 +75,19 @@ export function TopControls() {
     onSubtitleTrackChange?.(trackIndex);
   };
 
+  const handleRateSelect = (newRate: number) => {
+    onRateChange?.(newRate);
+  };
+
+  const createMenuAction = <T,>(id: string, title: string, currentValue: T, targetValue: T) => ({
+    id,
+    title,
+    state: currentValue === targetValue ? ('on' as const) : ('off' as const),
+  });
+
+  const createRateAction = (rateValue: number) =>
+    createMenuAction(`rate_${rateValue}`, `${rateValue}x`, rate, rateValue);
+
   return (
     <>
       <Animated.View
@@ -113,12 +128,12 @@ export function TopControls() {
         {!!now && <Text style={[styles.textShadow, styles.clockText]}>{now}</Text>}
       </Animated.View>
 
-      {audioTracks.length > 0 && (
-        <Animated.View
-          style={[styles.audioButton, fadeAnimatedStyle]}
-          pointerEvents={showControls ? 'auto' : 'none'}
-        >
-          <BlurView tint="dark" intensity={100} style={styles.controlButtonBlur}>
+      <Animated.View
+        style={[styles.controlsContainer, fadeAnimatedStyle]}
+        pointerEvents={showControls ? 'auto' : 'none'}
+      >
+        <BlurView tint="dark" intensity={100} style={styles.controlsBlur}>
+          <View style={styles.controlsRow}>
             <MenuView
               isAnchoredToRight
               onPressAction={({ nativeEvent }) => {
@@ -136,27 +151,31 @@ export function TopControls() {
                 setMenuOpen(false);
               }}
               title="音轨选择"
-              actions={audioTracks.map((track) => ({
-                id: `audio_${track.index}`,
-                title: track.name,
-                state:
-                  selectedTracks?.audio?.index === track.index ? ('on' as const) : ('off' as const),
-              }))}
+              actions={
+                audioTracks.length > 0
+                  ? audioTracks.map((track) =>
+                      createMenuAction(
+                        `audio_${track.index}`,
+                        track.name,
+                        selectedTracks?.audio?.index,
+                        track.index,
+                      ),
+                    )
+                  : [{ id: 'no_audio', title: '无可用音轨', state: 'off' as const }]
+              }
             >
-              <TouchableOpacity style={styles.controlButtonTouchable}>
-                <MaterialIcons name="audiotrack" size={20} color="white" />
+              <TouchableOpacity
+                style={[styles.controlButton, audioTracks.length === 0 && styles.disabledButton]}
+                disabled={audioTracks.length === 0}
+              >
+                <MaterialIcons
+                  name="audiotrack"
+                  size={20}
+                  color={audioTracks.length === 0 ? '#666' : 'white'}
+                />
               </TouchableOpacity>
             </MenuView>
-          </BlurView>
-        </Animated.View>
-      )}
 
-      {subtitleTracks.length > 0 && (
-        <Animated.View
-          style={[styles.subtitleButton, fadeAnimatedStyle]}
-          pointerEvents={showControls ? 'auto' : 'none'}
-        >
-          <BlurView tint="dark" intensity={100} style={styles.controlButtonBlur}>
             <MenuView
               isAnchoredToRight
               onPressAction={({ nativeEvent }) => {
@@ -174,30 +193,65 @@ export function TopControls() {
                 setMenuOpen(false);
               }}
               title="字幕选择"
-              actions={[
-                {
-                  id: 'subtitle_-1',
-                  title: '关闭字幕',
-                  state:
-                    selectedTracks?.subtitle?.index === -1 ? ('on' as const) : ('off' as const),
-                },
-                ...subtitleTracks.map((track) => ({
-                  id: `subtitle_${track.index}`,
-                  title: track.name,
-                  state:
-                    selectedTracks?.subtitle?.index === track.index
-                      ? ('on' as const)
-                      : ('off' as const),
-                })),
-              ]}
+              actions={
+                subtitleTracks.length > 0
+                  ? [
+                      createMenuAction(
+                        'subtitle_-1',
+                        '关闭字幕',
+                        selectedTracks?.subtitle?.index,
+                        -1,
+                      ),
+                      ...subtitleTracks.map((track) =>
+                        createMenuAction(
+                          `subtitle_${track.index}`,
+                          track.name,
+                          selectedTracks?.subtitle?.index,
+                          track.index,
+                        ),
+                      ),
+                    ]
+                  : [{ id: 'no_subtitle', title: '无可用字幕', state: 'off' as const }]
+              }
             >
-              <TouchableOpacity style={styles.controlButtonTouchable}>
-                <MaterialIcons name="subtitles" size={20} color="white" />
+              <TouchableOpacity
+                style={[styles.controlButton, subtitleTracks.length === 0 && styles.disabledButton]}
+                disabled={subtitleTracks.length === 0}
+              >
+                <MaterialIcons
+                  name="subtitles"
+                  size={20}
+                  color={subtitleTracks.length === 0 ? '#666' : 'white'}
+                />
               </TouchableOpacity>
             </MenuView>
-          </BlurView>
-        </Animated.View>
-      )}
+
+            <MenuView
+              isAnchoredToRight
+              onPressAction={({ nativeEvent }) => {
+                const key = nativeEvent.event;
+                if (key.startsWith('rate_')) {
+                  const newRate = parseFloat(key.replace('rate_', ''));
+                  handleRateSelect(newRate);
+                }
+                setMenuOpen(false);
+              }}
+              onOpenMenu={() => {
+                setMenuOpen(true);
+              }}
+              onCloseMenu={() => {
+                setMenuOpen(false);
+              }}
+              title="播放速度"
+              actions={[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(createRateAction)}
+            >
+              <TouchableOpacity style={styles.controlButton}>
+                <MaterialIcons name="speed" size={20} color="white" />
+              </TouchableOpacity>
+            </MenuView>
+          </View>
+        </BlurView>
+      </Animated.View>
 
       {!!title && (
         <Animated.View style={[styles.titleContainer, fadeAnimatedStyle]} pointerEvents="none">
@@ -268,17 +322,22 @@ const styles = StyleSheet.create({
     justifyContent: 'center',
     alignItems: 'center',
   },
-  audioButton: {
+  controlsContainer: {
     position: 'absolute',
     top: 50,
     right: 100,
     zIndex: 10,
   },
-  subtitleButton: {
-    position: 'absolute',
-    top: 50,
-    right: 160,
-    zIndex: 10,
+  controlsBlur: {
+    borderRadius: 22,
+    overflow: 'hidden',
+  },
+  controlsRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 8,
+    paddingHorizontal: 8,
+    paddingVertical: 4,
   },
   clockContainer: {
     position: 'absolute',
@@ -292,20 +351,14 @@ const styles = StyleSheet.create({
     fontWeight: '500',
     textAlign: 'right',
   },
-  controlButtonBlur: {
+  controlButton: {
     width: 44,
     height: 44,
     borderRadius: 22,
-    overflow: 'hidden',
-    display: 'flex',
     justifyContent: 'center',
     alignItems: 'center',
   },
-  controlButtonTouchable: {
-    width: 44,
-    height: 44,
-    borderRadius: 22,
-    justifyContent: 'center',
-    alignItems: 'center',
+  disabledButton: {
+    opacity: 0.5,
   },
 });

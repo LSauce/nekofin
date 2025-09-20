@@ -1,6 +1,7 @@
 import { formatTimeWorklet } from '@/lib/utils';
 import { BlurView } from 'expo-blur';
 import * as Brightness from 'expo-brightness';
+import * as Haptics from 'expo-haptics';
 import { Fragment, useCallback, useEffect, useState } from 'react';
 import { StyleSheet, TextInput, useWindowDimensions } from 'react-native';
 import { Gesture, GestureDetector } from 'react-native-gesture-handler';
@@ -358,7 +359,7 @@ export function GestureHandler() {
     });
 
   const longPressGesture = Gesture.LongPress()
-    .minDuration(200)
+    .minDuration(300)
     .maxDistance(9999)
     .shouldCancelWhenOutside(false)
     .onStart(() => {
@@ -369,7 +370,10 @@ export function GestureHandler() {
       ) {
         return;
       }
-      if (onRateChange) scheduleOnRN(onRateChange, 3, { remember: false });
+      if (onRateChange) {
+        scheduleOnRN(Haptics.impactAsync, Haptics.ImpactFeedbackStyle.Medium);
+        scheduleOnRN(onRateChange, 3, { remember: false });
+      }
     })
     .onEnd((_event, _success) => {
       if (onRateChange) scheduleOnRN(onRateChange, null);

@@ -301,8 +301,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             startPosition: initialTime,
             autoplay: true,
           }}
-          progressUpdateInterval={500}
-          videoAspectRatio="16:9"
           onVideoProgress={(e) => {
             const { duration, currentTime: newCurrentTime } = e.nativeEvent;
 
@@ -382,6 +380,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onSeek={handleSeek}
         title={formattedTitle}
         onPlayPause={handlePlayPause}
+        onRateChange={handleRateChange}
+        rate={rate}
         tracks={tracks}
         selectedTracks={selectedTracks}
         onAudioTrackChange={handleAudioTrackChange}
@@ -390,7 +390,6 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         hasNextEpisode={hasNextEpisode}
         onPreviousEpisode={handlePreviousEpisode}
         onNextEpisode={handleNextEpisode}
-        onRateChange={handleRateChange}
         mediaStats={mediaStats}
       />
     </View>

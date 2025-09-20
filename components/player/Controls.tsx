@@ -17,6 +17,7 @@ type ControlsProps = {
   onSeek: (position: number) => void;
   onPlayPause: () => void;
   onRateChange?: (newRate: number | null, options?: { remember?: boolean }) => void;
+  rate: number;
   tracks?: MediaTracks;
   selectedTracks?: MediaTrack;
   onAudioTrackChange?: (trackIndex: number) => void;
@@ -37,6 +38,7 @@ export function Controls({
   title,
   onPlayPause,
   onRateChange,
+  rate,
   tracks,
   selectedTracks,
   onAudioTrackChange,
@@ -129,6 +131,7 @@ export function Controls({
     onSeek,
     onPlayPause,
     onRateChange,
+    rate,
     tracks,
     selectedTracks,
     onAudioTrackChange,
