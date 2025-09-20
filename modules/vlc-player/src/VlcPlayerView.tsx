@@ -92,7 +92,6 @@ const VlcPlayerView = React.forwardRef<VlcPlayerViewRef, VlcPlayerViewProps>((pr
   const {
     source,
     style,
-    progressUpdateInterval = 500,
     paused,
     muted,
     volume,
@@ -120,7 +119,6 @@ const VlcPlayerView = React.forwardRef<VlcPlayerViewRef, VlcPlayerViewProps>((pr
       ref={nativeRef}
       source={processedSource}
       style={[{ width: '100%', height: '100%' }, style as ViewStyle]}
-      progressUpdateInterval={progressUpdateInterval}
       paused={paused}
       muted={muted}
       volume={volume}

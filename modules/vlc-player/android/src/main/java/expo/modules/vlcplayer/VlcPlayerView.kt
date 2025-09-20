@@ -60,12 +60,10 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
   var hasSource: Boolean = false
 
   private val handler = Handler(Looper.getMainLooper())
-  private val updateInterval = 1000L // 1 second
-  private val updateProgressRunnable = object : Runnable {
+  private val updateStatsRunnable = object : Runnable {
     override fun run() {
-      updateVideoProgress()
       updateMediaStats()
-      handler.postDelayed(this, updateInterval)
+      handler.postDelayed(this, 500L)
     }
   }
   private val currentActivity get() = context.findActivity()
@@ -280,18 +278,18 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
   fun play() {
     mediaPlayer?.play()
     isPaused = false
-    handler.post(updateProgressRunnable) // Start updating progress
+    handler.post(updateStatsRunnable) // Start updating stats
   }
 
   fun pause() {
     mediaPlayer?.pause()
     isPaused = true
-    handler.removeCallbacks(updateProgressRunnable) // Stop updating progress
+    handler.removeCallbacks(updateStatsRunnable) // Stop updating stats
   }
 
   fun stop() {
     mediaPlayer?.stop()
-    handler.removeCallbacks(updateProgressRunnable) // Stop updating progress
+    handler.removeCallbacks(updateStatsRunnable) // Stop updating stats
   }
 
   fun seekTo(time: Int) {
@@ -433,7 +431,7 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
     currentActivity.removeOnPictureInPictureModeChangedListener(pipChangeListener)
 
     mediaPlayer?.stop()
-    handler.removeCallbacks(updateProgressRunnable) // Stop updating progress
+    handler.removeCallbacks(updateStatsRunnable) // Stop updating stats
 
     media?.release()
     mediaPlayer?.release()
@@ -454,7 +452,7 @@ class VlcPlayerView(context: Context, appContext: AppContext) : ExpoView(context
       MediaPlayer.Event.EncounteredError -> updatePlayerState(event)
 
       MediaPlayer.Event.TimeChanged -> {
-        // Do nothing here, as we are updating progress every 1 second
+        updateVideoProgress() // Update progress immediately when time changes
       }
     }
   }

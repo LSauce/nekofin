@@ -97,7 +97,6 @@ export type ChapterInfo = {
 export type VlcPlayerViewProps = {
   source: VlcPlayerSource;
   style?: ViewStyle | ViewStyle[];
-  progressUpdateInterval?: number;
   paused?: boolean;
   muted?: boolean;
   volume?: number;

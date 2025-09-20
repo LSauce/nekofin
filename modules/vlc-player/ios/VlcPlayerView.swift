@@ -9,7 +9,6 @@ import ExpoModulesCore
 class VlcPlayerView: ExpoView {
     private var mediaPlayer: VLCMediaPlayer?
     private var videoView: UIView?
-    private var progressUpdateInterval: TimeInterval = 1.0  // Update interval set to 1 second
     private var isPaused: Bool = false
     private var currentGeometryCString: [CChar]?
     private var lastReportedState: VLCMediaPlayerState?
@@ -21,7 +20,6 @@ class VlcPlayerView: ExpoView {
     private var progressTimer: DispatchSourceTimer?
     private var statsTimer: DispatchSourceTimer?
     private var isStopping: Bool = false  // Define isStopping here
-    private var lastProgressCall = Date().timeIntervalSince1970
     var hasSource = false
     var isTranscoding = false
     private var initialSeekPerformed: Bool = false
@@ -417,12 +415,7 @@ class VlcPlayerView: ExpoView {
 
 extension VlcPlayerView: VLCMediaPlayerDelegate {
     func mediaPlayerTimeChanged(_ aNotification: Notification) {
-        // self?.updateVideoProgress()
-        let timeNow = Date().timeIntervalSince1970
-        if timeNow - lastProgressCall >= 1 {
-            lastProgressCall = timeNow
-            updateVideoProgress()
-        }
+        updateVideoProgress()
     }
 
     func mediaPlayerStateChanged(_ aNotification: Notification) {
