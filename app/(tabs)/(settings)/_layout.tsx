@@ -4,7 +4,7 @@ import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
 
 export default function HomeLayout() {
-  const backgroundColor = useColorScheme() === 'dark' ? 'black' : 'white';
+  const backgroundColor = useColorScheme() === 'dark' ? 'black' : '#f1f2f6';
 
   return (
     <Stack
@@ -15,6 +15,9 @@ export default function HomeLayout() {
         headerLeft: HeaderBackButton,
         headerLargeStyle: {
           backgroundColor: isGreaterThanOrEqual26 ? undefined : backgroundColor,
+        },
+        contentStyle: {
+          backgroundColor,
         },
       }}
     >

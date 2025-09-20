@@ -1,5 +1,3 @@
-import { getSystemColor } from '@/constants/SystemColor';
-import { useColorScheme } from '@/hooks/useColorScheme';
 import { useSettingsColors } from '@/hooks/useSettingsColors';
 import { Slider as AndroidSlider } from '@expo/ui/jetpack-compose';
 import { Host, Slider as IOSSlider } from '@expo/ui/swift-ui';
@@ -31,10 +29,7 @@ export const SliderSetting: React.FC<SliderSettingProps> = ({
   subtitle,
   step = 0.01,
 }) => {
-  const theme = useColorScheme() ?? 'light';
   const { accentColor } = useSettingsColors();
-
-  const maximumTrackTintColor = getSystemColor('systemGray5', theme);
 
   const clampAndStep = useMemo(() => {
     return (raw: number) => {

@@ -83,7 +83,7 @@ export default function MediaScreen() {
               },
             ]}
           >
-            <MaterialIcons name="more-vert" size={24} color={secondaryTextColor} />
+            <MaterialIcons name="unfold-more" size={24} color={secondaryTextColor} />
           </MenuView>
         }
       />
