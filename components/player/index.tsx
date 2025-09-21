@@ -58,6 +58,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [rate, setRate] = useState(1);
   const prevRateRef = useRef<number>(1);
   const [mediaStats, setMediaStats] = useState<MediaStats | null>(null);
+  const [danmakuEpisodeInfo, setDanmakuEpisodeInfo] = useState<
+    { animeTitle: string; episodeTitle: string } | undefined
+  >(undefined);
 
   const player = useRef<VlcPlayerViewRef>(null);
   const currentTime = useSharedValue(0);
@@ -88,21 +91,31 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [manualComments, setManualComments] = useState<DandanComment[]>([]);
   const [useManualComments, setUseManualComments] = useState(false);
 
-  const { data: autoComments = [] } = useQuery({
+  const { data: autoCommentsData } = useQuery({
     queryKey: ['comments', itemDetail?.id, seriesInfo?.originalTitle],
     queryFn: async () => {
-      if (!itemDetail || !seriesInfo?.originalTitle) return [];
-      return await getCommentsByItem(itemDetail, seriesInfo.originalTitle);
+      if (!itemDetail || !seriesInfo?.originalTitle) {
+        return { comments: [], episodeInfo: undefined };
+      }
+      return getCommentsByItem(itemDetail, seriesInfo.originalTitle);
     },
     enabled: !!itemDetail && !!seriesInfo?.originalTitle && !useManualComments,
     staleTime: 1000 * 60 * 5,
   });
 
-  const comments = useManualComments ? manualComments : autoComments;
+  useEffect(() => {
+    setDanmakuEpisodeInfo(autoCommentsData?.episodeInfo);
+  }, [autoCommentsData?.episodeInfo]);
 
-  const handleCommentsLoaded = (newComments: DandanComment[]) => {
+  const comments = useManualComments ? manualComments : (autoCommentsData?.comments ?? []);
+
+  const handleCommentsLoaded = (
+    newComments: DandanComment[],
+    episodeInfo?: { animeTitle: string; episodeTitle: string },
+  ) => {
     setManualComments(newComments);
     setUseManualComments(true);
+    setDanmakuEpisodeInfo(episodeInfo);
   };
 
   const { data: streamInfo } = useQuery({
@@ -403,6 +416,8 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onNextEpisode={handleNextEpisode}
         mediaStats={mediaStats}
         onCommentsLoaded={handleCommentsLoaded}
+        danmakuEpisodeInfo={danmakuEpisodeInfo}
+        danmakuComments={comments}
       />
     </View>
   );

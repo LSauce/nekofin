@@ -8,7 +8,7 @@ import {
   searchAnimesByKeyword,
 } from '@/services/dandanplay';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
-import { BottomSheetFlatList, BottomSheetModal, BottomSheetTextInput } from '@gorhom/bottom-sheet';
+import { BottomSheetFlatList, BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useCallback, useImperativeHandle, useRef, useState } from 'react';
 import {
   ActivityIndicator,
@@ -21,7 +21,10 @@ import {
 } from 'react-native';
 
 type DanmakuSearchModalProps = {
-  onCommentsLoaded: (comments: DandanComment[]) => void;
+  onCommentsLoaded: (
+    comments: DandanComment[],
+    episodeInfo?: { animeTitle: string; episodeTitle: string },
+  ) => void;
   ref?: React.RefObject<DanmakuSearchModalRef | null>;
 };
 
@@ -93,7 +96,10 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
       setLoading(true);
       try {
         const comments = await getCommentsByEpisodeId(episode.episodeId);
-        onCommentsLoaded(comments);
+        onCommentsLoaded(comments, {
+          animeTitle: selectedAnime?.animeTitle ?? '',
+          episodeTitle: episode.episodeTitle,
+        });
         bottomSheetModalRef.current?.dismiss();
         Alert.alert('成功', '弹幕已加载');
       } catch (error) {
@@ -102,7 +108,7 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
         setLoading(false);
       }
     },
-    [onCommentsLoaded],
+    [onCommentsLoaded, selectedAnime],
   );
 
   const handleClose = useCallback(() => {

@@ -35,7 +35,12 @@ export type PlayerContextValue = {
   isBrightnessGestureActive: SharedValue<boolean>;
   hideControlsWithDelay: () => void;
   clearControlsTimeout: () => void;
-  onCommentsLoaded?: (comments: DandanComment[]) => void;
+  onCommentsLoaded?: (
+    comments: DandanComment[],
+    episodeInfo?: { animeTitle: string; episodeTitle: string },
+  ) => void;
+  danmakuEpisodeInfo?: { animeTitle: string; episodeTitle: string } | undefined;
+  danmakuComments: DandanComment[];
 };
 
 export const PlayerContext = createContext<PlayerContextValue | null>(null);

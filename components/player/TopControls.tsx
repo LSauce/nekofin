@@ -1,5 +1,6 @@
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { formatBitrate } from '@/lib/utils';
+import { DandanComment } from '@/services/dandanplay';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { MenuView } from '@react-native-menu/menu';
@@ -29,6 +30,8 @@ export function TopControls() {
     rate,
     mediaStats,
     onCommentsLoaded,
+    danmakuEpisodeInfo,
+    danmakuComments,
   } = usePlayer();
   const router = useRouter();
   const navigation = useNavigation();
@@ -105,8 +108,8 @@ export function TopControls() {
   }, []);
 
   const handleCommentsLoaded = useCallback(
-    (comments: any[]) => {
-      onCommentsLoaded?.(comments);
+    (comments: DandanComment[], episodeInfo?: { animeTitle: string; episodeTitle: string }) => {
+      onCommentsLoaded?.(comments, episodeInfo);
     },
     [onCommentsLoaded],
   );
@@ -145,6 +148,22 @@ export function TopControls() {
             </Text>
           )}
         </Animated.View>
+      </Animated.View>
+
+      <Animated.View style={[styles.danmakuInfoContainer, fadeAnimatedStyle]} pointerEvents="none">
+        {danmakuEpisodeInfo && (
+          <View style={styles.danmakuInfoRow}>
+            <MaterialIcons name="chat" size={12} color="#fff" />
+            <Text style={[styles.textShadow, styles.danmakuInfoText]}>
+              {danmakuEpisodeInfo.animeTitle} - {danmakuEpisodeInfo.episodeTitle}
+            </Text>
+          </View>
+        )}
+        {danmakuComments.length > 0 && (
+          <Text style={[styles.textShadow, styles.danmakuCountText]}>
+            {danmakuComments.length} 条弹幕
+          </Text>
+        )}
       </Animated.View>
 
       <Animated.View style={[styles.clockContainer, fadeAnimatedStyle]} pointerEvents="none">
@@ -418,5 +437,34 @@ const styles = StyleSheet.create({
   },
   disabledButton: {
     opacity: 0.5,
+  },
+  danmakuInfoContainer: {
+    position: 'absolute',
+    top: 32,
+    left: 100,
+    zIndex: 10,
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  danmakuInfoRow: {
+    flexDirection: 'row',
+    alignItems: 'center',
+    gap: 4,
+    marginBottom: 2,
+  },
+  danmakuInfoText: {
+    color: '#fff',
+    fontSize: 11,
+    fontWeight: '400',
+    textAlign: 'left',
+  },
+  danmakuCountText: {
+    color: '#fff',
+    fontSize: 10,
+    fontWeight: '400',
+    textAlign: 'left',
+    opacity: 0.8,
   },
 });

@@ -67,12 +67,18 @@ export const getCommentsByItem = async (item: MediaItem, originalTitle?: string 
     animes = await searchAnimesByKeyword(originalTitle ?? '');
   }
   if (animes.length === 0) {
-    return [];
+    return { comments: [], episodeInfo: undefined };
   }
   const anime = animes[seasonNumber - 1];
   if (anime && episodeNumber) {
     const comments = await getCommentsByEpisodeId(anime.episodes[episodeNumber - 1].episodeId);
-    return comments;
+    return {
+      comments,
+      episodeInfo: {
+        animeTitle: anime.animeTitle,
+        episodeTitle: anime.episodes[episodeNumber - 1].episodeTitle,
+      },
+    };
   }
 };
 

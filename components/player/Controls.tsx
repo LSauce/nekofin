@@ -28,7 +28,12 @@ type ControlsProps = {
   onPreviousEpisode?: () => void;
   onNextEpisode?: () => void;
   mediaStats?: MediaStats | null;
-  onCommentsLoaded?: (comments: DandanComment[]) => void;
+  onCommentsLoaded?: (
+    comments: DandanComment[],
+    episodeInfo?: { animeTitle: string; episodeTitle: string },
+  ) => void;
+  danmakuEpisodeInfo?: { animeTitle: string; episodeTitle: string } | undefined;
+  danmakuComments: DandanComment[];
 };
 
 export function Controls({
@@ -51,6 +56,8 @@ export function Controls({
   onNextEpisode,
   mediaStats,
   onCommentsLoaded,
+  danmakuEpisodeInfo,
+  danmakuComments,
 }: ControlsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -157,6 +164,8 @@ export function Controls({
     hideControlsWithDelay,
     clearControlsTimeout,
     onCommentsLoaded,
+    danmakuEpisodeInfo,
+    danmakuComments,
   };
 
   return (

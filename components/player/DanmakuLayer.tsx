@@ -742,8 +742,13 @@ export function DanmakuLayer({
     setActive((prev) => prev.filter((b) => b.id !== id));
   }, []);
 
+  const effectiveOpacity = danmakuFilter === 15 ? 0 : opacity;
+
   return (
-    <View style={[StyleSheet.absoluteFill, { opacity, overflow: 'hidden' }]} pointerEvents="none">
+    <View
+      style={[StyleSheet.absoluteFill, { opacity: effectiveOpacity, overflow: 'hidden' }]}
+      pointerEvents="none"
+    >
       {active.map((b) => (
         <MemoBullet
           key={b.id}

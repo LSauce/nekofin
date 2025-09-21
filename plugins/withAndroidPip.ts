@@ -14,10 +14,10 @@ const withAndroidPip: ConfigPlugin = (config) => {
     const activities = application.activity;
     const launcherActivity =
       activities.find((activity) => {
-        const intentFilters: any[] = activity['intent-filter'] || [];
+        const intentFilters = activity['intent-filter'] || [];
         return intentFilters.some((filter) => {
-          const actions: any[] = filter.action || [];
-          const categories: any[] = filter.category || [];
+          const actions = filter.action || [];
+          const categories = filter.category || [];
           const hasMain = actions.some(
             (a) => a['$']['android:name'] === 'android.intent.action.MAIN',
           );
