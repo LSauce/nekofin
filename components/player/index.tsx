@@ -16,6 +16,7 @@ import {
   VlcPlayerView,
   VlcPlayerViewRef,
 } from '@/modules/vlc-player';
+import { DandanComment } from '@/services/dandanplay';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
@@ -84,15 +85,25 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     enabled: !!itemDetail?.seriesId && !!currentServer,
   });
 
-  const { data: comments = [] } = useQuery({
+  const [manualComments, setManualComments] = useState<DandanComment[]>([]);
+  const [useManualComments, setUseManualComments] = useState(false);
+
+  const { data: autoComments = [] } = useQuery({
     queryKey: ['comments', itemDetail?.id, seriesInfo?.originalTitle],
     queryFn: async () => {
       if (!itemDetail || !seriesInfo?.originalTitle) return [];
       return await getCommentsByItem(itemDetail, seriesInfo.originalTitle);
     },
-    enabled: !!itemDetail && !!seriesInfo?.originalTitle,
+    enabled: !!itemDetail && !!seriesInfo?.originalTitle && !useManualComments,
     staleTime: 1000 * 60 * 5,
   });
+
+  const comments = useManualComments ? manualComments : autoComments;
+
+  const handleCommentsLoaded = (newComments: DandanComment[]) => {
+    setManualComments(newComments);
+    setUseManualComments(true);
+  };
 
   const { data: streamInfo } = useQuery({
     queryKey: ['streamInfo', itemId, currentServer?.userId],
@@ -391,6 +402,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onPreviousEpisode={handlePreviousEpisode}
         onNextEpisode={handleNextEpisode}
         mediaStats={mediaStats}
+        onCommentsLoaded={handleCommentsLoaded}
       />
     </View>
   );

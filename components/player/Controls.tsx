@@ -1,4 +1,5 @@
 import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
+import { DandanComment } from '@/services/dandanplay';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
@@ -27,6 +28,7 @@ type ControlsProps = {
   onPreviousEpisode?: () => void;
   onNextEpisode?: () => void;
   mediaStats?: MediaStats | null;
+  onCommentsLoaded?: (comments: DandanComment[]) => void;
 };
 
 export function Controls({
@@ -48,6 +50,7 @@ export function Controls({
   onPreviousEpisode,
   onNextEpisode,
   mediaStats,
+  onCommentsLoaded,
 }: ControlsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
@@ -153,6 +156,7 @@ export function Controls({
     isBrightnessGestureActive,
     hideControlsWithDelay,
     clearControlsTimeout,
+    onCommentsLoaded,
   };
 
   return (

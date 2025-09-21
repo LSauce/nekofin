@@ -1,4 +1,5 @@
 import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
+import { DandanComment } from '@/services/dandanplay';
 import { createContext, useContext } from 'react';
 import { SharedValue } from 'react-native-reanimated';
 
@@ -34,6 +35,7 @@ export type PlayerContextValue = {
   isBrightnessGestureActive: SharedValue<boolean>;
   hideControlsWithDelay: () => void;
   clearControlsTimeout: () => void;
+  onCommentsLoaded?: (comments: DandanComment[]) => void;
 };
 
 export const PlayerContext = createContext<PlayerContextValue | null>(null);

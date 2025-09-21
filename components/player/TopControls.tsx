@@ -1,3 +1,4 @@
+import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { formatBitrate } from '@/lib/utils';
 import AntDesign from '@expo/vector-icons/AntDesign';
 import MaterialIcons from '@expo/vector-icons/MaterialIcons';
@@ -6,10 +7,11 @@ import { BlurView } from 'expo-blur';
 import * as Network from 'expo-network';
 import { useNetworkState } from 'expo-network';
 import { useNavigation, useRouter } from 'expo-router';
-import { useEffect, useState } from 'react';
+import { useCallback, useEffect, useRef, useState } from 'react';
 import { StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 
+import { DanmakuSearchModal, DanmakuSearchModalRef } from './DanmakuSearchModal';
 import { usePlayer } from './PlayerContext';
 
 export function TopControls() {
@@ -26,11 +28,14 @@ export function TopControls() {
     onRateChange,
     rate,
     mediaStats,
+    onCommentsLoaded,
   } = usePlayer();
   const router = useRouter();
   const navigation = useNavigation();
   const [now, setNow] = useState<string>('');
   const { type: networkType } = useNetworkState();
+  const { settings: danmakuSettings, setSettings: setDanmakuSettings } = useDanmakuSettings();
+  const danmakuSearchModalRef = useRef<DanmakuSearchModalRef>(null);
 
   const audioTracks =
     tracks?.audio?.filter((track) => track.index !== -1).sort((a, b) => a.index - b.index) ?? [];
@@ -87,6 +92,24 @@ export function TopControls() {
 
   const createRateAction = (rateValue: number) =>
     createMenuAction(`rate_${rateValue}`, `${rateValue}x`, rate, rateValue);
+
+  const handleDanmakuToggle = useCallback(() => {
+    setDanmakuSettings({
+      ...danmakuSettings,
+      danmakuFilter: danmakuSettings.danmakuFilter === 15 ? 0 : 15, // 15 = 所有弹幕都过滤掉
+    });
+  }, [danmakuSettings, setDanmakuSettings]);
+
+  const handleDanmakuSearch = useCallback(() => {
+    danmakuSearchModalRef.current?.present();
+  }, []);
+
+  const handleCommentsLoaded = useCallback(
+    (comments: any[]) => {
+      onCommentsLoaded?.(comments);
+    },
+    [onCommentsLoaded],
+  );
 
   return (
     <>
@@ -249,6 +272,39 @@ export function TopControls() {
                 <MaterialIcons name="speed" size={20} color="white" />
               </TouchableOpacity>
             </MenuView>
+
+            <MenuView
+              isAnchoredToRight
+              onPressAction={({ nativeEvent }) => {
+                const key = nativeEvent.event;
+                if (key === 'danmaku_toggle') {
+                  handleDanmakuToggle();
+                } else if (key === 'danmaku_search') {
+                  handleDanmakuSearch();
+                }
+                setMenuOpen(false);
+              }}
+              onOpenMenu={() => {
+                setMenuOpen(true);
+              }}
+              onCloseMenu={() => {
+                setMenuOpen(false);
+              }}
+              title="弹幕设置"
+              actions={[
+                createMenuAction(
+                  'danmaku_toggle',
+                  danmakuSettings.danmakuFilter === 15 ? '开启弹幕' : '关闭弹幕',
+                  danmakuSettings.danmakuFilter,
+                  15,
+                ),
+                { id: 'danmaku_search', title: '搜索弹幕', state: 'off' },
+              ]}
+            >
+              <TouchableOpacity style={styles.controlButton}>
+                <MaterialIcons name="chat" size={20} color="white" />
+              </TouchableOpacity>
+            </MenuView>
           </View>
         </BlurView>
       </Animated.View>
@@ -260,6 +316,8 @@ export function TopControls() {
           </Text>
         </Animated.View>
       )}
+
+      <DanmakuSearchModal ref={danmakuSearchModalRef} onCommentsLoaded={handleCommentsLoaded} />
     </>
   );
 }
