@@ -376,7 +376,10 @@ export function GestureHandler() {
       }
     })
     .onEnd((_event, _success) => {
-      if (onRateChange) scheduleOnRN(onRateChange, null);
+      if (onRateChange) {
+        scheduleOnRN(Haptics.impactAsync, Haptics.ImpactFeedbackStyle.Medium);
+        scheduleOnRN(onRateChange, null);
+      }
     });
 
   const tapGestures = Gesture.Exclusive(doubleTapGesture, tapGesture);
