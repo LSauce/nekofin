@@ -6,6 +6,7 @@ import { scheduleOnRN } from 'react-native-worklets';
 
 import { BottomControls } from './BottomControls';
 import { GestureHandler } from './GestureHandler';
+import { BottomOverlayGradient, TopOverlayGradient } from './OverlayGradients';
 import { PlayerContext } from './PlayerContext';
 import { TopControls } from './TopControls';
 
@@ -170,6 +171,8 @@ export function Controls({
 
   return (
     <PlayerContext.Provider value={contextValue}>
+      <TopOverlayGradient />
+      <BottomOverlayGradient />
       <TopControls />
       <BottomControls />
       <GestureHandler />
