@@ -10,8 +10,10 @@ import { createAsyncStoragePersister } from '@tanstack/query-async-storage-persi
 import { QueryClient } from '@tanstack/react-query';
 import { PersistQueryClientProvider } from '@tanstack/react-query-persist-client';
 import { useFonts } from 'expo-font';
-import { Stack } from 'expo-router';
+import { Stack, useSegments } from 'expo-router';
+import * as ScreenOrientation from 'expo-screen-orientation';
 import { StatusBar } from 'expo-status-bar';
+import { useEffect } from 'react';
 import { Platform } from 'react-native';
 import { GestureHandlerRootView } from 'react-native-gesture-handler';
 
@@ -44,6 +46,14 @@ export default function RootLayout() {
     Roboto: require('../assets/fonts/Roboto-Regular.ttf'),
   });
 
+  const segments = useSegments();
+
+  useEffect(() => {
+    if (!segments.includes('player' as never)) {
+      ScreenOrientation.lockAsync(ScreenOrientation.OrientationLock.PORTRAIT_UP);
+    }
+  }, [segments]);
+
   if (!loaded) {
     // Async font loading only occurs in development.
     return null;
@@ -71,13 +81,7 @@ export default function RootLayout() {
                     }}
                   >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />
-                    <Stack.Screen
-                      name="player"
-                      options={{
-                        headerShown: false,
-                        animation: 'fade',
-                      }}
-                    />
+                    <Stack.Screen name="player" options={{ headerShown: false }} />
                     <Stack.Screen name="+not-found" />
                   </Stack>
                   <StatusBar style="auto" />

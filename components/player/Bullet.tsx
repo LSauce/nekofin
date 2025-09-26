@@ -1,7 +1,14 @@
 import { StrokeTextView } from '@/modules/stroke-text';
 import { DANDAN_COMMENT_MODE } from '@/services/dandanplay';
 import { useCallback, useEffect, useMemo, useRef } from 'react';
-import { Animated, Easing, TextStyle } from 'react-native';
+import { TextStyle } from 'react-native';
+import Animated, {
+  cancelAnimation,
+  Easing,
+  useAnimatedStyle,
+  useSharedValue,
+  withTiming,
+} from 'react-native-reanimated';
 
 import { ActiveBullet } from './DanmakuTypes';
 
@@ -27,17 +34,31 @@ export function Bullet({
   isPlaying: boolean;
   playbackRate: number;
 }) {
-  const initTranslateX = useMemo(() => {
-    const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
-    const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
-    const totalDistance = isLeftScroll
-      ? -(width + (data.textWidth || 0) + 300)
-      : width + (data.textWidth || 0) + 300;
-    const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
-    return totalDistance * progressed;
-  }, [data.mode, data.startOffsetMs, data.durationMs, width, data.textWidth]);
+  const isScroll = useMemo(
+    () =>
+      data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom,
+    [data.mode],
+  );
 
-  const translateX = useRef(new Animated.Value(initTranslateX)).current;
+  const initTranslateX = useMemo(() => {
+    if (isScroll) {
+      const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
+      const progressed = Math.max(0, Math.min(1, clampedOffset / data.durationMs));
+
+      const startX = data.mode === DANDAN_COMMENT_MODE.Scroll ? width : -100;
+      const endX =
+        data.mode === DANDAN_COMMENT_MODE.Scroll
+          ? -(data.textWidth || 0) - 300
+          : width + (data.textWidth || 0) + 300;
+
+      const totalDistance = endX - startX;
+      return startX + totalDistance * progressed;
+    } else {
+      return 0;
+    }
+  }, [isScroll, data.startOffsetMs, data.durationMs, data.textWidth, width, data.mode]);
+
+  const translateX = useSharedValue(initTranslateX);
 
   const originalDurationRef = useRef<number>(data.durationMs);
   const remainingDurationRef = useRef<number>(data.durationMs);
@@ -45,11 +66,18 @@ export function Bullet({
   const removeTimeoutRef = useRef<ReturnType<typeof setTimeout> | null>(null);
   const prevRateRef = useRef<number>(playbackRate);
 
+  const isInitializedRef = useRef(false);
+
   useEffect(() => {
     originalDurationRef.current = data.durationMs;
     const clampedOffset = Math.max(0, Math.min(data.startOffsetMs || 0, data.durationMs));
     remainingDurationRef.current = Math.max(0, data.durationMs - clampedOffset);
-  }, [data.durationMs, data.startOffsetMs, data.mode, width, translateX]);
+
+    if (!isInitializedRef.current) {
+      translateX.value = initTranslateX;
+      isInitializedRef.current = true;
+    }
+  }, [data.durationMs, data.startOffsetMs, width, translateX, initTranslateX]);
 
   const handleExpire = useCallback(() => {
     onExpire(data.id);
@@ -72,15 +100,11 @@ export function Bullet({
     runStartedAtRef.current = Date.now();
     scheduleFadeAndRemoval();
 
-    if (
-      data.mode === DANDAN_COMMENT_MODE.Scroll ||
-      data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-    ) {
-      const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
-      // 长弹幕需要更大的移动距离，确保完全离开屏幕
-      const totalDistance = isLeftScroll
-        ? -(width + (data.textWidth || 0) + 300)
-        : width + (data.textWidth || 0) + 300;
+    if (isScroll) {
+      const totalDistance =
+        data.mode === DANDAN_COMMENT_MODE.Scroll
+          ? -(data.textWidth || 0) - 300
+          : width + (data.textWidth || 0) + 300;
       const remaining = remainingDurationRef.current;
 
       if (remaining <= 0) {
@@ -88,14 +112,20 @@ export function Bullet({
         return;
       }
 
-      Animated.timing(translateX, {
-        toValue: totalDistance,
-        duration: Math.max(0, remaining),
+      translateX.value = withTiming(totalDistance, {
+        duration: Math.max(100, remaining),
         easing: Easing.linear,
-        useNativeDriver: true,
-      }).start();
+      });
     }
-  }, [scheduleFadeAndRemoval, data.mode, data.textWidth, width, translateX, handleExpire]);
+  }, [
+    scheduleFadeAndRemoval,
+    isScroll,
+    data.mode,
+    data.textWidth,
+    width,
+    translateX,
+    handleExpire,
+  ]);
 
   const pauseRun = useCallback(() => {
     if (runStartedAtRef.current == null) return;
@@ -106,7 +136,7 @@ export function Bullet({
 
     remainingDurationRef.current = Math.max(0, remainingDurationRef.current - elapsed);
 
-    translateX.stopAnimation();
+    cancelAnimation(translateX);
   }, [translateX]);
 
   useEffect(() => {
@@ -137,34 +167,26 @@ export function Bullet({
 
     remainingDurationRef.current = Math.max(0, Math.round(remainingDurationRef.current * scale));
 
-    // 对滚动弹幕重启动画使其以新时长完成剩余距离
-    if (
-      data.mode === DANDAN_COMMENT_MODE.Scroll ||
-      data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-    ) {
-      translateX.stopAnimation((currentX) => {
-        const isLeftScroll = data.mode === DANDAN_COMMENT_MODE.Scroll;
-        const totalDistance = isLeftScroll
-          ? -(width + (data.textWidth || 0) + 300)
+    if (isScroll) {
+      const totalDistance =
+        data.mode === DANDAN_COMMENT_MODE.Scroll
+          ? -(data.textWidth || 0) - 300
           : width + (data.textWidth || 0) + 300;
 
-        const remaining = remainingDurationRef.current;
-        if (remaining <= 0) {
-          handleExpire();
-          return;
-        }
+      const remaining = remainingDurationRef.current;
+      if (remaining <= 0) {
+        handleExpire();
+        return;
+      }
 
-        // 重新启动计时与移除调度
-        runStartedAtRef.current = Date.now();
-        scheduleFadeAndRemoval();
+      cancelAnimation(translateX);
 
-        // 从当前位移到目标位移，耗时为缩放后的剩余时间
-        Animated.timing(translateX, {
-          toValue: totalDistance,
-          duration: Math.max(0, remaining),
-          easing: Easing.linear,
-          useNativeDriver: true,
-        }).start();
+      runStartedAtRef.current = Date.now();
+      scheduleFadeAndRemoval();
+
+      translateX.value = withTiming(totalDistance, {
+        duration: Math.max(100, remaining),
+        easing: Easing.linear,
       });
     } else {
       runStartedAtRef.current = Date.now();
@@ -174,37 +196,40 @@ export function Bullet({
     prevRateRef.current = newRate;
   }, [
     playbackRate,
-    data.mode,
+    isScroll,
     data.textWidth,
     width,
     translateX,
     handleExpire,
     scheduleFadeAndRemoval,
+    data.mode,
   ]);
 
-  const style = useMemo(
-    () => ({
-      position: 'absolute' as const,
-      top: data.top,
-      left:
-        data.mode === DANDAN_COMMENT_MODE.Scroll
-          ? width
-          : data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-            ? -100
-            : 0,
-      transform:
-        data.mode === DANDAN_COMMENT_MODE.Scroll || data.mode === DANDAN_COMMENT_MODE.ScrollBottom
-          ? [{ translateX }]
-          : [],
-    }),
-    [data.top, data.mode, width, translateX],
-  );
+  const animatedStyle = useAnimatedStyle(() => {
+    const shouldTranslate = isScroll;
+
+    if (shouldTranslate) {
+      return {
+        position: 'absolute' as const,
+        top: data.top,
+        left: 0,
+        transform: [{ translateX: translateX.value }],
+      };
+    } else {
+      return {
+        position: 'absolute' as const,
+        top: data.top,
+        left: 0,
+        transform: [],
+      };
+    }
+  }, [data.top, isScroll]);
 
   const isTopOrBottom =
     data.mode === DANDAN_COMMENT_MODE.Top || data.mode === DANDAN_COMMENT_MODE.Bottom;
 
   return (
-    <Animated.View style={[style, { width: '100%' }]} renderToHardwareTextureAndroid>
+    <Animated.View style={[animatedStyle, { width: '100%' }]} renderToHardwareTextureAndroid>
       <StrokeTextView
         text={data.text}
         color={data.colorHex}
