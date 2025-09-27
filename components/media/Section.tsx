@@ -1,6 +1,6 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { MediaItem } from '@/services/media/types';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { FlatList, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 
 import { SkeletonCard, SkeletonSectionHeader } from '../ui/Skeleton';
@@ -37,7 +37,7 @@ export function Section({
           </Text>
           <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
             <Text style={styles.viewAllText}>查看所有</Text>
-            <MaterialIcons name="keyboard-arrow-right" size={20} color={styles.viewAllText.color} />
+            <Ionicons name="chevron-forward" size={20} color={styles.viewAllText.color} />
           </TouchableOpacity>
         </View>
       )}

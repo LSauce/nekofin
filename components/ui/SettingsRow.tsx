@@ -1,5 +1,5 @@
 import { useSettingsColors } from '@/hooks/useSettingsColors';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { MenuView } from '@react-native-menu/menu';
 import { Image } from 'expo-image';
 import React from 'react';
@@ -8,7 +8,7 @@ import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from '
 export interface SettingsRowProps {
   title: string;
   subtitle?: string;
-  icon?: keyof typeof MaterialIcons.glyphMap;
+  icon?: keyof typeof Ionicons.glyphMap;
   imageUri?: string;
   onPress?: () => void;
   showArrow?: boolean;
@@ -54,7 +54,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
         {imageUri ? (
           <Image source={{ uri: imageUri }} style={styles.settingImage} contentFit="cover" />
         ) : icon ? (
-          <MaterialIcons name={icon} size={24} color={accentColor} style={styles.settingIcon} />
+          <Ionicons name={icon} size={24} color={accentColor} style={styles.settingIcon} />
         ) : null}
         <View style={styles.settingTextContainer}>
           <Text style={[styles.settingTitle, { color: textColor }]}>{title}</Text>
@@ -66,7 +66,7 @@ export const SettingsRow: React.FC<SettingsRowProps> = ({
       <View style={styles.settingItemRight}>
         {rightComponent}
         {showArrow && onPress ? (
-          <MaterialIcons name="chevron-right" size={24} color={secondaryTextColor} />
+          <Ionicons name="chevron-forward" size={20} color={secondaryTextColor} />
         ) : null}
       </View>
     </TouchableOpacity>

@@ -7,7 +7,7 @@ import {
   getCommentsByEpisodeId,
   searchAnimesByKeyword,
 } from '@/services/dandanplay';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetFlatList, BottomSheetModal } from '@gorhom/bottom-sheet';
 import { useCallback, useImperativeHandle, useRef, useState } from 'react';
 import {
@@ -204,7 +204,7 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
             {loading ? (
               <ActivityIndicator size="small" color="white" />
             ) : (
-              <MaterialIcons name="search" size={20} color="white" />
+              <Ionicons name="search" size={20} color="white" />
             )}
           </TouchableOpacity>
         </View>

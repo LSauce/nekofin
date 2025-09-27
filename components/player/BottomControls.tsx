@@ -1,7 +1,6 @@
 import { useCurrentTime } from '@/hooks/useCurrentTime';
 import { formatTimeWorklet } from '@/lib/utils';
-import Entypo from '@expo/vector-icons/Entypo';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useCallback } from 'react';
 import { ActivityIndicator, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import { Slider } from 'react-native-awesome-slider';
@@ -125,7 +124,7 @@ export function BottomControls() {
 
       <View style={styles.bottomRow}>
         <TouchableOpacity style={styles.cornerButton}>
-          <MaterialCommunityIcons name="lock-outline" size={18} color="#fff" />
+          <Ionicons name="lock-closed-outline" size={24} color="#fff" />
         </TouchableOpacity>
 
         <View style={styles.controlsCluster}>
@@ -134,9 +133,9 @@ export function BottomControls() {
             onPress={hasPreviousEpisode ? onPreviousEpisode : undefined}
             disabled={!hasPreviousEpisode}
           >
-            <Entypo
-              name="controller-jump-to-start"
-              size={20}
+            <Ionicons
+              name="play-skip-back"
+              size={24}
               color={hasPreviousEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
             />
           </TouchableOpacity>
@@ -145,11 +144,7 @@ export function BottomControls() {
             {isLoading ? (
               <ActivityIndicator size="small" color="#fff" />
             ) : (
-              <Entypo
-                name={isPlaying ? 'controller-paus' : 'controller-play'}
-                size={28}
-                color="white"
-              />
+              <Ionicons name={isPlaying ? 'pause' : 'play'} size={30} color="white" />
             )}
           </TouchableOpacity>
 
@@ -158,16 +153,16 @@ export function BottomControls() {
             onPress={hasNextEpisode ? onNextEpisode : undefined}
             disabled={!hasNextEpisode}
           >
-            <Entypo
-              name="controller-next"
-              size={20}
+            <Ionicons
+              name="play-skip-forward"
+              size={24}
               color={hasNextEpisode ? 'white' : 'rgba(255,255,255,0.3)'}
             />
           </TouchableOpacity>
         </View>
 
         <TouchableOpacity style={styles.cornerButton}>
-          <MaterialCommunityIcons name="playlist-play" size={18} color="#fff" />
+          <Ionicons name="list" size={24} color="#fff" />
         </TouchableOpacity>
       </View>
     </Animated.View>
@@ -179,25 +174,21 @@ const styles = StyleSheet.create({
     position: 'absolute',
     bottom: 30,
     zIndex: 10,
-    gap: 10,
+    gap: 8,
   },
   progressSection: {
     position: 'relative',
-    paddingTop: 50,
+    paddingTop: 30,
   },
   playButton: {
     width: 56,
     height: 56,
-    borderRadius: 28,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
   circleButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },
@@ -209,16 +200,16 @@ const styles = StyleSheet.create({
   progressOverlayRight: {
     position: 'absolute',
     right: 0,
-    top: 0,
+    bottom: 30,
   },
   sliderContainer: {
     flex: 1,
-    height: 40,
+    height: 30,
     justifyContent: 'center',
   },
   slider: {
     width: '100%',
-    height: 40,
+    height: 30,
   },
   timeText: {
     color: '#fff',
@@ -230,17 +221,9 @@ const styles = StyleSheet.create({
   disabledButton: {
     opacity: 0.5,
   },
-  settingsRow: {
-    marginTop: 6,
-    flexDirection: 'row',
-    alignItems: 'center',
-    justifyContent: 'space-between',
-  },
   cornerButton: {
     width: 40,
     height: 40,
-    borderRadius: 20,
-    backgroundColor: 'rgba(0,0,0,0.35)',
     justifyContent: 'center',
     alignItems: 'center',
   },

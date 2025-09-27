@@ -33,11 +33,20 @@ export default function SettingsScreen() {
       </Section>
 
       <Section title="播放">
-        <SettingItem title="弹幕设置" icon="chat" onPress={() => router.push('/danmaku')} />
+        <SettingItem
+          title="弹幕设置"
+          icon="chatbubble-ellipses"
+          onPress={() => router.push('/danmaku')}
+        />
       </Section>
 
       <Section title="关于">
-        <SettingItem title="版本信息" subtitle="nekofin v1.0.0" icon="info" showArrow={false} />
+        <SettingItem
+          title="版本信息"
+          subtitle="nekofin v1.0.0"
+          icon="information-circle"
+          showArrow={false}
+        />
         <SettingItem title="开源协议" subtitle="MIT License" icon="code" showArrow={false} />
       </Section>
     </PageScrollView>

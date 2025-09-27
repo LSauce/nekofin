@@ -4,7 +4,7 @@ import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { ImageUrlInfo } from '@/lib/utils/image';
 import { MediaItem } from '@/services/media/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image, type ImageProps } from 'expo-image';
 import { useRouter } from 'expo-router';
@@ -156,7 +156,7 @@ export function EpisodeCard({
         />
         {isPlayed && (
           <View style={styles.playedOverlay}>
-            <MaterialIcons name="check-circle" size={24} color={accentColor} />
+            <Ionicons name="checkmark-circle" size={24} color={accentColor} />
           </View>
         )}
         {playedPercentage !== undefined && (

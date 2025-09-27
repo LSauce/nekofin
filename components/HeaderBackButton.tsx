@@ -1,7 +1,7 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
 import { Image } from 'expo-image';
 import { usePathname, useRouter } from 'expo-router';
 import { TouchableOpacity, View } from 'react-native';
@@ -34,8 +34,16 @@ export default function HeaderBackButton({ canGoBack = true }: { canGoBack?: boo
   }
 
   return (
-    <TouchableOpacity onPress={() => router.back()} style={{ marginLeft: 12 }}>
-      <MaterialIcons name="arrow-back-ios" size={20} color={textColor} />
+    <TouchableOpacity
+      onPress={() => router.back()}
+      style={{
+        justifyContent: 'center',
+        alignItems: 'center',
+        width: 36,
+        height: 36,
+      }}
+    >
+      <Ionicons name="chevron-back" size={24} color={textColor} />
     </TouchableOpacity>
   );
 }

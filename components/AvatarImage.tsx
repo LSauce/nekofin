@@ -1,5 +1,5 @@
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { Image } from 'expo-image';
 import { useState } from 'react';
 import { ImageStyle, StyleProp, View } from 'react-native';
@@ -21,7 +21,7 @@ export function AvatarImage({ avatarUri, style }: AvatarImageProps) {
           { backgroundColor: accentColor, justifyContent: 'center', alignItems: 'center' },
         ]}
       >
-        <MaterialIcons name="person" size={20} color="white" />
+        <Ionicons name="person" size={20} color="white" />
       </View>
     );
   }

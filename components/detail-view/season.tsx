@@ -3,7 +3,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { formatDurationFromTicks } from '@/lib/utils';
 import { MediaItem } from '@/services/media/types';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { useQueryClient } from '@tanstack/react-query';
 import { Text, TouchableOpacity, View } from 'react-native';
 
@@ -82,8 +82,8 @@ export const SeasonModeContent = ({
                 }}
                 style={{ paddingHorizontal: 8, alignSelf: 'flex-start' }}
               >
-                <MaterialCommunityIcons
-                  name={item.userData?.played ? 'check-circle' : 'check-circle-outline'}
+                <Ionicons
+                  name={item.userData?.played ? 'checkmark-circle' : 'checkmark-circle-outline'}
                   size={24}
                   color={subtitleColor}
                 />

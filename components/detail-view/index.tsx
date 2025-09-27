@@ -4,7 +4,7 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
-import MaterialCommunityIcons from '@expo/vector-icons/MaterialCommunityIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { UseQueryResult } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
@@ -75,11 +75,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
             }}
             style={{ marginLeft: 6 }}
           >
-            <MaterialCommunityIcons
-              name={isFavorite ? 'heart' : 'heart-outline'}
-              size={24}
-              color={textColor}
-            />
+            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={textColor} />
           </TouchableOpacity>
         ) : null,
     });

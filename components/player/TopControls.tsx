@@ -1,7 +1,6 @@
 import { formatBitrate, sleep } from '@/lib/utils';
 import { DandanComment } from '@/services/dandanplay';
-import AntDesign from '@expo/vector-icons/AntDesign';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BlurView } from 'expo-blur';
 import * as Network from 'expo-network';
 import { useNetworkState } from 'expo-network';
@@ -79,11 +78,9 @@ export function TopControls() {
         ]}
         pointerEvents={showControls ? 'auto' : 'none'}
       >
-        <BlurView tint="dark" intensity={100} style={styles.backButtonBlur}>
-          <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
-            <AntDesign name="arrow-left" size={24} color="white" />
-          </TouchableOpacity>
-        </BlurView>
+        <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
+          <Ionicons name="chevron-back" size={24} color="white" />
+        </TouchableOpacity>
       </Animated.View>
 
       <Animated.View
@@ -95,17 +92,17 @@ export function TopControls() {
       >
         <Animated.View style={styles.netRow}>
           {networkType === Network.NetworkStateType.WIFI && (
-            <MaterialIcons name="wifi" size={14} color="#fff" />
+            <Ionicons name="wifi" size={14} color="#fff" />
           )}
           {networkType === Network.NetworkStateType.CELLULAR && (
-            <MaterialIcons name="network-cell" size={14} color="#fff" />
+            <Ionicons name="cellular" size={14} color="#fff" />
           )}
           {networkType === Network.NetworkStateType.ETHERNET && (
-            <MaterialIcons name="settings-ethernet" size={14} color="#fff" />
+            <Ionicons name="link" size={14} color="#fff" />
           )}
           {(networkType === Network.NetworkStateType.NONE ||
             networkType === Network.NetworkStateType.UNKNOWN) && (
-            <MaterialIcons name="signal-cellular-off" size={14} color="#fff" />
+            <Ionicons name="unlink" size={14} color="#fff" />
           )}
           {!!mediaStats?.inputBitrate && mediaStats.inputBitrate > 0 && (
             <Text style={[styles.textShadow, styles.netSpeedText]}>
@@ -133,7 +130,7 @@ export function TopControls() {
       >
         {danmakuEpisodeInfo && (
           <View style={styles.danmakuInfoRow}>
-            <MaterialIcons name="chat" size={12} color="#fff" />
+            <Ionicons name="chatbubble-ellipses" size={12} color="#fff" />
             <Text style={[styles.textShadow, styles.danmakuInfoText]}>
               {danmakuEpisodeInfo.animeTitle} - {danmakuEpisodeInfo.episodeTitle}
             </Text>

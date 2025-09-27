@@ -8,7 +8,7 @@ import { SettingsRow } from '@/components/ui/SettingsRow';
 import { useSettingsColors } from '@/hooks/useSettingsColors';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaServerInfo } from '@/services/media/types';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
 import { MenuView } from '@react-native-menu/menu';
 import { useRef, useState } from 'react';
@@ -47,7 +47,7 @@ export default function MediaScreen() {
         key={server.id}
         title={server.name}
         subtitle={`${server.type} • ${server.address}`}
-        icon={server.userAvatar ? undefined : 'dns'}
+        icon={server.userAvatar ? undefined : 'link'}
         showArrow={false}
         leftComponent={
           <AvatarImage
@@ -83,7 +83,7 @@ export default function MediaScreen() {
               },
             ]}
           >
-            <MaterialIcons name="unfold-more" size={24} color={secondaryTextColor} />
+            <Ionicons name="chevron-expand" size={20} color={secondaryTextColor} />
           </MenuView>
         }
       />

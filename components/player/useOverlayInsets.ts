@@ -7,7 +7,7 @@ export function useOverlayInsets() {
   const isPortrait = height >= width;
 
   return useMemo(() => {
-    const side = 80;
+    const side = 60;
     const topExtra = isPortrait ? 20 : 0;
     const bottomExtra = isPortrait ? 20 : 0;
 

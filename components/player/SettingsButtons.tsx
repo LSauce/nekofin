@@ -1,6 +1,6 @@
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { DandanComment } from '@/services/dandanplay';
-import MaterialIcons from '@expo/vector-icons/MaterialIcons';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { MenuView } from '@react-native-menu/menu';
 import { useCallback, useRef } from 'react';
 import { StyleProp, StyleSheet, TouchableOpacity, View, ViewStyle } from 'react-native';
@@ -100,9 +100,9 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
         }
       >
         <TouchableOpacity style={styles.circleButton} disabled={audioTracks.length === 0}>
-          <MaterialIcons
-            name="audiotrack"
-            size={20}
+          <Ionicons
+            name="musical-notes"
+            size={24}
             color={audioTracks.length === 0 ? '#666' : 'white'}
           />
         </TouchableOpacity>
@@ -138,9 +138,9 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
         }
       >
         <TouchableOpacity style={styles.circleButton} disabled={subtitleTracks.length === 0}>
-          <MaterialIcons
-            name="subtitles"
-            size={20}
+          <Ionicons
+            name="chatbox-ellipses"
+            size={24}
             color={subtitleTracks.length === 0 ? '#666' : 'white'}
           />
         </TouchableOpacity>
@@ -162,7 +162,7 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
         actions={[0.5, 0.75, 1, 1.25, 1.5, 1.75, 2].map(createRateAction)}
       >
         <TouchableOpacity style={styles.circleButton}>
-          <MaterialIcons name="speed" size={20} color="white" />
+          <Ionicons name="speedometer-outline" size={24} color="white" />
         </TouchableOpacity>
       </MenuView>
 
@@ -181,17 +181,15 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
         onCloseMenu={() => setMenuOpen(false)}
         title="弹幕设置"
         actions={[
-          createMenuAction(
-            'danmaku_toggle',
-            danmakuSettings.danmakuFilter === 15 ? '开启弹幕' : '关闭弹幕',
-            danmakuSettings.danmakuFilter,
-            15,
-          ),
-          { id: 'danmaku_search', title: '搜索弹幕', state: 'off' },
+          {
+            id: 'danmaku_toggle',
+            title: danmakuSettings.danmakuFilter === 15 ? '开启弹幕' : '关闭弹幕',
+          },
+          { id: 'danmaku_search', title: '搜索弹幕' },
         ]}
       >
         <TouchableOpacity style={styles.circleButton}>
-          <MaterialIcons name="chat" size={20} color="white" />
+          <Ionicons name="chatbubble-ellipses" size={24} color="white" />
         </TouchableOpacity>
       </MenuView>
 
@@ -209,9 +207,7 @@ const styles = StyleSheet.create({
   circleButton: {
     width: 44,
     height: 44,
-    borderRadius: 22,
     justifyContent: 'center',
     alignItems: 'center',
-    backgroundColor: 'rgba(0,0,0,0.35)',
   },
 });
