@@ -19,9 +19,21 @@ const getUniqueIdentifier = () => {
   return 'com.lonzzi.nekofin';
 };
 
+const getAppName = () => {
+  if (IS_DEV) {
+    return 'nekofin (dev)';
+  }
+
+  if (IS_PREVIEW) {
+    return 'nekofin (preview)';
+  }
+
+  return 'nekofin';
+};
+
 export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
   return {
-    name: 'nekofin',
+    name: getAppName(),
     slug: 'nekofin',
     version: packageJson.version,
     orientation: 'default',
@@ -116,6 +128,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
         },
       ],
       './plugins/withAndroidPip',
+      ['./plugins/withDrawableAssets', './assets/drawables'],
     ],
     experiments: {
       typedRoutes: true,

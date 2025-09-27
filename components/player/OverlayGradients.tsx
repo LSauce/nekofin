@@ -5,7 +5,7 @@ import Animated, { useAnimatedStyle } from 'react-native-reanimated';
 import { usePlayer } from './PlayerContext';
 
 export function TopOverlayGradient() {
-  const { fadeAnim, showControls } = usePlayer();
+  const { fadeAnim } = usePlayer();
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -16,7 +16,7 @@ export function TopOverlayGradient() {
   return (
     <Animated.View
       style={[styles.topContainer, { left: 0, right: 0, top: 0 }, fadeAnimatedStyle]}
-      pointerEvents={showControls ? 'none' : 'none'}
+      pointerEvents="none"
     >
       <LinearGradient
         colors={['rgba(0,0,0,0.6)', 'rgba(0,0,0,0.0)']}
@@ -29,7 +29,7 @@ export function TopOverlayGradient() {
 }
 
 export function BottomOverlayGradient() {
-  const { fadeAnim, showControls } = usePlayer();
+  const { fadeAnim } = usePlayer();
 
   const fadeAnimatedStyle = useAnimatedStyle(() => {
     return {
@@ -40,7 +40,7 @@ export function BottomOverlayGradient() {
   return (
     <Animated.View
       style={[styles.bottomContainer, { left: 0, right: 0, bottom: 0 }, fadeAnimatedStyle]}
-      pointerEvents={showControls ? 'none' : 'none'}
+      pointerEvents="none"
     >
       <LinearGradient
         colors={['rgba(0,0,0,0.0)', 'rgba(0,0,0,0.6)']}

@@ -28,6 +28,7 @@ export const BottomSheetBackdropModal = ({
           pressBehavior="close"
         />
       )}
+      snapPoints={['100%']}
       enableDynamicSizing={true}
       backgroundStyle={[{ backgroundColor }, backgroundStyle]}
       handleIndicatorStyle={[{ backgroundColor: handleIndicatorColor }]}
