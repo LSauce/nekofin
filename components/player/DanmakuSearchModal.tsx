@@ -42,6 +42,7 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
   const [episodes, setEpisodes] = useState<DandanEpisode[]>([]);
   const [selectedAnime, setSelectedAnime] = useState<DandanAnime | null>(null);
   const [loading, setLoading] = useState(false);
+  const textInputRef = useRef<TextInput>(null);
 
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -67,6 +68,7 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
   );
 
   const handleSearch = useCallback(async () => {
+    textInputRef.current?.blur();
     if (!searchKeyword.trim()) return;
 
     setLoading(true);
@@ -185,12 +187,12 @@ export const DanmakuSearchModal = ({ onCommentsLoaded, ref }: DanmakuSearchModal
             ]}
             placeholder={searchStep === 'anime' ? '输入番剧名称' : '剧集列表'}
             placeholderTextColor={`${String(textColor)}80`}
-            value={searchKeyword}
             onChangeText={setSearchKeyword}
             onSubmitEditing={handleSearch}
             editable={searchStep === 'anime'}
             autoCapitalize="none"
             autoCorrect={false}
+            ref={textInputRef}
           />
           <TouchableOpacity
             style={[
