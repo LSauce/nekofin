@@ -29,7 +29,7 @@ export const EpisodeModeContent = ({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
   const { accentColor } = useAccentColor();
-  const { setTitle, setBackgroundImageUrl } = useDetailView();
+  const { setTitle, setBackgroundImageUrl, setSelectedItem } = useDetailView();
   const mediaAdapter = useMediaAdapter();
 
   const [selectedEpisode, setSelectedEpisode] = useState<MediaItem>(item ?? episodes[0]);
@@ -51,7 +51,8 @@ export const EpisodeModeContent = ({
 
   useEffect(() => {
     setTitle(selectedEpisode.name);
-  }, [selectedEpisode.name, setTitle]);
+    setSelectedItem(selectedEpisode);
+  }, [selectedEpisode.name, selectedEpisode, setTitle, setSelectedItem]);
 
   useEffect(() => {
     const imageInfo = mediaAdapter.getImageInfo({
@@ -125,14 +126,7 @@ export const EpisodeModeContent = ({
             horizontal
             data={seasons}
             style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => (
-              <SeriesCard
-                item={item}
-                style={detailViewStyles.seasonCard}
-                imgType="Primary"
-                hideSubtitle
-              />
-            )}
+            renderItem={({ item }) => <SeriesCard item={item} imgType="Primary" hideSubtitle />}
             keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
@@ -162,9 +156,7 @@ export const EpisodeModeContent = ({
             horizontal
             data={similarItems}
             style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => (
-              <SeriesCard item={item} style={detailViewStyles.seasonCard} imgType="Primary" />
-            )}
+            renderItem={({ item }) => <SeriesCard item={item} imgType="Primary" />}
             keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}

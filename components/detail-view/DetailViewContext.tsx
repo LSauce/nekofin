@@ -1,6 +1,4 @@
-import { DetailBundle } from '@/hooks/useDetailBundle';
 import { MediaItem } from '@/services/media/types';
-import { UseQueryResult } from '@tanstack/react-query';
 import { createContext, ReactNode, useContext, useState } from 'react';
 
 import { DetailViewProps } from '.';
@@ -12,6 +10,8 @@ type DetailViewContextType = {
   setBackgroundImageUrl: (url?: string | null) => void;
   item?: MediaItem | null;
   setItem: (item: MediaItem | null) => void;
+  selectedItem?: MediaItem | null;
+  setSelectedItem: (item: MediaItem | null) => void;
 } & DetailViewProps;
 
 const DetailViewContext = createContext<DetailViewContextType | undefined>(undefined);
@@ -27,6 +27,7 @@ export const DetailViewProvider = ({
   const [title, setTitle] = useState<string>('');
   const [backgroundImageUrl, setBackgroundImageUrl] = useState<string | null | undefined>(null);
   const [item, setItem] = useState<MediaItem | null>(null);
+  const [selectedItem, setSelectedItem] = useState<MediaItem | null>(null);
 
   return (
     <DetailViewContext.Provider
@@ -37,6 +38,8 @@ export const DetailViewProvider = ({
         setBackgroundImageUrl,
         item,
         setItem,
+        selectedItem,
+        setSelectedItem,
         query,
         itemId,
         mode,

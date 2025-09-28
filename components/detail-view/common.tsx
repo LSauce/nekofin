@@ -23,19 +23,17 @@ export const ItemMeta = ({ item }: { item: MediaItem }) => {
   }, [item?.productionYear]);
 
   return (
-    <>
-      <Text style={[detailViewStyles.meta, { color: textColor }]}>
-        {ratingText ? (
-          <>
-            <Text style={detailViewStyles.star}>★</Text>
-            <Text>{` ${ratingText}`}</Text>
-            {yearText ? <Text>{` · ${yearText}`}</Text> : null}
-          </>
-        ) : (
-          <>{yearText}</>
-        )}
-      </Text>
-    </>
+    <Text style={[detailViewStyles.meta, { color: textColor }]}>
+      {ratingText ? (
+        <>
+          <Text style={detailViewStyles.star}>★</Text>
+          <Text>{` ${ratingText}`}</Text>
+          {yearText ? <Text>{` · ${yearText}`}</Text> : null}
+        </>
+      ) : (
+        <>{yearText}</>
+      )}
+    </Text>
   );
 };
 
@@ -228,16 +226,13 @@ export const detailViewStyles = StyleSheet.create({
   horizontalList: {
     paddingVertical: 4,
     paddingHorizontal: 20,
-    gap: 8,
+    gap: 12,
   },
   edgeToEdge: {
     marginHorizontal: -20,
   },
   horizontalCard: {
     width: 200,
-  },
-  seasonCard: {
-    width: 140,
   },
   listContainer: {
     marginTop: 16,

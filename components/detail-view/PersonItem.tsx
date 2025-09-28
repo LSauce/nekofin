@@ -48,8 +48,6 @@ export const PersonItem = ({ item }: { item: MediaPerson }) => {
 const styles = StyleSheet.create({
   personCard: {
     width: 120,
-    marginRight: 12,
-    alignItems: 'flex-start',
   },
   personPoster: {
     width: 120,

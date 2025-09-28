@@ -50,14 +50,7 @@ export const SeriesModeContent = ({
             horizontal
             data={seasons}
             style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => (
-              <SeriesCard
-                item={item}
-                style={detailViewStyles.seasonCard}
-                imgType="Primary"
-                hideSubtitle
-              />
-            )}
+            renderItem={({ item }) => <SeriesCard item={item} imgType="Primary" hideSubtitle />}
             keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}
@@ -87,9 +80,7 @@ export const SeriesModeContent = ({
             horizontal
             data={similarItems}
             style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => (
-              <SeriesCard item={item} style={detailViewStyles.seasonCard} imgType="Primary" />
-            )}
+            renderItem={({ item }) => <SeriesCard item={item} imgType="Primary" />}
             keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}

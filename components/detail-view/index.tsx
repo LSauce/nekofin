@@ -5,11 +5,12 @@ import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import Ionicons from '@expo/vector-icons/Ionicons';
+import { HeaderButton } from '@react-navigation/elements';
 import { UseQueryResult } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { RefreshControl, Text, TouchableOpacity, View } from 'react-native';
+import { RefreshControl, Text, View } from 'react-native';
 
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
@@ -30,7 +31,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   const { currentServer } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const { title, backgroundImageUrl, setItem } = useDetailView();
+  const { title, backgroundImageUrl, setItem, selectedItem } = useDetailView();
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const { data: bundle, isLoading, refetch } = query;
@@ -48,35 +49,45 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
 
   useEffect(() => {
     if (!item) return;
-    setIsFavorite(!!item.userData?.isFavorite);
     setItem?.(item);
   }, [item, setItem]);
 
   useEffect(() => {
+    if (mode === 'episode' && selectedItem) {
+      setIsFavorite(!!selectedItem.userData?.isFavorite);
+    } else if (mode !== 'episode' && item) {
+      setIsFavorite(!!item.userData?.isFavorite);
+    }
+  }, [mode, selectedItem, item]);
+
+  useEffect(() => {
+    const currentItem = mode === 'episode' ? selectedItem : item;
+    const currentItemId = currentItem?.id;
+
     navigation.setOptions({
       headerRight: () =>
-        mode === 'series' && item?.id ? (
-          <TouchableOpacity
+        mode !== 'season' && currentItemId ? (
+          <HeaderButton
             onPress={async () => {
-              if (!currentServer?.userId || !item?.id) return;
+              if (!currentServer?.userId || !currentItemId) return;
               if (isFavorite) {
                 await mediaAdapter.removeFavoriteItem({
                   userId: currentServer.userId,
-                  itemId: item.id!,
+                  itemId: currentItemId,
                 });
                 setIsFavorite(false);
               } else {
                 await mediaAdapter.addFavoriteItem({
                   userId: currentServer.userId,
-                  itemId: item.id!,
+                  itemId: currentItemId,
                 });
                 setIsFavorite(true);
               }
             }}
-            style={{ marginLeft: 6 }}
+            style={{ paddingHorizontal: 6 }}
           >
             <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={textColor} />
-          </TouchableOpacity>
+          </HeaderButton>
         ) : null,
     });
   }, [
@@ -86,8 +97,11 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
     isFavorite,
     currentServer?.userId,
     item?.id,
+    selectedItem?.id,
     textColor,
     mediaAdapter,
+    item,
+    selectedItem,
   ]);
 
   if (isLoading || !item) {
