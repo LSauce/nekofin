@@ -17,6 +17,7 @@ import {
   VlcPlayerViewRef,
 } from '@/modules/vlc-player';
 import { DandanComment } from '@/services/dandanplay';
+import { SubtitleDeliveryMethod } from '@jellyfin/sdk/lib/generated-client/models';
 import { useQuery } from '@tanstack/react-query';
 import { activateKeepAwakeAsync, deactivateKeepAwake } from 'expo-keep-awake';
 import { useRouter } from 'expo-router';
@@ -38,7 +39,7 @@ const LoadingIndicator = ({ title }: { title?: string }) => {
 };
 
 export const VideoPlayer = ({ itemId }: { itemId: string }) => {
-  const { currentServer } = useMediaServers();
+  const { currentServer, currentApi } = useMediaServers();
   const router = useRouter();
   const mediaAdapter = useMediaAdapter();
   const { settings } = useDanmakuSettings();
@@ -57,6 +58,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const [rate, setRate] = useState(1);
   const prevRateRef = useRef<number>(1);
   const [mediaStats, setMediaStats] = useState<MediaStats | null>(null);
+
   const [danmakuEpisodeInfo, setDanmakuEpisodeInfo] = useState<
     { animeTitle: string; episodeTitle: string } | undefined
   >(undefined);
@@ -132,6 +134,24 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     },
     enabled: !!currentServer && !!itemDetail,
   });
+
+  const allSubs = useMemo(() => {
+    return (
+      streamInfo?.mediaSource?.MediaStreams?.filter((sub) => sub.Type === 'Subtitle').sort(
+        (a, b) => Number(a.IsExternal) - Number(b.IsExternal),
+      ) || []
+    );
+  }, [streamInfo?.mediaSource?.MediaStreams]);
+
+  const externalSubtitles = useMemo(() => {
+    const subs = allSubs
+      .filter((sub) => sub.DeliveryMethod === 'External')
+      .map((sub) => ({
+        name: sub.DisplayTitle ?? '',
+        DeliveryUrl: `${currentApi?.basePath}${sub.DeliveryUrl ?? ''}`,
+      }));
+    return subs;
+  }, [allSubs, currentApi?.basePath]);
 
   const { syncPlaybackProgress } = usePlaybackSync({
     currentServer,
@@ -221,16 +241,33 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   useEffect(() => {
     (async () => {
-      if (!isLoaded) return;
       const audioTracks = await player.current?.getAudioTracks();
-      const subtitleTracks = await player.current?.getSubtitleTracks();
+      let subtitleTracks = await player.current?.getSubtitleTracks();
+
+      if (streamInfo?.mediaSource?.TranscodingUrl && subtitleTracks && subtitleTracks.length > 1) {
+        subtitleTracks = [subtitleTracks[0], ...subtitleTracks.slice(1).reverse()];
+      }
+
+      let embedSubIndex = 1;
+      const processedSubs = allSubs?.map((sub) => {
+        const shouldIncrement =
+          sub.DeliveryMethod === SubtitleDeliveryMethod.Embed ||
+          sub.DeliveryMethod === SubtitleDeliveryMethod.Hls ||
+          sub.DeliveryMethod === SubtitleDeliveryMethod.External;
+        if (shouldIncrement) embedSubIndex++;
+        return {
+          name: sub.DisplayTitle || 'Undefined Subtitle',
+          index: sub.Index ?? -1,
+        };
+      });
+
       setTracks((prev) => ({
         ...prev,
         audio: audioTracks ?? [],
-        subtitle: subtitleTracks ?? [],
+        subtitle: processedSubs.sort((a, b) => a.index - b.index) ?? [],
       }));
     })();
-  }, [player, isLoaded]);
+  }, [player, isLoaded, streamInfo?.mediaSource?.TranscodingUrl, allSubs]);
 
   const handlePlayPause = useCallback(() => {
     if (isPlaying) {
@@ -324,6 +361,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
             isNetwork: true,
             startPosition: initialTime,
             autoplay: true,
+            externalSubtitles,
           }}
           onVideoProgress={(e) => {
             const { duration, currentTime: newCurrentTime } = e.nativeEvent;

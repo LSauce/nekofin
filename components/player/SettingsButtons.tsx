@@ -121,8 +121,9 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
         onOpenMenu={() => setMenuOpen(true)}
         onCloseMenu={() => setMenuOpen(false)}
         title="字幕选择"
-        actions={
-          subtitleTracks.length > 0
+        actions={[
+          // 内置字幕选项
+          ...(subtitleTracks.length > 0
             ? [
                 createMenuAction('subtitle_-1', '关闭字幕', selectedTracks?.subtitle?.index, -1),
                 ...subtitleTracks.map((track) =>
@@ -134,8 +135,8 @@ export function SettingsButtons({ style }: SettingsButtonsProps) {
                   ),
                 ),
               ]
-            : [{ id: 'no_subtitle', title: '无可用字幕', state: 'off' as const }]
-        }
+            : [{ id: 'no_subtitle', title: '无可用字幕', state: 'off' as const }]),
+        ]}
       >
         <TouchableOpacity style={styles.circleButton} disabled={subtitleTracks.length === 0}>
           <Ionicons
