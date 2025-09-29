@@ -210,14 +210,14 @@ export function Bullet({
 
     if (shouldTranslate) {
       return {
-        position: 'absolute' as const,
+        position: 'absolute',
         top: data.top,
         left: 0,
         transform: [{ translateX: translateX.value }],
       };
     } else {
       return {
-        position: 'absolute' as const,
+        position: 'absolute',
         top: data.top,
         left: 0,
         transform: [],
