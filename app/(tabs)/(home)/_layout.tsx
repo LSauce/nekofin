@@ -19,12 +19,8 @@ export default function HomeLayout() {
       <Stack.Screen
         name="index"
         options={{
-          title: '首页',
-          headerLargeTitle: true,
-          headerLargeTitleShadowVisible: false,
-          headerLargeStyle: {
-            backgroundColor: isGreaterThanOrEqual26 ? undefined : backgroundColor,
-          },
+          title: '',
+          headerTransparent: true,
         }}
       />
       {GroupedStackRoutes()}

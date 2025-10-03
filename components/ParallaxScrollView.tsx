@@ -16,7 +16,7 @@ const HEADER_HEIGHT = 450;
 
 type Props = PropsWithChildren<{
   headerImage: ReactElement;
-  headerBackgroundColor: { dark: string; light: string };
+  headerBackgroundColor?: { dark: string; light: string };
   headerHeight?: number;
   enableMaskView?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
@@ -24,6 +24,8 @@ type Props = PropsWithChildren<{
   showsVerticalScrollIndicator?: boolean;
   refreshControl?: ScrollViewProps['refreshControl'];
   contentInsetAdjustmentBehavior?: ScrollViewProps['contentInsetAdjustmentBehavior'];
+  contentInset?: ScrollViewProps['contentInset'];
+  style?: StyleProp<ViewStyle>;
 }>;
 
 export default function ParallaxScrollView({
@@ -37,6 +39,8 @@ export default function ParallaxScrollView({
   showsVerticalScrollIndicator = true,
   refreshControl,
   contentInsetAdjustmentBehavior,
+  contentInset,
+  style,
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -82,11 +86,13 @@ export default function ParallaxScrollView({
         scrollEventThrottle={16}
         showsVerticalScrollIndicator={showsVerticalScrollIndicator}
         contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
+        contentInset={contentInset}
+        style={style}
       >
         <Animated.View
           style={[
             styles.header,
-            { backgroundColor: headerBackgroundColor[colorScheme] },
+            { backgroundColor: headerBackgroundColor?.[colorScheme], height: headerHeight },
             headerAnimatedStyle,
           ]}
         >
@@ -127,8 +133,11 @@ const styles = StyleSheet.create({
     flex: 1,
   },
   header: {
-    height: HEADER_HEIGHT,
     overflow: 'hidden',
+    position: 'relative',
+  },
+  headerOverlay: {
+    ...StyleSheet.absoluteFillObject,
   },
   content: {
     flex: 1,

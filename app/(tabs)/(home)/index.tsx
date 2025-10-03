@@ -1,20 +1,23 @@
 import { AvatarImage } from '@/components/AvatarImage';
+import { getSubtitle } from '@/components/media/Card';
 import { Section } from '@/components/media/Section';
-import PageScrollView from '@/components/PageScrollView';
+import ParallaxScrollView from '@/components/ParallaxScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { ThemedView } from '@/components/ThemedView';
 import { IconSymbol } from '@/components/ui/IconSymbol';
 import { UserViewSection } from '@/components/user-view/UserViewSection';
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useQueryWithFocus } from '@/hooks/useQueryWithFocus';
-import useRefresh from '@/hooks/useRefresh';
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
+import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
-import { useCallback, useEffect } from 'react';
-import { Platform, RefreshControl, StyleSheet, TouchableOpacity, View } from 'react-native';
+import { useCallback, useEffect, useMemo, useState } from 'react';
+import { Platform, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
+import { interpolate, useSharedValue } from 'react-native-reanimated';
+import Carousel from 'react-native-reanimated-carousel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type HomeSection = {
@@ -95,19 +98,61 @@ export default function HomeScreen() {
   const { servers, currentServer, setCurrentServer, refreshServerInfo, isInitialized } =
     useMediaServers();
   const navigation = useNavigation();
+  const mediaAdapter = useMediaAdapter();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const carouselSkeletonColor = useThemeColor(
+    { light: '#f0f0f5', dark: 'rgba(255, 255, 255, 0.08)' },
+    'background',
+  );
+  const carouselPlaceholderColor = useThemeColor(
+    { light: '#d1d1d6', dark: '#2b2b2b' },
+    'background',
+  );
   const insets = useSafeAreaInsets();
+  const { height: windowHeight, width: windowWidth } = useWindowDimensions();
+  const carouselHeight = windowHeight * 0.6;
 
   const router = useRouter();
 
   const sectionsQuery = useHomeSections(currentServer);
+  const [carouselIndex, setCarouselIndex] = useState(0);
+  const carouselScrollOffset = useSharedValue(0);
+  const carouselProgress = useSharedValue(0);
 
-  const { refreshing, onRefresh } = useRefresh(async () => {
-    if (!currentServer) return Promise.resolve();
-    await refreshServerInfo(currentServer.id);
-    await sectionsQuery.refetch();
-  }, ['homeSections', currentServer?.id]);
+  const carouselItems = useMemo(() => {
+    const sections = sectionsQuery.data;
+    if (!sections) return [];
+
+    const candidates = sections
+      .filter((section) => section.type && section.type !== 'userview')
+      .flatMap((section) => section.items ?? [])
+      .filter((item): item is MediaItem => !!item?.id);
+
+    if (candidates.length === 0) return [];
+
+    const uniqueById = new Map<string, MediaItem>();
+    for (const item of candidates) {
+      if (!item.id) continue;
+      uniqueById.set(item.id, item);
+    }
+
+    const uniqueItems = Array.from(uniqueById.values()).filter((item) =>
+      ['Movie', 'Series', 'Episode', 'Season'].includes(item.type),
+    );
+
+    if (uniqueItems.length <= 6) {
+      return uniqueItems;
+    }
+
+    const shuffled = [...uniqueItems];
+    for (let i = shuffled.length - 1; i > 0; i--) {
+      const j = Math.floor(Math.random() * (i + 1));
+      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
+    }
+
+    return shuffled.slice(0, 6);
+  }, [sectionsQuery.data]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {
@@ -116,6 +161,18 @@ export default function HomeScreen() {
     },
     [servers, setCurrentServer, refreshServerInfo],
   );
+
+  useEffect(() => {
+    if (carouselItems.length === 0) {
+      setCarouselIndex(0);
+      carouselScrollOffset.value = 0;
+      return;
+    }
+
+    setCarouselIndex((current) =>
+      current >= carouselItems.length ? Math.max(carouselItems.length - 1, 0) : current,
+    );
+  }, [carouselItems.length, carouselScrollOffset]);
 
   useEffect(() => {
     navigation.setOptions({
@@ -165,6 +222,32 @@ export default function HomeScreen() {
     currentServer,
   ]);
 
+  const handleCarouselItemPress = useCallback(
+    (item: MediaItem) => {
+      if (!item?.id) return;
+
+      switch (item.type) {
+        case 'Movie':
+          router.push({ pathname: '/movie/[id]', params: { id: item.id } });
+          return;
+        case 'Series':
+          router.push({ pathname: '/series/[id]', params: { id: item.id } });
+          return;
+        case 'Season':
+          router.push({ pathname: '/season/[id]', params: { id: item.id } });
+          return;
+        case 'Episode':
+          router.push({ pathname: '/episode/[id]', params: { id: item.id } });
+          return;
+        default:
+          if (item.seriesId) {
+            router.push({ pathname: '/series/[id]', params: { id: item.seriesId } });
+          }
+      }
+    },
+    [router],
+  );
+
   if (servers.length === 0 && isInitialized) {
     return (
       <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top }]}>
@@ -179,14 +262,76 @@ export default function HomeScreen() {
   }
 
   return (
-    <PageScrollView
+    <ParallaxScrollView
       showsVerticalScrollIndicator={false}
       contentInsetAdjustmentBehavior="automatic"
+      contentInset={{ top: -100 }}
       style={{ flex: 1, backgroundColor }}
-      refreshControl={
-        sectionsQuery.isLoading ? undefined : (
-          <RefreshControl refreshing={!!refreshing} onRefresh={onRefresh} />
-        )
+      headerHeight={carouselHeight}
+      enableMaskView
+      headerImage={
+        <>
+          {carouselItems.length > 0 && (
+            <Carousel
+              width={windowWidth}
+              height={carouselHeight}
+              data={carouselItems}
+              defaultScrollOffsetValue={carouselScrollOffset}
+              loop={carouselItems.length > 1}
+              autoPlay={carouselItems.length > 1}
+              autoPlayInterval={6500}
+              scrollAnimationDuration={900}
+              pagingEnabled
+              onSnapToItem={(index) => setCarouselIndex(index)}
+              onConfigurePanGesture={(panGesture) => {
+                return panGesture.activeOffsetX([-10, 10]);
+              }}
+              onProgressChange={carouselProgress}
+              renderItem={({ item }) => {
+                const imageInfo = mediaAdapter.getImageInfo({
+                  item,
+                  opts: {
+                    preferBackdrop: true,
+                    preferThumb: true,
+                  },
+                });
+                const imageUrl = imageInfo.url;
+
+                return (
+                  <View style={[styles.carouselItemWrapper, { height: carouselHeight }]}>
+                    <TouchableOpacity
+                      activeOpacity={0.9}
+                      style={styles.carouselCard}
+                      onPress={() => handleCarouselItemPress(item)}
+                    >
+                      {imageUrl ? (
+                        <Image
+                          source={{ uri: imageUrl }}
+                          style={styles.carouselImage}
+                          contentFit="cover"
+                          cachePolicy="memory-disk"
+                          placeholder={
+                            imageInfo.blurhash ? { blurhash: imageInfo.blurhash } : undefined
+                          }
+                        />
+                      ) : (
+                        <View
+                          style={[
+                            styles.carouselImage,
+                            styles.carouselPlaceholder,
+                            { backgroundColor: carouselPlaceholderColor },
+                          ]}
+                        >
+                          <IconSymbol name="video.fill" size={48} color="rgba(255,255,255,0.9)" />
+                        </View>
+                      )}
+                    </TouchableOpacity>
+                  </View>
+                );
+              }}
+            />
+          )}
+        </>
       }
     >
       {sectionsQuery.isLoading ? (
@@ -216,57 +361,95 @@ export default function HomeScreen() {
           />
         </>
       ) : (
-        sectionsQuery.data?.map((section) => {
-          if (section.type === 'userview') {
-            return <UserViewSection key={section.key} userView={section.items} />;
-          }
-          if (section.type === 'resume') {
-            if (section.items.length === 0) return null;
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/view-all/resume')}
-                items={section.items}
-                isLoading={false}
-              />
-            );
-          }
-          if (section.type === 'nextup') {
-            if (section.items.length === 0) return null;
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/view-all/nextup')}
-                items={section.items}
-                isLoading={false}
-              />
-            );
-          }
-          const folderId = section.key.replace('latest_', '');
-          return (
-            <Section
-              key={section.key}
-              title={section.title}
-              onViewAll={() =>
-                router.push({
-                  pathname: '/view-all/[type]',
-                  params: {
-                    folderId,
-                    folderName: section.title.replace('最近添加的 ', ''),
-                    type: 'latest',
-                  },
-                })
-              }
-              items={section.items}
-              isLoading={false}
-              type="series"
+        <>
+          {carouselItems.length > 0 && (
+            <Carousel
+              width={windowWidth}
+              height={100}
+              data={carouselItems}
+              defaultScrollOffsetValue={carouselScrollOffset}
+              loop={carouselItems.length > 1}
+              autoPlay={false}
+              autoPlayInterval={6500}
+              scrollAnimationDuration={900}
+              pagingEnabled
+              onSnapToItem={(index) => setCarouselIndex(index)}
+              onConfigurePanGesture={(panGesture) => {
+                return panGesture.activeOffsetX([-10, 10]);
+              }}
+              onProgressChange={carouselProgress}
+              style={styles.carouselContainer}
+              renderItem={({ item }) => {
+                const title = item.seriesName || item.name || '未知标题';
+                const subtitle = getSubtitle(item);
+
+                return (
+                  <View style={styles.carouselTextContainer}>
+                    <ThemedText style={styles.carouselTitle} numberOfLines={2}>
+                      {title}
+                    </ThemedText>
+                    {subtitle ? (
+                      <ThemedText style={styles.carouselSubtitle} numberOfLines={1}>
+                        {subtitle}
+                      </ThemedText>
+                    ) : null}
+                  </View>
+                );
+              }}
             />
-          );
-        })
+          )}
+          {sectionsQuery.data?.map((section) => {
+            if (section.type === 'userview') {
+              return <UserViewSection key={section.key} userView={section.items} />;
+            }
+            if (section.type === 'resume') {
+              if (section.items.length === 0) return null;
+              return (
+                <Section
+                  key={section.key}
+                  title={section.title}
+                  onViewAll={() => router.push('/view-all/resume')}
+                  items={section.items}
+                  isLoading={false}
+                />
+              );
+            }
+            if (section.type === 'nextup') {
+              if (section.items.length === 0) return null;
+              return (
+                <Section
+                  key={section.key}
+                  title={section.title}
+                  onViewAll={() => router.push('/view-all/nextup')}
+                  items={section.items}
+                  isLoading={false}
+                />
+              );
+            }
+            const folderId = section.key.replace('latest_', '');
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() =>
+                  router.push({
+                    pathname: '/view-all/[type]',
+                    params: {
+                      folderId,
+                      folderName: section.title.replace('最近添加的 ', ''),
+                      type: 'latest',
+                    },
+                  })
+                }
+                items={section.items}
+                isLoading={false}
+                type="series"
+              />
+            );
+          })}
+        </>
       )}
-    </PageScrollView>
+    </ParallaxScrollView>
   );
 }
 
@@ -286,6 +469,78 @@ const styles = StyleSheet.create({
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
+  },
+  carouselSkeleton: {
+    marginTop: 0,
+    marginBottom: 24,
+  },
+  carouselContainer: {
+    position: 'absolute',
+    bottom: 0,
+    justifyContent: 'center',
+  },
+  carouselItemWrapper: {
+    flex: 1,
+    width: '100%',
+  },
+  carouselCard: {
+    flex: 1,
+    overflow: 'hidden',
+    backgroundColor: '#151718',
+  },
+  carouselImage: {
+    width: '100%',
+    height: '100%',
+  },
+  carouselPlaceholder: {
+    justifyContent: 'center',
+    alignItems: 'center',
+  },
+  carouselGradient: {
+    position: 'absolute',
+    left: 0,
+    right: 0,
+    bottom: 0,
+    top: '35%',
+  },
+  carouselTextContainer: {
+    position: 'absolute',
+    left: 20,
+    right: 20,
+    gap: 6,
+    zIndex: 2,
+  },
+  carouselTitle: {
+    fontSize: 24,
+    fontWeight: '700',
+  },
+  carouselSubtitle: {
+    fontSize: 15,
+  },
+  carouselIndicators: {
+    paddingHorizontal: 12,
+    paddingVertical: 8,
+    borderRadius: 999,
+    backgroundColor: 'rgba(0, 0, 0, 0.45)',
+    flexDirection: 'row',
+    justifyContent: 'center',
+    alignItems: 'center',
+    gap: 6,
+  },
+  carouselIndicatorsContainer: {
+    justifyContent: 'center',
+    alignItems: 'center',
+    marginTop: 16,
+  },
+  carouselIndicatorDot: {
+    width: 8,
+    height: 8,
+    borderRadius: 4,
+    backgroundColor: 'rgba(255, 255, 255, 0.25)',
+  },
+  carouselIndicatorDotActive: {
+    width: 16,
+    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   serverButton: {
     borderWidth: 1,
