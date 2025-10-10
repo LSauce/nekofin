@@ -147,7 +147,7 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
   const userViewSection = useMemo<HomeSectionWithStatus>(
     () => ({
       key: 'userview',
-      title: '用户视图',
+      title: '媒体库',
       items: userViewQuery.data ?? [],
       type: 'userview',
       isLoading: userViewQuery.isPending,
@@ -495,6 +495,7 @@ export default function HomeScreen() {
             return (
               <UserViewSection
                 key={section.key}
+                title={section.title}
                 userView={section.items}
                 isLoading={section.isLoading}
               />
@@ -531,25 +532,9 @@ export default function HomeScreen() {
 }
 
 const styles = StyleSheet.create({
-  header: {
-    height: 60,
-    justifyContent: 'flex-end',
-    paddingHorizontal: 20,
-    flexDirection: 'row',
-    alignItems: 'center',
-  },
-  title: {
-    fontSize: 36,
-    fontWeight: 'bold',
-    flex: 1,
-  },
   headerButtons: {
     flexDirection: 'row',
     alignItems: 'center',
-  },
-  carouselSkeleton: {
-    marginTop: 0,
-    marginBottom: 24,
   },
   carouselContainer: {
     position: 'absolute',
@@ -572,13 +557,6 @@ const styles = StyleSheet.create({
   carouselPlaceholder: {
     justifyContent: 'center',
     alignItems: 'center',
-  },
-  carouselGradient: {
-    position: 'absolute',
-    left: 0,
-    right: 0,
-    bottom: 0,
-    top: '35%',
   },
   carouselTextContainer: {
     position: 'absolute',
