@@ -214,6 +214,7 @@ export type SearchItemsParams = WithUserId & { searchTerm: string } & WithLimit 
     includeItemTypes?: MediaItemType[];
   };
 export type GetRecommendedSearchKeywordsParams = WithUserId & WithLimit;
+export type GetRandomItemsParams = WithUserId & WithLimit;
 export type GetAvailableFiltersParams = WithUserId & { parentId?: string };
 export interface GetImageInfoParams {
   item: MediaItem | MediaPerson;
@@ -325,6 +326,7 @@ export abstract class MediaAdapter {
   abstract getRecommendedSearchKeywords(
     params: GetRecommendedSearchKeywordsParams,
   ): Promise<string[]>;
+  abstract getRandomItems(params: GetRandomItemsParams): Promise<MediaItem[]>;
   abstract getAvailableFilters(params: GetAvailableFiltersParams): Promise<MediaFilters>;
   abstract getImageInfo(params: GetImageInfoParams): ImageUrlInfo;
   abstract getStreamInfo(params: GetStreamInfoParams): Promise<StreamInfo | null>;

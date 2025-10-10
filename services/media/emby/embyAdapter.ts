@@ -27,6 +27,7 @@ import {
 import { StreamInfo } from '../jellyfin';
 import { convertBaseItemDtoToMediaItem } from '../jellyfin/jellyfinAdapter';
 import {
+  GetRandomItemsParams,
   MediaAdapter,
   type AuthenticateAndSaveServerParams,
   type CreateApiFromServerInfoParams,
@@ -528,6 +529,17 @@ class EmbyAdapter implements MediaAdapter {
     const data = res.data;
     const titles = (data.Items ?? []).map((i) => i.Name).filter((v): v is string => Boolean(v));
     return Array.from(new Set(titles)).slice(0, limit ?? 20);
+  }
+
+  async getRandomItems({ userId, limit }: GetRandomItemsParams): Promise<MediaItem[]> {
+    const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Items`, {
+      UserId: userId,
+      Recursive: true,
+      IncludeItemTypes: 'Movie,Series,Episode',
+      SortBy: 'Random',
+      Limit: limit,
+    });
+    return await parseItems(res);
   }
 
   async getAvailableFilters({

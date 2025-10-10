@@ -446,6 +446,24 @@ export async function getRecommendedSearchKeywords(api: Api, userId: string, lim
   return Array.from(new Set(titles)).slice(0, limit);
 }
 
+export async function getRandomItems(
+  api: Api,
+  userId: string,
+  limit: number = 20,
+): Promise<BaseItemDto[]> {
+  const res = await getItemsApi(api).getItems({
+    userId,
+    limit,
+    recursive: true,
+    includeItemTypes: ['Movie', 'Series', 'Episode'],
+    sortBy: ['Random'],
+    imageTypeLimit: 0,
+    enableTotalRecordCount: false,
+    enableImages: false,
+  });
+  return res.data?.Items ?? [];
+}
+
 export type AvailableFilters = {
   years: number[];
   tags: string[];

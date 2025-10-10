@@ -158,7 +158,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   return (
     <ParallaxScrollView
       enableMaskView
-      headerHeight={400}
+      headerHeight={500}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}

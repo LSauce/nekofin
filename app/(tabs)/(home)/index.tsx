@@ -12,11 +12,21 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
+import { useQueries } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
-import { Platform, StyleSheet, TouchableOpacity, useWindowDimensions, View } from 'react-native';
-import { interpolate, useSharedValue } from 'react-native-reanimated';
+import {
+  Easing,
+  Platform,
+  StyleSheet,
+  TouchableOpacity,
+  useColorScheme,
+  useWindowDimensions,
+  View,
+} from 'react-native';
+import { easeGradient } from 'react-native-easing-gradient';
+import { useSharedValue } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
 import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
@@ -27,71 +37,154 @@ type HomeSection = {
   type?: 'latest' | 'nextup' | 'resume' | 'userview';
 };
 
+type HomeSectionWithStatus = HomeSection & { isLoading: boolean };
+
 function useHomeSections(currentServer: MediaServerInfo | null) {
   const mediaAdapter = useMediaAdapter();
+  const enabled = !!currentServer?.id && !!currentServer?.userId;
 
-  const query = useQueryWithFocus({
+  const resumeQuery = useQueryWithFocus<MediaItem[]>({
     refetchOnScreenFocus: true,
-    queryKey: ['homeSections', currentServer?.id],
-    queryFn: async (): Promise<HomeSection[]> => {
+    queryKey: ['homeSections', currentServer?.id, 'resume'],
+    queryFn: async () => {
       if (!currentServer) return [];
-
-      const [userViewRes, nextUpRes, resumeRes] = await Promise.all([
-        mediaAdapter.getUserView({ userId: currentServer.userId }),
-        mediaAdapter.getNextUpItems({ userId: currentServer.userId, limit: 10 }),
-        mediaAdapter.getResumeItems({ userId: currentServer.userId, limit: 10 }),
-      ]);
-
-      const userViewItems = (userViewRes || []).filter((f) => f.collectionType !== 'playlists');
-
-      const latestByFolder: { folderId: string; items: MediaItem[]; name: string }[] = [];
-      for (const folder of userViewItems) {
-        if (!folder.id) continue;
-        const latest = await mediaAdapter.getLatestItemsByFolder({
-          userId: currentServer.userId,
-          folderId: folder.id,
-          limit: 16,
-        });
-        latestByFolder.push({
-          folderId: folder.id,
-          items: latest.data.Items || [],
-          name: folder.name || '',
-        });
-      }
-
-      const sections: HomeSection[] = [];
-      sections.push({
-        key: 'userview',
-        title: '用户视图',
-        items: userViewItems || [],
-        type: 'userview',
+      const response = await mediaAdapter.getResumeItems({
+        userId: currentServer.userId,
+        limit: 10,
       });
-      sections.push({
-        key: 'resume',
-        title: '继续观看',
-        items: resumeRes.data.Items || [],
-        type: 'resume',
-      });
-      sections.push({
-        key: 'nextup',
-        title: '接下来',
-        items: nextUpRes.data.Items || [],
-        type: 'nextup',
-      });
-      for (const f of latestByFolder) {
-        sections.push({
-          key: `latest_${f.folderId}`,
-          title: `最近添加的 ${f.name}`,
-          items: f.items,
-          type: 'latest',
-        });
-      }
-      return sections;
+      return response.data.Items || [];
     },
-    enabled: !!currentServer,
+    enabled,
   });
 
-  return query;
+  const nextUpQuery = useQueryWithFocus<MediaItem[]>({
+    refetchOnScreenFocus: true,
+    queryKey: ['homeSections', currentServer?.id, 'nextup'],
+    queryFn: async () => {
+      if (!currentServer) return [];
+      const response = await mediaAdapter.getNextUpItems({
+        userId: currentServer.userId,
+        limit: 10,
+      });
+      return response.data.Items || [];
+    },
+    enabled,
+  });
+
+  const userViewQuery = useQueryWithFocus<MediaItem[]>({
+    refetchOnScreenFocus: true,
+    queryKey: ['homeSections', currentServer?.id, 'userview'],
+    queryFn: async () => {
+      if (!currentServer) return [];
+      const userView = await mediaAdapter.getUserView({ userId: currentServer.userId });
+      return (userView || []).filter((item) => item.collectionType !== 'playlists');
+    },
+    enabled,
+  });
+
+  const latestFolders = useMemo(() => {
+    if (!userViewQuery.data) return [];
+
+    return userViewQuery.data
+      .filter((item): item is MediaItem & { id: string } => !!item.id)
+      .map((item) => ({
+        folderId: item.id!,
+        name: item.name || '',
+      }));
+  }, [userViewQuery.data]);
+
+  const latestQueries = useQueries({
+    queries: latestFolders.map((folder) => ({
+      queryKey: ['homeSections', currentServer?.id, 'latest', folder.folderId],
+      queryFn: async () => {
+        if (!currentServer) return [];
+        const response = await mediaAdapter.getLatestItemsByFolder({
+          userId: currentServer.userId,
+          folderId: folder.folderId,
+          limit: 16,
+        });
+        return response.data.Items || [];
+      },
+      enabled,
+    })),
+  });
+
+  const randomItemsQuery = useQueryWithFocus<MediaItem[]>({
+    refetchOnScreenFocus: true,
+    queryKey: ['homeSections', currentServer?.id, 'random'],
+    queryFn: async () => {
+      if (!currentServer) return [];
+      return await mediaAdapter.getRandomItems({
+        userId: currentServer.userId,
+        limit: 6,
+      });
+    },
+    enabled,
+  });
+
+  const resumeSection = useMemo<HomeSectionWithStatus>(
+    () => ({
+      key: 'resume',
+      title: '继续观看',
+      items: resumeQuery.data ?? [],
+      type: 'resume',
+      isLoading: resumeQuery.isPending,
+    }),
+    [resumeQuery.data, resumeQuery.isPending],
+  );
+
+  const nextUpSection = useMemo<HomeSectionWithStatus>(
+    () => ({
+      key: 'nextup',
+      title: '接下来',
+      items: nextUpQuery.data ?? [],
+      type: 'nextup',
+      isLoading: nextUpQuery.isPending,
+    }),
+    [nextUpQuery.data, nextUpQuery.isPending],
+  );
+
+  const userViewSection = useMemo<HomeSectionWithStatus>(
+    () => ({
+      key: 'userview',
+      title: '用户视图',
+      items: userViewQuery.data ?? [],
+      type: 'userview',
+      isLoading: userViewQuery.isPending,
+    }),
+    [userViewQuery.data, userViewQuery.isPending],
+  );
+
+  const latestSections = useMemo<HomeSectionWithStatus[]>(
+    () =>
+      latestFolders.map((folder, index) => {
+        const query = latestQueries[index];
+        const items = query?.data ?? [];
+
+        return {
+          key: `latest_${folder.folderId}`,
+          title: `最近添加的 ${folder.name}`,
+          items,
+          type: 'latest',
+          isLoading: query?.isPending ?? false,
+        } satisfies HomeSectionWithStatus;
+      }),
+    [latestFolders, latestQueries],
+  );
+
+  const sections = useMemo<HomeSectionWithStatus[]>(
+    () => [resumeSection, nextUpSection, userViewSection, ...latestSections],
+    [resumeSection, nextUpSection, userViewSection, latestSections],
+  );
+
+  return {
+    sections,
+    resume: resumeSection,
+    nextUp: nextUpSection,
+    userView: userViewSection,
+    latest: latestSections,
+    randomItemsQuery,
+  };
 }
 
 export default function HomeScreen() {
@@ -101,58 +194,42 @@ export default function HomeScreen() {
   const mediaAdapter = useMediaAdapter();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
-  const carouselSkeletonColor = useThemeColor(
-    { light: '#f0f0f5', dark: 'rgba(255, 255, 255, 0.08)' },
-    'background',
-  );
   const carouselPlaceholderColor = useThemeColor(
     { light: '#d1d1d6', dark: '#2b2b2b' },
     'background',
   );
+
+  const colorScheme = useColorScheme() ?? 'light';
+  const linearColor = useThemeColor(
+    { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
+    'background',
+  );
+
+  const gradientStartColor = colorScheme === 'light' ? 'rgba(255,255,255,0)' : 'rgba(0,0,0,0)';
+
+  const { colors, locations } = easeGradient({
+    colorStops: {
+      0: { color: gradientStartColor },
+      1: { color: String(linearColor) },
+    },
+    easing: Easing.bezier(0.4, 0.0, 0.2, 1),
+    extraColorStopsPerTransition: 6,
+  });
+
   const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
   const carouselHeight = windowHeight * 0.6;
 
   const router = useRouter();
 
-  const sectionsQuery = useHomeSections(currentServer);
+  const { sections, randomItemsQuery } = useHomeSections(currentServer);
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselScrollOffset = useSharedValue(0);
   const carouselProgress = useSharedValue(0);
 
   const carouselItems = useMemo(() => {
-    const sections = sectionsQuery.data;
-    if (!sections) return [];
-
-    const candidates = sections
-      .filter((section) => section.type && section.type !== 'userview')
-      .flatMap((section) => section.items ?? [])
-      .filter((item): item is MediaItem => !!item?.id);
-
-    if (candidates.length === 0) return [];
-
-    const uniqueById = new Map<string, MediaItem>();
-    for (const item of candidates) {
-      if (!item.id) continue;
-      uniqueById.set(item.id, item);
-    }
-
-    const uniqueItems = Array.from(uniqueById.values()).filter((item) =>
-      ['Movie', 'Series', 'Episode', 'Season'].includes(item.type),
-    );
-
-    if (uniqueItems.length <= 6) {
-      return uniqueItems;
-    }
-
-    const shuffled = [...uniqueItems];
-    for (let i = shuffled.length - 1; i > 0; i--) {
-      const j = Math.floor(Math.random() * (i + 1));
-      [shuffled[i], shuffled[j]] = [shuffled[j], shuffled[i]];
-    }
-
-    return shuffled.slice(0, 6);
-  }, [sectionsQuery.data]);
+    return randomItemsQuery.data ?? [];
+  }, [randomItemsQuery.data]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {
@@ -168,10 +245,6 @@ export default function HomeScreen() {
       carouselScrollOffset.value = 0;
       return;
     }
-
-    setCarouselIndex((current) =>
-      current >= carouselItems.length ? Math.max(carouselItems.length - 1, 0) : current,
-    );
   }, [carouselItems.length, carouselScrollOffset]);
 
   useEffect(() => {
@@ -269,6 +342,11 @@ export default function HomeScreen() {
       style={{ flex: 1, backgroundColor }}
       headerHeight={carouselHeight}
       enableMaskView
+      gradientColors={colors as unknown as [string, string]}
+      gradientLocations={locations as unknown as [number, number]}
+      contentStyle={{
+        gap: 2,
+      }}
       headerImage={
         <>
           {carouselItems.length > 0 && (
@@ -334,98 +412,96 @@ export default function HomeScreen() {
         </>
       }
     >
-      {sectionsQuery.isLoading ? (
-        <>
-          <UserViewSection userView={[]} isLoading={true} />
-          <Section
-            key="skeleton-resume"
-            title=""
-            onViewAll={() => {}}
-            items={[]}
-            isLoading={true}
-          />
-          <Section
-            key="skeleton-nextup"
-            title=""
-            onViewAll={() => {}}
-            items={[]}
-            isLoading={true}
-          />
-          <Section
-            key="skeleton-latest"
-            title=""
-            onViewAll={() => {}}
-            items={[]}
-            isLoading={true}
-            type="series"
-          />
-        </>
-      ) : (
-        <>
-          {carouselItems.length > 0 && (
-            <Carousel
-              width={windowWidth}
-              height={100}
-              data={carouselItems}
-              defaultScrollOffsetValue={carouselScrollOffset}
-              loop={carouselItems.length > 1}
-              autoPlay={false}
-              autoPlayInterval={6500}
-              scrollAnimationDuration={900}
-              pagingEnabled
-              onSnapToItem={(index) => setCarouselIndex(index)}
-              onConfigurePanGesture={(panGesture) => {
-                return panGesture.activeOffsetX([-10, 10]);
-              }}
-              onProgressChange={carouselProgress}
-              style={styles.carouselContainer}
-              renderItem={({ item }) => {
-                const title = item.seriesName || item.name || '未知标题';
-                const subtitle = getSubtitle(item);
+      <>
+        {carouselItems.length > 0 && (
+          <Carousel
+            width={windowWidth}
+            height={100}
+            data={carouselItems}
+            defaultScrollOffsetValue={carouselScrollOffset}
+            loop={carouselItems.length > 1}
+            autoPlay={false}
+            scrollAnimationDuration={900}
+            pagingEnabled
+            onConfigurePanGesture={(panGesture) => {
+              return panGesture.activeOffsetX([-10, 10]);
+            }}
+            onProgressChange={carouselProgress}
+            style={styles.carouselContainer}
+            renderItem={({ item }) => {
+              const title = item.seriesName || item.name || '未知标题';
+              const subtitle = getSubtitle(item);
 
-                return (
-                  <View style={styles.carouselTextContainer}>
-                    <ThemedText style={styles.carouselTitle} numberOfLines={2}>
-                      {title}
+              return (
+                <View style={styles.carouselTextContainer}>
+                  <ThemedText style={styles.carouselTitle} numberOfLines={1}>
+                    {title}
+                  </ThemedText>
+                  {subtitle ? (
+                    <ThemedText style={styles.carouselSubtitle} numberOfLines={1}>
+                      {subtitle}
                     </ThemedText>
-                    {subtitle ? (
-                      <ThemedText style={styles.carouselSubtitle} numberOfLines={1}>
-                        {subtitle}
-                      </ThemedText>
-                    ) : null}
-                  </View>
-                );
-              }}
-            />
-          )}
-          {sectionsQuery.data?.map((section) => {
-            if (section.type === 'userview') {
-              return <UserViewSection key={section.key} userView={section.items} />;
-            }
-            if (section.type === 'resume') {
-              if (section.items.length === 0) return null;
-              return (
-                <Section
-                  key={section.key}
-                  title={section.title}
-                  onViewAll={() => router.push('/view-all/resume')}
-                  items={section.items}
-                  isLoading={false}
-                />
+                  ) : null}
+                </View>
               );
-            }
-            if (section.type === 'nextup') {
-              if (section.items.length === 0) return null;
-              return (
-                <Section
-                  key={section.key}
-                  title={section.title}
-                  onViewAll={() => router.push('/view-all/nextup')}
-                  items={section.items}
-                  isLoading={false}
+            }}
+          />
+        )}
+        {carouselItems.length > 1 && (
+          <View style={styles.carouselIndicatorsContainer} pointerEvents="none">
+            <View style={styles.carouselIndicators}>
+              {carouselItems.map((item, index) => (
+                <ThemedView
+                  key={item.id ?? `${item.type}-${item.seriesId ?? index}`}
+                  style={[
+                    styles.carouselIndicatorDot,
+                    index === carouselIndex && styles.carouselIndicatorDotActive,
+                  ]}
+                  lightColor={index === carouselIndex ? 'rgba(0,0,0,0.9)' : 'rgba(0,0,0,0.25)'}
+                  darkColor={
+                    index === carouselIndex ? 'rgba(255,255,255,0.9)' : 'rgba(255,255,255,0.25)'
+                  }
                 />
-              );
-            }
+              ))}
+            </View>
+          </View>
+        )}
+        {sections.map((section) => {
+          if (section.type === 'resume') {
+            if (!section.isLoading && section.items.length === 0) return null;
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() => router.push('/view-all/resume')}
+                items={section.items}
+                isLoading={section.isLoading}
+              />
+            );
+          }
+          if (section.type === 'nextup') {
+            if (!section.isLoading && section.items.length === 0) return null;
+            return (
+              <Section
+                key={section.key}
+                title={section.title}
+                onViewAll={() => router.push('/view-all/nextup')}
+                items={section.items}
+                isLoading={section.isLoading}
+              />
+            );
+          }
+          if (section.type === 'userview') {
+            return (
+              <UserViewSection
+                key={section.key}
+                userView={section.items}
+                isLoading={section.isLoading}
+              />
+            );
+          }
+          if (section.type === 'latest') {
+            if (!section.isLoading && section.items.length === 0) return null;
             const folderId = section.key.replace('latest_', '');
             return (
               <Section
@@ -442,13 +518,14 @@ export default function HomeScreen() {
                   })
                 }
                 items={section.items}
-                isLoading={false}
+                isLoading={section.isLoading}
                 type="series"
               />
             );
-          })}
-        </>
-      )}
+          }
+          return null;
+        })}
+      </>
     </ParallaxScrollView>
   );
 }
@@ -518,29 +595,30 @@ const styles = StyleSheet.create({
     fontSize: 15,
   },
   carouselIndicators: {
+    position: 'absolute',
+    bottom: 0,
+    left: 0,
+    right: 0,
     paddingHorizontal: 12,
     paddingVertical: 8,
     borderRadius: 999,
-    backgroundColor: 'rgba(0, 0, 0, 0.45)',
     flexDirection: 'row',
     justifyContent: 'center',
     alignItems: 'center',
     gap: 6,
   },
   carouselIndicatorsContainer: {
+    position: 'relative',
     justifyContent: 'center',
     alignItems: 'center',
-    marginTop: 16,
   },
   carouselIndicatorDot: {
     width: 8,
     height: 8,
     borderRadius: 4,
-    backgroundColor: 'rgba(255, 255, 255, 0.25)',
   },
   carouselIndicatorDotActive: {
     width: 16,
-    backgroundColor: 'rgba(255, 255, 255, 0.9)',
   },
   serverButton: {
     borderWidth: 1,

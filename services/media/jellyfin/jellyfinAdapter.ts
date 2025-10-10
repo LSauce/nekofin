@@ -23,6 +23,7 @@ import {
   getNextUpItems,
   getNextUpItemsByFolder,
   getPublicUsers,
+  getRandomItems,
   getRecommendedSearchKeywords,
   getResumeItems,
   getSeasonsBySeries,
@@ -44,6 +45,7 @@ import {
   setGlobalApiInstance,
 } from '.';
 import {
+  GetRandomItemsParams,
   MediaAdapter,
   type AuthenticateAndSaveServerParams,
   type CreateApiFromServerInfoParams,
@@ -464,6 +466,13 @@ class JellyfinAdapter implements MediaAdapter {
     const api = getApiInstance();
     if (!api) throw new Error('API instance is not set');
     return getRecommendedSearchKeywords(api, userId, limit);
+  }
+
+  async getRandomItems(params: GetRandomItemsParams): Promise<MediaItem[]> {
+    const api = getApiInstance();
+    if (!api) throw new Error('API instance is not set');
+    const result = await getRandomItems(api, params.userId, params.limit);
+    return result.map(convertBaseItemDtoToMediaItem);
   }
 
   async getAvailableFilters({ userId, parentId }: GetAvailableFiltersParams) {

@@ -21,12 +21,12 @@ type Props = PropsWithChildren<{
   enableMaskView?: boolean;
   containerStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
-  showsVerticalScrollIndicator?: boolean;
-  refreshControl?: ScrollViewProps['refreshControl'];
-  contentInsetAdjustmentBehavior?: ScrollViewProps['contentInsetAdjustmentBehavior'];
-  contentInset?: ScrollViewProps['contentInset'];
-  style?: StyleProp<ViewStyle>;
-}>;
+  maskViewStyle?: StyleProp<ViewStyle>;
+  gradientStyle?: StyleProp<ViewStyle>;
+  gradientColors?: [string, string];
+  gradientLocations?: [number, number];
+}> &
+  ScrollViewProps;
 
 export default function ParallaxScrollView({
   children,
@@ -36,11 +36,11 @@ export default function ParallaxScrollView({
   enableMaskView = false,
   containerStyle,
   contentStyle,
-  showsVerticalScrollIndicator = true,
-  refreshControl,
-  contentInsetAdjustmentBehavior,
-  contentInset,
-  style,
+  maskViewStyle,
+  gradientStyle,
+  gradientColors,
+  gradientLocations,
+  ...props
 }: Props) {
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
@@ -80,15 +80,7 @@ export default function ParallaxScrollView({
 
   return (
     <ThemedView style={[styles.container, containerStyle]}>
-      <Animated.ScrollView
-        refreshControl={refreshControl}
-        ref={scrollRef}
-        scrollEventThrottle={16}
-        showsVerticalScrollIndicator={showsVerticalScrollIndicator}
-        contentInsetAdjustmentBehavior={contentInsetAdjustmentBehavior}
-        contentInset={contentInset}
-        style={style}
-      >
+      <Animated.ScrollView ref={scrollRef} scrollEventThrottle={16} {...props}>
         <Animated.View
           style={[
             styles.header,
@@ -100,23 +92,34 @@ export default function ParallaxScrollView({
         </Animated.View>
         {enableMaskView ? (
           <ThemedView
-            style={{
-              position: 'relative',
-              flex: 1,
-              top: -50,
-              backgroundColor: 'transparent',
-            }}
+            style={[
+              {
+                position: 'relative',
+                flex: 1,
+                top: -50,
+                backgroundColor: 'transparent',
+              },
+              maskViewStyle,
+            ]}
           >
             <LinearGradient
-              colors={colors as unknown as readonly [string, string, ...string[]]}
-              locations={locations as unknown as readonly [number, number, ...number[]]}
-              style={{
-                position: 'absolute',
-                left: 0,
-                right: 0,
-                top: -180,
-                height: 200,
-              }}
+              colors={
+                gradientColors ?? (colors as unknown as readonly [string, string, ...string[]])
+              }
+              locations={
+                gradientLocations ??
+                (locations as unknown as readonly [number, number, ...number[]])
+              }
+              style={[
+                {
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: -180,
+                  height: 200,
+                },
+                gradientStyle,
+              ]}
             />
             <ThemedView style={[styles.content, contentStyle]}>{children}</ThemedView>
           </ThemedView>
