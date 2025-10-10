@@ -348,7 +348,7 @@ export default function HomeScreen() {
         gap: 2,
       }}
       headerImage={
-        <>
+        <View>
           {carouselItems.length > 0 && (
             <Carousel
               width={windowWidth}
@@ -409,10 +409,10 @@ export default function HomeScreen() {
               }}
             />
           )}
-        </>
+        </View>
       }
     >
-      <>
+      <View>
         {carouselItems.length > 0 && (
           <Carousel
             width={windowWidth}
@@ -466,67 +466,69 @@ export default function HomeScreen() {
             </View>
           </View>
         )}
-        {sections.map((section) => {
-          if (section.type === 'resume') {
-            if (!section.isLoading && section.items.length === 0) return null;
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/view-all/resume')}
-                items={section.items}
-                isLoading={section.isLoading}
-              />
-            );
-          }
-          if (section.type === 'nextup') {
-            if (!section.isLoading && section.items.length === 0) return null;
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() => router.push('/view-all/nextup')}
-                items={section.items}
-                isLoading={section.isLoading}
-              />
-            );
-          }
-          if (section.type === 'userview') {
-            return (
-              <UserViewSection
-                key={section.key}
-                title={section.title}
-                userView={section.items}
-                isLoading={section.isLoading}
-              />
-            );
-          }
-          if (section.type === 'latest') {
-            if (!section.isLoading && section.items.length === 0) return null;
-            const folderId = section.key.replace('latest_', '');
-            return (
-              <Section
-                key={section.key}
-                title={section.title}
-                onViewAll={() =>
-                  router.push({
-                    pathname: '/view-all/[type]',
-                    params: {
-                      folderId,
-                      folderName: section.title.replace('最近添加的 ', ''),
-                      type: 'latest',
-                    },
-                  })
-                }
-                items={section.items}
-                isLoading={section.isLoading}
-                type="series"
-              />
-            );
-          }
-          return null;
-        })}
-      </>
+        <View style={{ gap: 24, marginTop: 24 }}>
+          {sections.map((section) => {
+            if (section.type === 'resume') {
+              if (!section.isLoading && section.items.length === 0) return null;
+              return (
+                <Section
+                  key={section.key}
+                  title={section.title}
+                  onViewAll={() => router.push('/view-all/resume')}
+                  items={section.items}
+                  isLoading={section.isLoading}
+                />
+              );
+            }
+            if (section.type === 'nextup') {
+              if (!section.isLoading && section.items.length === 0) return null;
+              return (
+                <Section
+                  key={section.key}
+                  title={section.title}
+                  onViewAll={() => router.push('/view-all/nextup')}
+                  items={section.items}
+                  isLoading={section.isLoading}
+                />
+              );
+            }
+            if (section.type === 'userview') {
+              return (
+                <UserViewSection
+                  key={section.key}
+                  title={section.title}
+                  userView={section.items}
+                  isLoading={section.isLoading}
+                />
+              );
+            }
+            if (section.type === 'latest') {
+              if (!section.isLoading && section.items.length === 0) return null;
+              const folderId = section.key.replace('latest_', '');
+              return (
+                <Section
+                  key={section.key}
+                  title={section.title}
+                  onViewAll={() =>
+                    router.push({
+                      pathname: '/view-all/[type]',
+                      params: {
+                        folderId,
+                        folderName: section.title.replace('最近添加的 ', ''),
+                        type: 'latest',
+                      },
+                    })
+                  }
+                  items={section.items}
+                  isLoading={section.isLoading}
+                  type="series"
+                />
+              );
+            }
+            return null;
+          })}
+        </View>
+      </View>
     </ParallaxScrollView>
   );
 }

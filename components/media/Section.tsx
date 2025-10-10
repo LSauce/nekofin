@@ -23,7 +23,7 @@ export function Section({
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   return (
-    <View style={[styles.section, { backgroundColor }]}>
+    <View style={{ backgroundColor }}>
       {isLoading ? (
         <SkeletonSectionHeader />
       ) : (
@@ -71,9 +71,6 @@ export function Section({
 }
 
 const styles = StyleSheet.create({
-  section: {
-    marginTop: 24,
-  },
   sectionHeader: {
     flexDirection: 'row',
     alignItems: 'center',

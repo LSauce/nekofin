@@ -20,7 +20,7 @@ export const UserViewSection = ({
 
   if (isLoading) {
     return (
-      <View style={[styles.userViewSection, { backgroundColor }]}>
+      <View style={{ backgroundColor }}>
         <FlatList
           data={Array.from({ length: 3 })}
           horizontal
@@ -35,14 +35,14 @@ export const UserViewSection = ({
 
   if (userViewItems.length === 0) {
     return (
-      <View style={styles.userViewSection}>
+      <View>
         <Text style={styles.userViewContent}>暂无内容</Text>
       </View>
     );
   }
 
   return (
-    <View style={[styles.userViewSection, { backgroundColor }]}>
+    <View style={{ backgroundColor }}>
       {title && <Text style={[styles.userViewTitle, { color: textColor }]}>{title}</Text>}
       <FlatList
         data={userViewItems}
@@ -59,9 +59,6 @@ export const UserViewSection = ({
 };
 
 const styles = StyleSheet.create({
-  userViewSection: {
-    marginTop: 10,
-  },
   userViewContainer: {
     flexDirection: 'row',
     gap: 12,
