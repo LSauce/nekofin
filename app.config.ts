@@ -111,6 +111,7 @@ export default ({ config }: { config: ExpoConfig }): ExpoConfig => {
           ios: {
             useFrameworks: 'static',
             reactNativeReleaseLevel: 'experimental',
+            deploymentTarget: '15.1',
           },
           android: {
             reactNativeReleaseLevel: 'experimental',
