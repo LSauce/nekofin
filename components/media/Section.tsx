@@ -93,6 +93,7 @@ const styles = StyleSheet.create({
     fontSize: 16,
   },
   sectionListContent: {
+    paddingVertical: 6,
     paddingHorizontal: 20,
     gap: 12,
   },

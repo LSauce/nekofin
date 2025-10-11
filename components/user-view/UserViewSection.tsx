@@ -63,6 +63,7 @@ const styles = StyleSheet.create({
     flexDirection: 'row',
     gap: 12,
     paddingHorizontal: 20,
+    paddingVertical: 6,
   },
   userViewContent: {
     fontSize: 14,

@@ -1,5 +1,6 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { ImageUrlInfo } from '@/lib/utils/image';
 import { MediaItem } from '@/services/media/types';
@@ -18,6 +19,7 @@ import {
   View,
   ViewStyle,
 } from 'react-native';
+import { Content, Item, ItemIcon, ItemTitle, Root as Menu, Trigger } from 'zeego/context-menu';
 
 function ImageWithFallback({
   uri,
@@ -95,6 +97,7 @@ export function EpisodeCard({
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { accentColor } = useAccentColor();
+  const { currentServer } = useMediaServers();
 
   const mediaAdapter = useMediaAdapter();
 
@@ -139,53 +142,113 @@ export function EpisodeCard({
 
   const isPlayed = item.userData?.played === true;
 
+  const handlePlay = () => {
+    if (!item.id) return;
+    router.push({
+      pathname: '/player',
+      params: { itemId: item.id },
+    });
+  };
+
+  const handleAddToFavorites = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.addFavoriteItem({
+      userId: currentServer.userId,
+      itemId: item.id,
+    });
+  };
+
+  const handleMarkAsWatched = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.markItemPlayed({
+      userId: currentServer.userId,
+      itemId: item.id,
+      datePlayed: new Date().toISOString(),
+    });
+  };
+
+  const handleMarkAsUnwatched = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.markItemUnplayed({
+      userId: currentServer.userId,
+      itemId: item.id,
+    });
+  };
+
   return (
-    <TouchableOpacity style={[styles.card, { width: 200 }, style]} onPress={onPress || handlePress}>
-      <View style={styles.coverContainer}>
-        <ImageWithFallback
-          uri={imageUrl}
-          style={styles.cover}
-          placeholderBlurhash={imageInfo.blurhash}
-          cachePolicy="memory-disk"
-          contentFit="cover"
-          fallback={
-            <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-              <FontAwesome name="film" size={36} color="#ccc" />
-            </View>
-          }
-        />
-        {isPlayed && (
-          <View style={styles.playedOverlay}>
-            <Ionicons name="checkmark-circle" size={24} color={accentColor} />
+    <Menu>
+      <Trigger>
+        <TouchableOpacity
+          style={[styles.card, { width: 200 }, style]}
+          onPress={onPress || handlePress}
+        >
+          <View style={styles.coverContainer}>
+            <ImageWithFallback
+              uri={imageUrl}
+              style={styles.cover}
+              placeholderBlurhash={imageInfo.blurhash}
+              cachePolicy="memory-disk"
+              contentFit="cover"
+              fallback={
+                <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
+                  <FontAwesome name="film" size={36} color="#ccc" />
+                </View>
+              }
+            />
+            {isPlayed && (
+              <View style={styles.playedOverlay}>
+                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
+              </View>
+            )}
+            {playedPercentage !== undefined && (
+              <View style={styles.progressContainer}>
+                <View style={styles.progressBackground}>
+                  <View
+                    style={[
+                      styles.progressFill,
+                      {
+                        width: `${playedPercentage}%`,
+                        backgroundColor: accentColor,
+                      },
+                    ]}
+                  />
+                </View>
+              </View>
+            )}
           </View>
-        )}
-        {playedPercentage !== undefined && (
-          <View style={styles.progressContainer}>
-            <View style={styles.progressBackground}>
-              <View
-                style={[
-                  styles.progressFill,
-                  {
-                    width: `${playedPercentage}%`,
-                    backgroundColor: accentColor,
-                  },
-                ]}
-              />
-            </View>
-          </View>
-        )}
-      </View>
-      {!hideText && (
-        <>
-          <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-            {item.seriesName || item.name || '未知标题'}
-          </Text>
-          <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
-            {getSubtitle(item)}
-          </Text>
-        </>
-      )}
-    </TouchableOpacity>
+          {!hideText && (
+            <>
+              <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
+                {item.seriesName || item.name || '未知标题'}
+              </Text>
+              <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
+                {getSubtitle(item)}
+              </Text>
+            </>
+          )}
+        </TouchableOpacity>
+      </Trigger>
+      <Content>
+        <Item key="play" onSelect={handlePlay}>
+          <ItemIcon ios={{ name: 'play.circle' }} />
+          <ItemTitle>播放</ItemTitle>
+        </Item>
+        <Item key="addToFavorites" onSelect={handleAddToFavorites}>
+          <ItemIcon ios={{ name: 'heart' }} />
+          <ItemTitle>添加到收藏</ItemTitle>
+        </Item>
+        <Item
+          key={isPlayed ? 'markAsUnwatched' : 'markAsWatched'}
+          onSelect={isPlayed ? handleMarkAsUnwatched : handleMarkAsWatched}
+        >
+          <ItemIcon ios={{ name: isPlayed ? 'eye.slash' : 'eye' }} />
+          <ItemTitle>{isPlayed ? '标记为未看' : '标记为已看'}</ItemTitle>
+        </Item>
+      </Content>
+    </Menu>
   );
 }
 
@@ -203,6 +266,7 @@ export function SeriesCard({
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
+  const { currentServer } = useMediaServers();
 
   const mediaAdapter = useMediaAdapter();
 
@@ -219,52 +283,120 @@ export function SeriesCard({
 
   const imageUrl = imageInfo.url;
 
+  const handlePress = () => {
+    const type = item.type;
+
+    if (type === 'Season') {
+      router.push({ pathname: '/season/[id]', params: { id: item.id! } });
+      return;
+    }
+
+    if (type === 'Series' || type === 'Episode') {
+      const seriesId = item.seriesId ?? item.id;
+      router.push({ pathname: '/series/[id]', params: { id: seriesId! } });
+      return;
+    }
+
+    if (type === 'Movie') {
+      router.push({ pathname: '/movie/[id]', params: { id: item.id! } });
+      return;
+    }
+
+    console.warn('Unknown type:', type);
+  };
+
+  const handlePlay = () => {
+    if (!item.id) return;
+    router.push({
+      pathname: '/player',
+      params: { itemId: item.id },
+    });
+  };
+
+  const handleViewDetails = () => {
+    handlePress();
+  };
+
+  const handleAddToFavorites = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.addFavoriteItem({
+      userId: currentServer.userId,
+      itemId: item.id,
+    });
+  };
+
+  const handleMarkAsWatched = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.markItemPlayed({
+      userId: currentServer.userId,
+      itemId: item.id,
+      datePlayed: new Date().toISOString(),
+    });
+  };
+
+  const handleMarkAsUnwatched = async () => {
+    if (!item.id || !currentServer) return;
+
+    await mediaAdapter.markItemUnplayed({
+      userId: currentServer.userId,
+      itemId: item.id,
+    });
+  };
+
+  const isPlayed = item.userData?.played === true;
+
   return (
-    <TouchableOpacity
-      style={[styles.card, { width: 120 }, style]}
-      onPress={() => {
-        const type = item.type;
-
-        if (type === 'Season') {
-          router.push({ pathname: '/season/[id]', params: { id: item.id! } });
-          return;
-        }
-
-        if (type === 'Series' || type === 'Episode') {
-          const seriesId = item.seriesId ?? item.id;
-          router.push({ pathname: '/series/[id]', params: { id: seriesId! } });
-          return;
-        }
-
-        if (type === 'Movie') {
-          router.push({ pathname: '/movie/[id]', params: { id: item.id! } });
-          return;
-        }
-
-        console.warn('Unknown type:', type);
-      }}
-    >
-      <ImageWithFallback
-        uri={imageUrl}
-        style={styles.posterCover}
-        placeholderBlurhash={imageInfo.blurhash}
-        cachePolicy="memory-disk"
-        contentFit="cover"
-        fallback={
-          <View style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}>
-            <FontAwesome name="film" size={36} color="#ccc" />
-          </View>
-        }
-      />
-      <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-        {hideSubtitle ? item.name : item.seriesName || item.name || '未知标题'}
-      </Text>
-      {!hideSubtitle && (
-        <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
-          {getSubtitle(item)}
-        </Text>
-      )}
-    </TouchableOpacity>
+    <Menu>
+      <Trigger>
+        <TouchableOpacity style={[styles.card, { width: 120 }, style]} onPress={handlePress}>
+          <ImageWithFallback
+            uri={imageUrl}
+            style={styles.posterCover}
+            placeholderBlurhash={imageInfo.blurhash}
+            cachePolicy="memory-disk"
+            contentFit="cover"
+            fallback={
+              <View
+                style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}
+              >
+                <FontAwesome name="film" size={36} color="#ccc" />
+              </View>
+            }
+          />
+          <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
+            {hideSubtitle ? item.name : item.seriesName || item.name || '未知标题'}
+          </Text>
+          {!hideSubtitle && (
+            <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
+              {getSubtitle(item)}
+            </Text>
+          )}
+        </TouchableOpacity>
+      </Trigger>
+      <Content>
+        <Item key="play" onSelect={handlePlay}>
+          <ItemIcon ios={{ name: 'play.circle' }} />
+          <ItemTitle>播放</ItemTitle>
+        </Item>
+        <Item key="viewDetails" onSelect={handleViewDetails}>
+          <ItemIcon ios={{ name: 'info.circle' }} />
+          <ItemTitle>查看详情</ItemTitle>
+        </Item>
+        <Item key="addToFavorites" onSelect={handleAddToFavorites}>
+          <ItemIcon ios={{ name: 'heart' }} />
+          <ItemTitle>添加到收藏</ItemTitle>
+        </Item>
+        <Item
+          key={isPlayed ? 'markAsUnwatched' : 'markAsWatched'}
+          onSelect={isPlayed ? handleMarkAsUnwatched : handleMarkAsWatched}
+        >
+          <ItemIcon ios={{ name: isPlayed ? 'eye.slash' : 'eye' }} />
+          <ItemTitle>{isPlayed ? '标记为未看' : '标记为已看'}</ItemTitle>
+        </Item>
+      </Content>
+    </Menu>
   );
 }
 
