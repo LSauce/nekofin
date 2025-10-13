@@ -1,15 +1,15 @@
+import { useMediaActions } from '@/hooks/useMediaActions';
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { ImageUrlInfo } from '@/lib/utils/image';
-import { MediaItem, MediaUserData } from '@/services/media/types';
+import { MediaItem } from '@/services/media/types';
 import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models';
 import { Image, type ImageProps } from 'expo-image';
 import { useRouter } from 'expo-router';
-import { useEffect, useState, type ReactNode } from 'react';
+import { useState, type ReactNode } from 'react';
 import {
   ImageStyle,
   StyleProp,
@@ -85,6 +85,7 @@ export function EpisodeCard({
   imgType = 'Thumb',
   imgInfo,
   onPress,
+  showPlayButton = false,
 }: {
   item: MediaItem;
   style?: StyleProp<ViewStyle>;
@@ -92,24 +93,21 @@ export function EpisodeCard({
   imgType?: ImageType;
   imgInfo?: ImageUrlInfo;
   onPress?: () => void;
+  showPlayButton?: boolean;
 }) {
   const router = useRouter();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { accentColor } = useAccentColor();
-  const { currentServer } = useMediaServers();
 
   const mediaAdapter = useMediaAdapter();
-
-  const [localUserData, setLocalUserData] = useState<MediaUserData | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    setLocalUserData(item.userData || null);
-    setIsUpdating(false);
-  }, [item.id, item.userData]);
-
-  const currentUserData = localUserData || item.userData;
+  const {
+    currentUserData,
+    handlePlay,
+    handleAddToFavorites,
+    handleMarkAsWatched,
+    handleMarkAsUnwatched,
+  } = useMediaActions(item);
 
   const imageInfo =
     imgInfo ??
@@ -152,94 +150,6 @@ export function EpisodeCard({
 
   const isPlayed = currentUserData?.played === true;
 
-  const handlePlay = () => {
-    if (!item.id) return;
-    router.push({
-      pathname: '/player',
-      params: { itemId: item.id },
-    });
-  };
-
-  const handleAddToFavorites = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      isFavorite: true,
-    }));
-
-    try {
-      await mediaAdapter.addFavoriteItem({
-        userId: currentServer.userId,
-        itemId: item.id,
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        isFavorite: false,
-      }));
-      console.error('添加收藏失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleMarkAsWatched = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      played: true,
-      playedPercentage: 100,
-    }));
-
-    try {
-      await mediaAdapter.markItemPlayed({
-        userId: currentServer.userId,
-        itemId: item.id,
-        datePlayed: new Date().toISOString(),
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        played: false,
-        playedPercentage: prev?.playedPercentage || 0,
-      }));
-      console.error('标记为已看失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleMarkAsUnwatched = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      played: false,
-      playedPercentage: 0,
-    }));
-
-    try {
-      await mediaAdapter.markItemUnplayed({
-        userId: currentServer.userId,
-        itemId: item.id,
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        played: true,
-        playedPercentage: prev?.playedPercentage || 100,
-      }));
-      console.error('标记为未看失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
   return (
     <Menu>
       <Trigger>
@@ -250,7 +160,7 @@ export function EpisodeCard({
           <View style={styles.coverContainer}>
             <ImageWithFallback
               uri={imageUrl}
-              style={styles.cover}
+              style={[styles.cover, styles.cardBorder]}
               placeholderBlurhash={imageInfo.blurhash}
               cachePolicy="memory-disk"
               contentFit="cover"
@@ -260,6 +170,11 @@ export function EpisodeCard({
                 </View>
               }
             />
+            {showPlayButton && (
+              <TouchableOpacity style={styles.playButton} onPress={handlePlay} activeOpacity={0.8}>
+                <Ionicons name="play" size={32} color="#fff" />
+              </TouchableOpacity>
+            )}
             {isPlayed && (
               <View style={styles.playedOverlay}>
                 <Ionicons name="checkmark-circle" size={24} color={accentColor} />
@@ -328,19 +243,15 @@ export function SeriesCard({
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const router = useRouter();
-  const { currentServer } = useMediaServers();
 
   const mediaAdapter = useMediaAdapter();
-
-  const [localUserData, setLocalUserData] = useState<MediaUserData | null>(null);
-  const [isUpdating, setIsUpdating] = useState(false);
-
-  useEffect(() => {
-    setLocalUserData(item.userData || null);
-    setIsUpdating(false);
-  }, [item.id, item.userData]);
-
-  const currentUserData = localUserData || item.userData;
+  const {
+    currentUserData,
+    handlePlay,
+    handleAddToFavorites,
+    handleMarkAsWatched,
+    handleMarkAsUnwatched,
+  } = useMediaActions(item);
 
   const imageInfo = mediaAdapter.getImageInfo({
     item,
@@ -377,96 +288,8 @@ export function SeriesCard({
     console.warn('Unknown type:', type);
   };
 
-  const handlePlay = () => {
-    if (!item.id) return;
-    router.push({
-      pathname: '/player',
-      params: { itemId: item.id },
-    });
-  };
-
   const handleViewDetails = () => {
     handlePress();
-  };
-
-  const handleAddToFavorites = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      isFavorite: true,
-    }));
-
-    try {
-      await mediaAdapter.addFavoriteItem({
-        userId: currentServer.userId,
-        itemId: item.id,
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        isFavorite: false,
-      }));
-      console.error('添加收藏失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleMarkAsWatched = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      played: true,
-      playedPercentage: 100,
-    }));
-
-    try {
-      await mediaAdapter.markItemPlayed({
-        userId: currentServer.userId,
-        itemId: item.id,
-        datePlayed: new Date().toISOString(),
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        played: false,
-        playedPercentage: prev?.playedPercentage || 0,
-      }));
-      console.error('标记为已看失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
-  };
-
-  const handleMarkAsUnwatched = async () => {
-    if (!item.id || !currentServer || isUpdating) return;
-
-    setIsUpdating(true);
-    setLocalUserData((prev) => ({
-      ...prev,
-      played: false,
-      playedPercentage: 0,
-    }));
-
-    try {
-      await mediaAdapter.markItemUnplayed({
-        userId: currentServer.userId,
-        itemId: item.id,
-      });
-    } catch (error) {
-      setLocalUserData((prev) => ({
-        ...prev,
-        played: true,
-        playedPercentage: prev?.playedPercentage || 100,
-      }));
-      console.error('标记为未看失败:', error);
-    } finally {
-      setIsUpdating(false);
-    }
   };
 
   const isPlayed = currentUserData?.played === true;
@@ -477,13 +300,17 @@ export function SeriesCard({
         <TouchableOpacity style={[styles.card, { width: 120 }, style]} onPress={handlePress}>
           <ImageWithFallback
             uri={imageUrl}
-            style={styles.posterCover}
+            style={[styles.posterCover, styles.cardBorder]}
             placeholderBlurhash={imageInfo.blurhash}
             cachePolicy="memory-disk"
             contentFit="cover"
             fallback={
               <View
-                style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}
+                style={[
+                  styles.posterCover,
+                  { justifyContent: 'center', alignItems: 'center' },
+                  styles.cardBorder,
+                ]}
               >
                 <FontAwesome name="film" size={36} color="#ccc" />
               </View>
@@ -534,6 +361,11 @@ const styles = StyleSheet.create({
     borderRadius: 12,
     overflow: 'hidden',
   },
+  cardBorder: {
+    borderWidth: 0.5,
+    borderColor: '#ccc',
+    borderRadius: 12,
+  },
   cover: {
     position: 'relative',
     width: '100%',
@@ -571,6 +403,19 @@ const styles = StyleSheet.create({
     backgroundColor: 'rgba(0, 0, 0, 0.6)',
     borderRadius: 9999,
     padding: 2,
+  },
+  playButton: {
+    position: 'absolute',
+    top: '50%',
+    left: '50%',
+    transform: [{ translateX: -24 }, { translateY: -24 }],
+    width: 48,
+    height: 48,
+    backgroundColor: 'rgba(0, 0, 0, 0.6)',
+    borderRadius: 24,
+    justifyContent: 'center',
+    alignItems: 'center',
+    zIndex: 3,
   },
   cardTitle: {
     fontSize: 16,

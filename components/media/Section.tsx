@@ -19,11 +19,10 @@ export function Section({
   isLoading: boolean;
   type?: 'episode' | 'series';
 }) {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   return (
-    <View style={{ backgroundColor }}>
+    <View>
       {isLoading ? (
         <SkeletonSectionHeader />
       ) : (
@@ -57,7 +56,11 @@ export function Section({
           showsHorizontalScrollIndicator={false}
           contentContainerStyle={styles.sectionListContent}
           renderItem={({ item }) =>
-            type === 'episode' ? <EpisodeCard item={item} /> : <SeriesCard item={item} />
+            type === 'episode' ? (
+              <EpisodeCard item={item} style={{ width: 240 }} showPlayButton />
+            ) : (
+              <SeriesCard item={item} />
+            )
           }
           keyExtractor={(item) => item.id!}
         />

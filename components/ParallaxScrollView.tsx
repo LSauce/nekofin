@@ -1,9 +1,11 @@
 import { ThemedView } from '@/components/ThemedView';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import MaskedView from '@react-native-masked-view/masked-view';
+import { BlurTint, BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
 import type { PropsWithChildren, ReactElement } from 'react';
-import { Easing, ScrollViewProps, StyleProp, StyleSheet, ViewStyle } from 'react-native';
+import { Easing, Platform, ScrollViewProps, StyleProp, StyleSheet, ViewStyle } from 'react-native';
 import { easeGradient } from 'react-native-easing-gradient';
 import Animated, {
   interpolate,
@@ -19,6 +21,9 @@ type Props = PropsWithChildren<{
   headerBackgroundColor?: { dark: string; light: string };
   headerHeight?: number;
   enableMaskView?: boolean;
+  enableBlurEffect?: boolean;
+  blurIntensity?: number;
+  blurTint?: BlurTint;
   containerStyle?: StyleProp<ViewStyle>;
   contentStyle?: StyleProp<ViewStyle>;
   maskViewStyle?: StyleProp<ViewStyle>;
@@ -34,6 +39,9 @@ export default function ParallaxScrollView({
   headerBackgroundColor,
   headerHeight = HEADER_HEIGHT,
   enableMaskView = false,
+  enableBlurEffect = false,
+  blurIntensity = 100,
+  blurTint = Platform.OS === 'ios' ? 'systemChromeMaterialDark' : 'systemMaterialDark',
   containerStyle,
   contentStyle,
   maskViewStyle,
@@ -52,11 +60,19 @@ export default function ParallaxScrollView({
 
   const gradientStartColor = colorScheme === 'light' ? 'rgba(255,255,255,0)' : 'rgba(0,0,0,0)';
 
+  const blurGradientColors = enableBlurEffect
+    ? {
+        0: { color: 'transparent' },
+        0.5: { color: 'rgba(0,0,0,0.99)' },
+        1: { color: 'black' },
+      }
+    : {
+        0: { color: gradientStartColor },
+        1: { color: String(linearColor) },
+      };
+
   const { colors, locations } = easeGradient({
-    colorStops: {
-      0: { color: gradientStartColor },
-      1: { color: String(linearColor) },
-    },
+    colorStops: blurGradientColors as any,
     easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     extraColorStopsPerTransition: 24,
   });
@@ -102,25 +118,53 @@ export default function ParallaxScrollView({
               maskViewStyle,
             ]}
           >
-            <LinearGradient
-              colors={
-                gradientColors ?? (colors as unknown as readonly [string, string, ...string[]])
-              }
-              locations={
-                gradientLocations ??
-                (locations as unknown as readonly [number, number, ...number[]])
-              }
-              style={[
-                {
-                  position: 'absolute',
-                  left: 0,
-                  right: 0,
-                  top: -180,
-                  height: 200,
-                },
-                gradientStyle,
-              ]}
-            />
+            {enableBlurEffect ? (
+              <MaskedView
+                maskElement={
+                  <LinearGradient
+                    locations={locations as unknown as readonly [number, number, ...number[]]}
+                    colors={colors as unknown as readonly [string, string, ...string[]]}
+                    style={StyleSheet.absoluteFill}
+                  />
+                }
+                style={[
+                  {
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: -180,
+                    height: 200,
+                  },
+                  gradientStyle,
+                ]}
+              >
+                <BlurView
+                  intensity={blurIntensity}
+                  tint={blurTint}
+                  style={StyleSheet.absoluteFill}
+                />
+              </MaskedView>
+            ) : (
+              <LinearGradient
+                colors={
+                  gradientColors ?? (colors as unknown as readonly [string, string, ...string[]])
+                }
+                locations={
+                  gradientLocations ??
+                  (locations as unknown as readonly [number, number, ...number[]])
+                }
+                style={[
+                  {
+                    position: 'absolute',
+                    left: 0,
+                    right: 0,
+                    top: -180,
+                    height: 200,
+                  },
+                  gradientStyle,
+                ]}
+              />
+            )}
             <ThemedView style={[styles.content, contentStyle]}>{children}</ThemedView>
           </ThemedView>
         ) : (

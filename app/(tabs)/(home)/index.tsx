@@ -194,6 +194,7 @@ export default function HomeScreen() {
   const mediaAdapter = useMediaAdapter();
 
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+
   const carouselPlaceholderColor = useThemeColor(
     { light: '#d1d1d6', dark: '#2b2b2b' },
     'background',
@@ -230,6 +231,20 @@ export default function HomeScreen() {
   const carouselItems = useMemo(() => {
     return randomItemsQuery.data ?? [];
   }, [randomItemsQuery.data]);
+
+  const carouselImageUri = useMemo(() => {
+    const item = carouselItems[carouselIndex];
+    if (!item) return undefined;
+    const imageInfo = mediaAdapter.getImageInfo({
+      item,
+      opts: {
+        preferBackdrop: true,
+        preferThumb: true,
+      },
+    });
+    const imageUrl = imageInfo.url;
+    return imageUrl;
+  }, [mediaAdapter, carouselItems, carouselIndex]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {

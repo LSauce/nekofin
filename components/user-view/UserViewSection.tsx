@@ -14,13 +14,12 @@ export const UserViewSection = ({
   isLoading?: boolean;
   title?: string;
 }) => {
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const userViewItems = userView || [];
 
   if (isLoading) {
     return (
-      <View style={{ backgroundColor }}>
+      <View>
         <FlatList
           data={Array.from({ length: 3 })}
           horizontal
@@ -42,7 +41,7 @@ export const UserViewSection = ({
   }
 
   return (
-    <View style={{ backgroundColor }}>
+    <View>
       {title && <Text style={[styles.userViewTitle, { color: textColor }]}>{title}</Text>}
       <FlatList
         data={userViewItems}

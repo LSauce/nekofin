@@ -9,7 +9,6 @@ import { IconSymbol } from '../ui/IconSymbol';
 
 export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }) => {
   const router = useRouter();
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
 
   const mediaAdapter = useMediaAdapter();
@@ -18,7 +17,7 @@ export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }
 
   return (
     <TouchableOpacity
-      style={[styles.userViewCard, { backgroundColor }]}
+      style={styles.userViewCard}
       onPress={() => {
         if (!item) return;
         router.push({
@@ -57,12 +56,6 @@ export const UserViewCard = ({ item, title }: { item: MediaItem; title: string }
 const styles = StyleSheet.create({
   userViewCard: {
     overflow: 'hidden',
-    backgroundColor: '#f7f7f7',
-  },
-  userViewDuration: {
-    color: '#fff',
-    fontSize: 12,
-    fontWeight: '500',
   },
   userViewInfo: {
     padding: 8,
