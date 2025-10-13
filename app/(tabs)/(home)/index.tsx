@@ -193,7 +193,7 @@ export default function HomeScreen() {
   const navigation = useNavigation();
   const mediaAdapter = useMediaAdapter();
 
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#FCFFFF', dark: '#000' }, 'background');
 
   const carouselPlaceholderColor = useThemeColor(
     { light: '#d1d1d6', dark: '#2b2b2b' },
@@ -201,17 +201,14 @@ export default function HomeScreen() {
   );
 
   const colorScheme = useColorScheme() ?? 'light';
-  const linearColor = useThemeColor(
-    { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
-    'background',
-  );
 
-  const gradientStartColor = colorScheme === 'light' ? 'rgba(255,255,255,0)' : 'rgba(0,0,0,0)';
+  const gradientStartColor = colorScheme === 'light' ? 'rgba(252,255,255,0)' : 'rgba(0,0,0,0)';
+  const gradientEndColor = colorScheme === 'light' ? 'rgba(252,255,255,1)' : 'rgba(0,0,0,1)';
 
   const { colors, locations } = easeGradient({
     colorStops: {
       0: { color: gradientStartColor },
-      1: { color: String(linearColor) },
+      1: { color: gradientEndColor },
     },
     easing: Easing.bezier(0.4, 0.0, 0.2, 1),
     extraColorStopsPerTransition: 6,
@@ -231,20 +228,6 @@ export default function HomeScreen() {
   const carouselItems = useMemo(() => {
     return randomItemsQuery.data ?? [];
   }, [randomItemsQuery.data]);
-
-  const carouselImageUri = useMemo(() => {
-    const item = carouselItems[carouselIndex];
-    if (!item) return undefined;
-    const imageInfo = mediaAdapter.getImageInfo({
-      item,
-      opts: {
-        preferBackdrop: true,
-        preferThumb: true,
-      },
-    });
-    const imageUrl = imageInfo.url;
-    return imageUrl;
-  }, [mediaAdapter, carouselItems, carouselIndex]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {
@@ -359,9 +342,7 @@ export default function HomeScreen() {
       enableMaskView
       gradientColors={colors as unknown as [string, string]}
       gradientLocations={locations as unknown as [number, number]}
-      contentStyle={{
-        gap: 2,
-      }}
+      contentStyle={{ gap: 2, backgroundColor }}
       headerImage={
         <View>
           {carouselItems.length > 0 && (

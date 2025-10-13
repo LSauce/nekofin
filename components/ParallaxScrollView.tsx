@@ -1,6 +1,5 @@
 import { ThemedView } from '@/components/ThemedView';
 import { useColorScheme } from '@/hooks/useColorScheme';
-import { useThemeColor } from '@/hooks/useThemeColor';
 import MaskedView from '@react-native-masked-view/masked-view';
 import { BlurTint, BlurView } from 'expo-blur';
 import { LinearGradient } from 'expo-linear-gradient';
@@ -53,12 +52,9 @@ export default function ParallaxScrollView({
   const colorScheme = useColorScheme() ?? 'light';
   const scrollRef = useAnimatedRef<Animated.ScrollView>();
   const scrollOffset = useScrollOffset(scrollRef);
-  const linearColor = useThemeColor(
-    { light: 'rgba(255,255,255,1)', dark: 'rgba(0,0,0,1)' },
-    'background',
-  );
 
-  const gradientStartColor = colorScheme === 'light' ? 'rgba(255,255,255,0)' : 'rgba(0,0,0,0)';
+  const gradientStartColor = colorScheme === 'light' ? 'rgba(252,255,255,0)' : 'rgba(0,0,0,0)';
+  const gradientEndColor = colorScheme === 'light' ? 'rgba(252,255,255,1)' : 'rgba(0,0,0,1)';
 
   const blurGradientColors = enableBlurEffect
     ? {
@@ -68,7 +64,7 @@ export default function ParallaxScrollView({
       }
     : {
         0: { color: gradientStartColor },
-        1: { color: String(linearColor) },
+        1: { color: gradientEndColor },
       };
 
   const { colors, locations } = easeGradient({

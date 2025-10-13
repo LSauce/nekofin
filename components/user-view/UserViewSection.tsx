@@ -71,7 +71,7 @@ const styles = StyleSheet.create({
     textAlign: 'center',
   },
   userViewTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     flex: 1,
     paddingHorizontal: 20,

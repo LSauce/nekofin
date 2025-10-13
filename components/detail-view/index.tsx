@@ -29,7 +29,7 @@ export type DetailViewProps = {
 function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer } = useMediaServers();
-  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#FCFFFF', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { title, backgroundImageUrl, setItem, selectedItem } = useDetailView();
 
@@ -193,7 +193,8 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
-      contentStyle={{ paddingBottom: 40 }}
+      contentStyle={{ paddingBottom: 40, backgroundColor }}
+      style={{ backgroundColor }}
       headerImage={
         headerImageUrl ? (
           <Image

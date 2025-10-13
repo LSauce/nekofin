@@ -35,8 +35,7 @@ export function Section({
             {title}
           </Text>
           <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
-            <Text style={styles.viewAllText}>查看所有</Text>
-            <Ionicons name="chevron-forward" size={20} color={styles.viewAllText.color} />
+            <Ionicons name="chevron-forward" size={20} color={textColor} />
           </TouchableOpacity>
         </View>
       )}
@@ -81,7 +80,7 @@ const styles = StyleSheet.create({
     marginBottom: 12,
   },
   sectionTitle: {
-    fontSize: 24,
+    fontSize: 20,
     fontWeight: 'bold',
     flex: 1,
     marginRight: 12,
@@ -92,7 +91,6 @@ const styles = StyleSheet.create({
     flexShrink: 0,
   },
   viewAllText: {
-    color: '#9C4DFF',
     fontSize: 16,
   },
   sectionListContent: {

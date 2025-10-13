@@ -104,6 +104,7 @@ export function EpisodeCard({
   const router = useRouter();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const borderColor = useThemeColor({ light: '#ccc', dark: '#333' }, 'background');
   const { accentColor } = useAccentColor();
 
   const mediaAdapter = useMediaAdapter();
@@ -167,13 +168,16 @@ export function EpisodeCard({
           <View style={styles.coverContainer}>
             <ImageWithFallback
               uri={imageUrl}
-              style={[styles.cover, showBorder && styles.cardBorder]}
+              style={[
+                styles.cover,
+                showBorder && { ...styles.cardBorder, borderColor: borderColor },
+              ]}
               placeholderBlurhash={imageInfo.blurhash}
               cachePolicy="memory-disk"
               contentFit="cover"
               fallback={
                 <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-                  <FontAwesome name="film" size={36} color="#ccc" />
+                  <FontAwesome name="film" size={36} color={borderColor} />
                 </View>
               }
             />
@@ -251,6 +255,7 @@ export function SeriesCard({
 }) {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
+  const borderColor = useThemeColor({ light: '#ccc', dark: '#333' }, 'background');
   const router = useRouter();
 
   const mediaAdapter = useMediaAdapter();
@@ -309,19 +314,18 @@ export function SeriesCard({
         <TouchableOpacity style={[styles.card, { width: 120 }, style]} onPress={handlePress}>
           <ImageWithFallback
             uri={imageUrl}
-            style={[styles.posterCover, showBorder && styles.cardBorder]}
+            style={[
+              styles.posterCover,
+              showBorder && { ...styles.cardBorder, borderColor: borderColor },
+            ]}
             placeholderBlurhash={imageInfo.blurhash}
             cachePolicy="memory-disk"
             contentFit="cover"
             fallback={
               <View
-                style={[
-                  styles.posterCover,
-                  { justifyContent: 'center', alignItems: 'center' },
-                  styles.cardBorder,
-                ]}
+                style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}
               >
-                <FontAwesome name="film" size={36} color="#ccc" />
+                <FontAwesome name="film" size={36} color={borderColor} />
               </View>
             }
           />
