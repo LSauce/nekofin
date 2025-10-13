@@ -1,10 +1,12 @@
 import { MediaStats, MediaTrack, MediaTracks } from '@/modules/vlc-player';
 import { DandanComment } from '@/services/dandanplay';
+import { MediaItem } from '@/services/media/types';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated';
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BottomControls } from './BottomControls';
+import { EpisodeListModal, EpisodeListModalRef } from './EpisodeListModal';
 import { GestureHandler } from './GestureHandler';
 import { BottomOverlayGradient, TopOverlayGradient } from './OverlayGradients';
 import { PlayerContext } from './PlayerContext';
@@ -35,6 +37,9 @@ type ControlsProps = {
   ) => void;
   danmakuEpisodeInfo?: { animeTitle: string; episodeTitle: string } | undefined;
   danmakuComments: DandanComment[];
+  episodes: MediaItem[];
+  currentItem?: MediaItem | null;
+  onEpisodeSelect: (episodeId: string) => void;
 };
 
 export function Controls({
@@ -59,10 +64,14 @@ export function Controls({
   onCommentsLoaded,
   danmakuEpisodeInfo,
   danmakuComments,
+  episodes,
+  currentItem,
+  onEpisodeSelect,
 }: ControlsProps) {
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
+  const episodeListModalRef = useRef<EpisodeListModalRef | null>(null);
   const isGestureSeekingActive = useSharedValue(false);
   const isVolumeGestureActive = useSharedValue(false);
   const isBrightnessGestureActive = useSharedValue(false);
@@ -167,6 +176,11 @@ export function Controls({
     onCommentsLoaded,
     danmakuEpisodeInfo,
     danmakuComments,
+    episodes,
+    currentItem,
+    isMovie: currentItem?.type === 'Movie',
+    episodeListModalRef,
+    onEpisodeSelect,
   };
 
   return (
@@ -176,6 +190,7 @@ export function Controls({
       <TopControls />
       <BottomControls />
       <GestureHandler />
+      <EpisodeListModal ref={episodeListModalRef} />
     </PlayerContext.Provider>
   );
 }

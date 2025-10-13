@@ -32,6 +32,9 @@ export function BottomControls() {
     isDragging,
     setIsDragging,
     hideControlsWithDelay,
+    episodes,
+    isMovie,
+    episodeListModalRef,
   } = usePlayer();
   const currentTimeMs = useCurrentTime({ time: currentTime });
 
@@ -84,6 +87,12 @@ export function BottomControls() {
     onPlayPause();
   };
 
+  const handleEpisodeListPress = () => {
+    if (!isMovie && episodes.length > 0) {
+      episodeListModalRef.current?.present();
+    }
+  };
+
   return (
     <Animated.View
       style={[
@@ -124,7 +133,7 @@ export function BottomControls() {
 
       <View style={styles.bottomRow}>
         <TouchableOpacity style={styles.cornerButton}>
-          <Ionicons name="lock-closed-outline" size={24} color="#fff" />
+          {/* <Ionicons name="lock-closed-outline" size={24} color="#fff" /> */}
         </TouchableOpacity>
 
         <View style={styles.controlsCluster}>
@@ -161,8 +170,16 @@ export function BottomControls() {
           </TouchableOpacity>
         </View>
 
-        <TouchableOpacity style={styles.cornerButton}>
-          <Ionicons name="list" size={24} color="#fff" />
+        <TouchableOpacity
+          style={[styles.cornerButton, (isMovie || episodes.length === 0) && styles.disabledButton]}
+          onPress={handleEpisodeListPress}
+          disabled={isMovie || episodes.length === 0}
+        >
+          <Ionicons
+            name="list"
+            size={24}
+            color={isMovie || episodes.length === 0 ? 'rgba(255,255,255,0.3)' : '#fff'}
+          />
         </TouchableOpacity>
       </View>
     </Animated.View>

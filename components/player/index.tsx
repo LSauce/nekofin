@@ -350,6 +350,18 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     }
   }, [nextEpisode, router]);
 
+  const handleEpisodeSelect = useCallback(
+    (episodeId: string) => {
+      router.replace({
+        pathname: '/player',
+        params: {
+          itemId: episodeId,
+        },
+      });
+    },
+    [router],
+  );
+
   return (
     <View style={styles.container}>
       {streamInfo?.url && initialTime >= 0 && (
@@ -456,6 +468,9 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         onCommentsLoaded={handleCommentsLoaded}
         danmakuEpisodeInfo={danmakuEpisodeInfo}
         danmakuComments={comments}
+        episodes={episodes}
+        currentItem={itemDetail}
+        onEpisodeSelect={handleEpisodeSelect}
       />
     </View>
   );

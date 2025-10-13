@@ -85,7 +85,10 @@ export function EpisodeCard({
   imgType = 'Thumb',
   imgInfo,
   onPress,
+  disabled = false,
   showPlayButton = false,
+  showBorder = true,
+  disableContextMenu = false,
 }: {
   item: MediaItem;
   style?: StyleProp<ViewStyle>;
@@ -93,7 +96,10 @@ export function EpisodeCard({
   imgType?: ImageType;
   imgInfo?: ImageUrlInfo;
   onPress?: () => void;
+  disabled?: boolean;
   showPlayButton?: boolean;
+  showBorder?: boolean;
+  disableContextMenu?: boolean;
 }) {
   const router = useRouter();
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -152,15 +158,16 @@ export function EpisodeCard({
 
   return (
     <Menu>
-      <Trigger>
+      <Trigger disabled={disableContextMenu}>
         <TouchableOpacity
           style={[styles.card, { width: 200 }, style]}
+          disabled={disabled}
           onPress={onPress || handlePress}
         >
           <View style={styles.coverContainer}>
             <ImageWithFallback
               uri={imageUrl}
-              style={[styles.cover, styles.cardBorder]}
+              style={[styles.cover, showBorder && styles.cardBorder]}
               placeholderBlurhash={imageInfo.blurhash}
               cachePolicy="memory-disk"
               contentFit="cover"
@@ -234,11 +241,13 @@ export function SeriesCard({
   style,
   imgType = 'Primary',
   hideSubtitle = false,
+  showBorder = true,
 }: {
   item: MediaItem;
   style?: StyleProp<ViewStyle>;
   imgType?: ImageType;
   hideSubtitle?: boolean;
+  showBorder?: boolean;
 }) {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
@@ -300,7 +309,7 @@ export function SeriesCard({
         <TouchableOpacity style={[styles.card, { width: 120 }, style]} onPress={handlePress}>
           <ImageWithFallback
             uri={imageUrl}
-            style={[styles.posterCover, styles.cardBorder]}
+            style={[styles.posterCover, showBorder && styles.cardBorder]}
             placeholderBlurhash={imageInfo.blurhash}
             cachePolicy="memory-disk"
             contentFit="cover"
