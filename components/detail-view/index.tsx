@@ -34,6 +34,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   const { title, backgroundImageUrl, setItem, selectedItem } = useDetailView();
 
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
+  const [isWatched, setIsWatched] = useState<boolean>(false);
   const { data: bundle, isLoading, refetch } = query;
 
   const mediaAdapter = useMediaAdapter();
@@ -55,8 +56,10 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   useEffect(() => {
     if (mode === 'episode' && selectedItem) {
       setIsFavorite(!!selectedItem.userData?.isFavorite);
+      setIsWatched(!!selectedItem.userData?.played);
     } else if (mode !== 'episode' && item) {
       setIsFavorite(!!item.userData?.isFavorite);
+      setIsWatched(!!item.userData?.played);
     }
   }, [mode, selectedItem, item]);
 
@@ -67,27 +70,54 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
     navigation.setOptions({
       headerRight: () =>
         mode !== 'season' && currentItemId ? (
-          <HeaderButton
-            onPress={async () => {
-              if (!currentServer?.userId || !currentItemId) return;
-              if (isFavorite) {
-                await mediaAdapter.removeFavoriteItem({
-                  userId: currentServer.userId,
-                  itemId: currentItemId,
-                });
-                setIsFavorite(false);
-              } else {
-                await mediaAdapter.addFavoriteItem({
-                  userId: currentServer.userId,
-                  itemId: currentItemId,
-                });
-                setIsFavorite(true);
-              }
-            }}
-            style={{ paddingHorizontal: 6 }}
-          >
-            <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={textColor} />
-          </HeaderButton>
+          <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }}>
+            <HeaderButton
+              onPress={async () => {
+                if (!currentServer?.userId || !currentItemId) return;
+                if (isWatched) {
+                  await mediaAdapter.markItemUnplayed({
+                    userId: currentServer.userId,
+                    itemId: currentItemId,
+                  });
+                  setIsWatched(false);
+                } else {
+                  await mediaAdapter.markItemPlayed({
+                    userId: currentServer.userId,
+                    itemId: currentItemId,
+                  });
+                  setIsWatched(true);
+                }
+              }}
+              style={{ paddingHorizontal: 6 }}
+            >
+              <Ionicons
+                name={isWatched ? 'checkmark-circle' : 'checkmark-circle-outline'}
+                size={24}
+                color={textColor}
+              />
+            </HeaderButton>
+            <HeaderButton
+              onPress={async () => {
+                if (!currentServer?.userId || !currentItemId) return;
+                if (isFavorite) {
+                  await mediaAdapter.removeFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: currentItemId,
+                  });
+                  setIsFavorite(false);
+                } else {
+                  await mediaAdapter.addFavoriteItem({
+                    userId: currentServer.userId,
+                    itemId: currentItemId,
+                  });
+                  setIsFavorite(true);
+                }
+              }}
+              style={{ paddingHorizontal: 6 }}
+            >
+              <Ionicons name={isFavorite ? 'heart' : 'heart-outline'} size={24} color={textColor} />
+            </HeaderButton>
+          </View>
         ) : null,
     });
   }, [
@@ -95,6 +125,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
     item?.name,
     mode,
     isFavorite,
+    isWatched,
     currentServer?.userId,
     item?.id,
     selectedItem?.id,

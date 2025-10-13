@@ -110,7 +110,7 @@ function useHomeSections(currentServer: MediaServerInfo | null) {
   });
 
   const randomItemsQuery = useQueryWithFocus<MediaItem[]>({
-    refetchOnScreenFocus: true,
+    refetchOnScreenFocus: false,
     queryKey: ['homeSections', currentServer?.id, 'random'],
     queryFn: async () => {
       if (!currentServer) return [];
