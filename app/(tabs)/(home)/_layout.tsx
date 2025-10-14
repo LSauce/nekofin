@@ -1,5 +1,4 @@
 import { GroupedStackRoutes } from '@/components/GroupedStackRoutes';
-import HeaderBackButton from '@/components/HeaderBackButton';
 import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Stack } from 'expo-router';
 import { Platform, useColorScheme } from 'react-native';
@@ -13,7 +12,7 @@ export default function HomeLayout() {
         headerTransparent: Platform.OS === 'ios',
         headerShadowVisible: false,
         headerBlurEffect: isGreaterThanOrEqual26 ? undefined : 'prominent',
-        headerLeft: HeaderBackButton,
+        headerBackButtonDisplayMode: 'minimal',
       }}
     >
       <Stack.Screen

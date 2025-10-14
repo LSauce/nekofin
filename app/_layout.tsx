@@ -1,4 +1,3 @@
-import HeaderBackButton from '@/components/HeaderBackButton';
 import { useColorScheme } from '@/hooks/useColorScheme';
 import { DanmakuSettingsProvider } from '@/lib/contexts/DanmakuSettingsContext';
 import { MediaServerProvider } from '@/lib/contexts/MediaServerContext';
@@ -76,8 +75,8 @@ export default function RootLayout() {
                   <Stack
                     screenOptions={{
                       headerTransparent: Platform.OS === 'ios',
-                      headerBackTitle: '返回',
-                      headerLeft: HeaderBackButton,
+                      headerBackTitle: '',
+                      headerBackButtonDisplayMode: 'minimal',
                     }}
                   >
                     <Stack.Screen name="(tabs)" options={{ headerShown: false }} />

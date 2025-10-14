@@ -58,7 +58,7 @@ export function TopControls() {
     navigation.setOptions({
       orientation: 'portrait',
     });
-    await sleep(Platform.OS === 'ios' ? 100 : 0);
+    await sleep(Platform.OS === 'ios' ? 300 : 0);
     router.back();
   };
 

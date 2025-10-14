@@ -14,7 +14,12 @@ import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { useQueries } from '@tanstack/react-query';
 import { Image } from 'expo-image';
-import { useNavigation, useRouter } from 'expo-router';
+import {
+  useNavigation,
+  useNavigationContainerRef,
+  useRootNavigationState,
+  useRouter,
+} from 'expo-router';
 import { useCallback, useEffect, useMemo, useState } from 'react';
 import {
   Easing,
@@ -191,6 +196,8 @@ export default function HomeScreen() {
   const { servers, currentServer, setCurrentServer, refreshServerInfo, isInitialized } =
     useMediaServers();
   const navigation = useNavigation();
+  const navigationRef = useNavigationContainerRef();
+  const rootNavigationState = useRootNavigationState();
   const mediaAdapter = useMediaAdapter();
 
   const backgroundColor = useThemeColor({ light: '#FCFFFF', dark: '#000' }, 'background');
@@ -233,8 +240,42 @@ export default function HomeScreen() {
     (serverId: string) => {
       setCurrentServer(servers.find((server) => server.id === serverId)!);
       refreshServerInfo(serverId);
+
+      if (navigationRef.current && rootNavigationState) {
+        const rootRoute = rootNavigationState.routes.find((route) => route.name === '__root');
+        if (rootRoute && rootRoute.state) {
+          const tabsRoute = rootRoute.state.routes.find((route) => route.name === '(tabs)');
+          if (tabsRoute && tabsRoute.state) {
+            const resetRoutes = tabsRoute.state.routes.map((route) => ({
+              name: route.name,
+              params: route.name === 'index' ? undefined : { screen: 'index' },
+            }));
+
+            navigationRef.current.reset({
+              index: 0,
+              routes: [
+                {
+                  name: '__root',
+                  state: {
+                    index: 0,
+                    routes: [
+                      {
+                        name: '(tabs)',
+                        state: {
+                          index: 0,
+                          routes: resetRoutes,
+                        },
+                      },
+                    ],
+                  },
+                },
+              ],
+            });
+          }
+        }
+      }
     },
-    [servers, setCurrentServer, refreshServerInfo],
+    [servers, setCurrentServer, refreshServerInfo, navigationRef, rootNavigationState],
   );
 
   useEffect(() => {

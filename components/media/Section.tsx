@@ -26,18 +26,20 @@ export function Section({
       {isLoading ? (
         <SkeletonSectionHeader />
       ) : (
-        <View style={styles.sectionHeader}>
-          <Text
-            style={[styles.sectionTitle, { color: textColor }]}
-            numberOfLines={1}
-            ellipsizeMode="tail"
-          >
-            {title}
-          </Text>
-          <TouchableOpacity onPress={onViewAll} style={styles.viewAllButton}>
-            <Ionicons name="chevron-forward" size={20} color={textColor} />
-          </TouchableOpacity>
-        </View>
+        <TouchableOpacity onPress={onViewAll} activeOpacity={0.8}>
+          <View style={styles.sectionHeader}>
+            <Text
+              style={[styles.sectionTitle, { color: textColor }]}
+              numberOfLines={1}
+              ellipsizeMode="tail"
+            >
+              {title}
+            </Text>
+            <View style={styles.viewAllButton}>
+              <Ionicons name="chevron-forward" size={20} color={textColor} />
+            </View>
+          </View>
+        </TouchableOpacity>
       )}
       {isLoading ? (
         <FlatList

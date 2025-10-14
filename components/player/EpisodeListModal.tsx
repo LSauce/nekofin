@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { formatDurationFromTicks } from '@/lib/utils';
 import { MediaItem } from '@/services/media/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useImperativeHandle, useState } from 'react';
+import { useCallback, useImperativeHandle, useRef, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -28,6 +28,7 @@ export function EpisodeListModal({ ref }: { ref: React.RefObject<EpisodeListModa
   const [open, setOpen] = useState(false);
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { width: screenWidth } = useWindowDimensions();
+  const flatListRef = useRef<FlatList>(null);
 
   const translateX = useSharedValue(screenWidth);
   const opacity = useSharedValue(0);
@@ -36,7 +37,24 @@ export function EpisodeListModal({ ref }: { ref: React.RefObject<EpisodeListModa
     translateX.value = withTiming(0, { duration: 300 });
     opacity.value = withTiming(1, { duration: 200 });
     scheduleOnRN(setOpen, true);
-  }, [translateX, opacity]);
+
+    scheduleOnRN(
+      setTimeout,
+      () => {
+        if (currentItem && episodes.length > 0) {
+          const currentIndex = episodes.findIndex((episode) => episode.id === currentItem.id);
+          if (currentIndex >= 0) {
+            flatListRef.current?.scrollToIndex({
+              index: currentIndex,
+              animated: true,
+              viewPosition: 0,
+            });
+          }
+        }
+      },
+      350,
+    );
+  }, [translateX, opacity, currentItem, episodes]);
 
   const dismiss = useCallback(() => {
     translateX.value = withTiming(screenWidth, { duration: 300 });
@@ -162,12 +180,16 @@ export function EpisodeListModal({ ref }: { ref: React.RefObject<EpisodeListModa
           </View>
 
           <FlatList
+            ref={flatListRef}
             data={episodes}
             renderItem={renderEpisodeItem}
             keyExtractor={(item) => item.id}
             style={styles.list}
             contentContainerStyle={styles.listContent}
             showsVerticalScrollIndicator={false}
+            onScrollToIndexFailed={() => {
+              flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+            }}
           />
         </Animated.View>
       </GestureDetector>
@@ -234,6 +256,7 @@ const styles = StyleSheet.create({
   episodeContent: {
     flexDirection: 'row',
     gap: 12,
+    padding: 8,
   },
   episodeInfo: {
     flex: 1,
