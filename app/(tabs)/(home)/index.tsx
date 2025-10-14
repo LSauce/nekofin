@@ -1,4 +1,5 @@
 import { AvatarImage } from '@/components/AvatarImage';
+import { ItemImage } from '@/components/ItemImage';
 import { getSubtitle } from '@/components/media/Card';
 import { Section } from '@/components/media/Section';
 import ParallaxScrollView from '@/components/ParallaxScrollView';
@@ -13,7 +14,6 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { useQueries } from '@tanstack/react-query';
-import { Image } from 'expo-image';
 import {
   useNavigation,
   useNavigationContainerRef,
@@ -399,7 +399,7 @@ export default function HomeScreen() {
               pagingEnabled
               onSnapToItem={(index) => setCarouselIndex(index)}
               onConfigurePanGesture={(panGesture) => {
-                return panGesture.activeOffsetX([-10, 10]);
+                return panGesture.activeOffsetX([-5, 5]).failOffsetY([-20, 20]);
               }}
               onProgressChange={carouselProgress}
               renderItem={({ item }) => {
@@ -420,14 +420,12 @@ export default function HomeScreen() {
                       onPress={() => handleCarouselItemPress(item)}
                     >
                       {imageUrl ? (
-                        <Image
-                          source={{ uri: imageUrl }}
-                          style={styles.carouselImage}
+                        <ItemImage
+                          uri={imageUrl}
+                          style={[styles.carouselImage, { backgroundColor }]}
                           contentFit="cover"
                           cachePolicy="memory-disk"
-                          placeholder={
-                            imageInfo.blurhash ? { blurhash: imageInfo.blurhash } : undefined
-                          }
+                          placeholderBlurhash={imageInfo.blurhash}
                         />
                       ) : (
                         <View

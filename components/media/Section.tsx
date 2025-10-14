@@ -58,7 +58,7 @@ export function Section({
           contentContainerStyle={styles.sectionListContent}
           renderItem={({ item }) =>
             type === 'episode' ? (
-              <EpisodeCard item={item} style={{ width: 240 }} showPlayButton />
+              <EpisodeCard item={item} style={{ width: 220 }} showPlayButton />
             ) : (
               <SeriesCard item={item} />
             )

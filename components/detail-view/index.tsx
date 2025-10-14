@@ -12,6 +12,7 @@ import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
 import { RefreshControl, Text, View } from 'react-native';
 
+import { ItemImage } from '../ItemImage';
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
 import { detailViewStyles } from './common';
 import { DetailViewProvider, useDetailView } from './DetailViewContext';
@@ -197,10 +198,10 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
       style={{ backgroundColor }}
       headerImage={
         headerImageUrl ? (
-          <Image
-            source={{ uri: headerImageUrl }}
+          <ItemImage
+            uri={headerImageUrl}
             style={detailViewStyles.header}
-            placeholder={{ blurhash: headerImageInfo.blurhash }}
+            placeholderBlurhash={headerImageInfo.blurhash}
             contentFit="cover"
           />
         ) : (

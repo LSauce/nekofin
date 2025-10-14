@@ -4,59 +4,27 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { ImageUrlInfo } from '@/lib/utils/image';
 import { MediaItem } from '@/services/media/types';
-import FontAwesome from '@expo/vector-icons/FontAwesome';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { ImageType } from '@jellyfin/sdk/lib/generated-client/models';
-import { Image, type ImageProps } from 'expo-image';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
-import { useState, type ReactNode } from 'react';
-import {
-  ImageStyle,
-  StyleProp,
-  StyleSheet,
-  Text,
-  TouchableOpacity,
-  View,
-  ViewStyle,
-} from 'react-native';
+import { useCallback, useState } from 'react';
+import { StyleProp, StyleSheet, Text, TouchableOpacity, View, ViewStyle } from 'react-native';
 import { Content, Item, ItemIcon, ItemTitle, Root as Menu, Trigger } from 'zeego/context-menu';
 
-function ImageWithFallback({
-  uri,
-  style,
-  placeholderBlurhash,
-  contentFit,
-  cachePolicy,
-  fallback,
-}: {
-  uri?: string;
-  style: StyleProp<ImageStyle>;
-  placeholderBlurhash?: string;
-  contentFit?: ImageProps['contentFit'];
-  cachePolicy?: ImageProps['cachePolicy'];
-  fallback: ReactNode;
-}) {
-  const [failed, setFailed] = useState(false);
-
-  if (!uri || failed) {
-    return <>{fallback}</>;
-  }
-
-  return (
-    <Image
-      source={{ uri: uri }}
-      style={style}
-      placeholder={placeholderBlurhash ? { blurhash: placeholderBlurhash } : undefined}
-      cachePolicy={cachePolicy}
-      contentFit={contentFit}
-      onError={() => setFailed(true)}
-    />
-  );
-}
+import { ItemImage } from '../ItemImage';
 
 export const getSubtitle = (item: MediaItem) => {
   if (item.type === 'Episode') {
-    return `S${item.parentIndexNumber}E${item.indexNumber} - ${item.name}`;
+    const season = item.parentIndexNumber;
+    const episode = item.indexNumber;
+    const seasonText = season !== undefined ? `S${season}` : '';
+    const episodeText = episode !== undefined ? `E${episode}` : '';
+
+    if (seasonText || episodeText) {
+      return `${seasonText}${episodeText} - ${item.name}`;
+    }
+    return item.name;
   }
   if (item.type === 'Movie') {
     return item.productionYear ?? '未知时间';
@@ -106,6 +74,7 @@ export function EpisodeCard({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const borderColor = useThemeColor({ light: '#ccc', dark: '#333' }, 'background');
   const { accentColor } = useAccentColor();
+  const [isLongPressing, setIsLongPressing] = useState(false);
 
   const mediaAdapter = useMediaAdapter();
   const {
@@ -131,8 +100,8 @@ export function EpisodeCard({
 
   const imageUrl = imageInfo.url;
 
-  const handlePress = async () => {
-    if (!item.id) return;
+  const handlePress = useCallback(async () => {
+    if (!item.id || isLongPressing) return;
 
     if (item.type === 'Movie') {
       router.push({
@@ -148,7 +117,7 @@ export function EpisodeCard({
         id: item.id,
       },
     });
-  };
+  }, [item.id, item.type, router, isLongPressing]);
 
   const playedPercentage =
     typeof currentUserData?.playedPercentage === 'number'
@@ -157,67 +126,112 @@ export function EpisodeCard({
 
   const isPlayed = currentUserData?.played === true;
 
+  const handleLongPressStart = useCallback(() => {
+    setIsLongPressing(true);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    setTimeout(() => {
+      setIsLongPressing(false);
+    }, 10);
+  }, []);
+
+  const CardComp = useCallback(
+    () => (
+      <TouchableOpacity
+        style={[styles.card, { width: 200 }, style]}
+        disabled={disabled}
+        onPress={onPress || handlePress}
+        onLongPress={handleLongPressStart}
+        onPressOut={handleLongPressEnd}
+      >
+        <View style={styles.coverContainer}>
+          <ItemImage
+            uri={imageUrl}
+            style={[styles.cover, showBorder && { ...styles.cardBorder, borderColor }]}
+            placeholderBlurhash={imageInfo.blurhash}
+            cachePolicy="memory-disk"
+            contentFit="cover"
+          />
+          {showPlayButton && (
+            <TouchableOpacity
+              style={[
+                styles.playButton,
+                !isLiquidGlassAvailable() && { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+              ]}
+              onPress={handlePlay}
+              activeOpacity={0.8}
+            >
+              {isLiquidGlassAvailable() && (
+                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="clear" isInteractive />
+              )}
+              <Ionicons name="play" size={32} color="#fff" />
+            </TouchableOpacity>
+          )}
+          {isPlayed && (
+            <View style={styles.playedOverlay}>
+              <Ionicons name="checkmark-circle" size={24} color={accentColor} />
+            </View>
+          )}
+          {playedPercentage !== undefined && (
+            <View style={styles.progressContainer}>
+              <View style={styles.progressBackground}>
+                <View
+                  style={[
+                    styles.progressFill,
+                    {
+                      width: `${playedPercentage}%`,
+                      backgroundColor: accentColor,
+                    },
+                  ]}
+                />
+              </View>
+            </View>
+          )}
+        </View>
+        {!hideText && (
+          <>
+            <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
+              {item.seriesName || item.name || '未知标题'}
+            </Text>
+            <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
+              {getSubtitle(item)}
+            </Text>
+          </>
+        )}
+      </TouchableOpacity>
+    ),
+    [
+      accentColor,
+      borderColor,
+      disabled,
+      handleLongPressEnd,
+      handleLongPressStart,
+      handlePlay,
+      handlePress,
+      hideText,
+      imageInfo.blurhash,
+      imageUrl,
+      isPlayed,
+      item,
+      onPress,
+      playedPercentage,
+      showBorder,
+      showPlayButton,
+      style,
+      subtitleColor,
+      textColor,
+    ],
+  );
+
+  if (disableContextMenu) {
+    return <CardComp />;
+  }
+
   return (
     <Menu>
-      <Trigger disabled={disableContextMenu}>
-        <TouchableOpacity
-          style={[styles.card, { width: 200 }, style]}
-          disabled={disabled}
-          onPress={onPress || handlePress}
-        >
-          <View style={styles.coverContainer}>
-            <ImageWithFallback
-              uri={imageUrl}
-              style={[
-                styles.cover,
-                showBorder && { ...styles.cardBorder, borderColor: borderColor },
-              ]}
-              placeholderBlurhash={imageInfo.blurhash}
-              cachePolicy="memory-disk"
-              contentFit="cover"
-              fallback={
-                <View style={[styles.cover, { justifyContent: 'center', alignItems: 'center' }]}>
-                  <FontAwesome name="film" size={36} color={borderColor} />
-                </View>
-              }
-            />
-            {showPlayButton && (
-              <TouchableOpacity style={styles.playButton} onPress={handlePlay} activeOpacity={0.8}>
-                <Ionicons name="play" size={32} color="#fff" />
-              </TouchableOpacity>
-            )}
-            {isPlayed && (
-              <View style={styles.playedOverlay}>
-                <Ionicons name="checkmark-circle" size={24} color={accentColor} />
-              </View>
-            )}
-            {playedPercentage !== undefined && (
-              <View style={styles.progressContainer}>
-                <View style={styles.progressBackground}>
-                  <View
-                    style={[
-                      styles.progressFill,
-                      {
-                        width: `${playedPercentage}%`,
-                        backgroundColor: accentColor,
-                      },
-                    ]}
-                  />
-                </View>
-              </View>
-            )}
-          </View>
-          {!hideText && (
-            <>
-              <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
-                {item.seriesName || item.name || '未知标题'}
-              </Text>
-              <Text style={[styles.subtitle, { color: subtitleColor }]} numberOfLines={1}>
-                {getSubtitle(item)}
-              </Text>
-            </>
-          )}
-        </TouchableOpacity>
+      <Trigger>
+        <CardComp />
       </Trigger>
       <Content>
         <Item key="play" onSelect={handlePlay}>
@@ -257,6 +271,7 @@ export function SeriesCard({
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const borderColor = useThemeColor({ light: '#ccc', dark: '#333' }, 'background');
   const router = useRouter();
+  const [isLongPressing, setIsLongPressing] = useState(false);
 
   const mediaAdapter = useMediaAdapter();
   const {
@@ -281,6 +296,8 @@ export function SeriesCard({
   const imageUrl = imageInfo.url;
 
   const handlePress = () => {
+    if (isLongPressing) return;
+
     const type = item.type;
 
     if (type === 'Season') {
@@ -308,26 +325,31 @@ export function SeriesCard({
 
   const isPlayed = currentUserData?.played === true;
 
+  const handleLongPressStart = useCallback(() => {
+    setIsLongPressing(true);
+  }, []);
+
+  const handleLongPressEnd = useCallback(() => {
+    setTimeout(() => {
+      setIsLongPressing(false);
+    }, 10);
+  }, []);
+
   return (
     <Menu>
       <Trigger>
-        <TouchableOpacity style={[styles.card, { width: 120 }, style]} onPress={handlePress}>
-          <ImageWithFallback
+        <TouchableOpacity
+          style={[styles.card, { width: 120 }, style]}
+          onPress={handlePress}
+          onLongPress={handleLongPressStart}
+          onPressOut={handleLongPressEnd}
+        >
+          <ItemImage
             uri={imageUrl}
-            style={[
-              styles.posterCover,
-              showBorder && { ...styles.cardBorder, borderColor: borderColor },
-            ]}
+            style={[styles.posterCover, showBorder && { ...styles.cardBorder, borderColor }]}
             placeholderBlurhash={imageInfo.blurhash}
             cachePolicy="memory-disk"
             contentFit="cover"
-            fallback={
-              <View
-                style={[styles.posterCover, { justifyContent: 'center', alignItems: 'center' }]}
-              >
-                <FontAwesome name="film" size={36} color={borderColor} />
-              </View>
-            }
           />
           <Text style={[styles.cardTitle, { color: textColor }]} numberOfLines={1}>
             {hideSubtitle ? item.name : item.seriesName || item.name || '未知标题'}
@@ -421,14 +443,14 @@ const styles = StyleSheet.create({
     position: 'absolute',
     top: '50%',
     left: '50%',
-    transform: [{ translateX: -24 }, { translateY: -24 }],
+    transform: [{ translateX: '-50%' }, { translateY: '-50%' }],
     width: 48,
     height: 48,
-    backgroundColor: 'rgba(0, 0, 0, 0.6)',
-    borderRadius: 24,
+    borderRadius: 9999,
     justifyContent: 'center',
     alignItems: 'center',
     zIndex: 3,
+    overflow: 'hidden',
   },
   cardTitle: {
     fontSize: 16,

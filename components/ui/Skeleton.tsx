@@ -67,7 +67,7 @@ export function Skeleton({ width = '100%', height = 20, borderRadius = 4, style 
 }
 
 export function SkeletonCard({ type = 'episode' }: { type?: 'episode' | 'series' }) {
-  const cardWidth = type === 'episode' ? 240 : 120;
+  const cardWidth = type === 'episode' ? 220 : 120;
   const aspectRatio = type === 'episode' ? 16 / 9 : 2 / 3;
 
   return (

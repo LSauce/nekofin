@@ -1,15 +1,28 @@
 {
-  "fill" : {
-    "solid" : "display-p3:0.94584,0.95520,0.95539,1.00000"
-  },
+  "fill-specializations" : [
+    {
+      "value" : {
+        "solid" : "srgb:0.09540,0.09931,0.11529,1.00000"
+      }
+    },
+    {
+      "appearance" : "dark",
+      "value" : {
+        "solid" : "srgb:0.09540,0.09931,0.11529,1.00000"
+      }
+    }
+  ],
   "groups" : [
     {
+      "blur-material" : 1,
       "layers" : [
         {
+          "hidden" : false,
           "image-name" : "cut.png",
           "name" : "cut"
         },
         {
+          "hidden" : false,
           "image-name" : "bg_shadow.png",
           "name" : "bg_shadow"
         }
