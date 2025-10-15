@@ -136,6 +136,21 @@ export function EpisodeCard({
     }, 10);
   }, []);
 
+  const PlayButton = useCallback(() => {
+    return (
+      <TouchableOpacity
+        style={[
+          styles.playButton,
+          !isLiquidGlassAvailable() && { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
+        ]}
+        onPress={handlePlay}
+        activeOpacity={0.8}
+      >
+        <Ionicons name="play" size={32} color="#fff" />
+      </TouchableOpacity>
+    );
+  }, [handlePlay]);
+
   const CardComp = useCallback(
     () => (
       <TouchableOpacity
@@ -153,21 +168,14 @@ export function EpisodeCard({
             cachePolicy="memory-disk"
             contentFit="cover"
           />
-          {showPlayButton && (
-            <TouchableOpacity
-              style={[
-                styles.playButton,
-                !isLiquidGlassAvailable() && { backgroundColor: 'rgba(0, 0, 0, 0.6)' },
-              ]}
-              onPress={handlePlay}
-              activeOpacity={0.8}
-            >
-              {isLiquidGlassAvailable() && (
-                <GlassView style={StyleSheet.absoluteFill} glassEffectStyle="clear" isInteractive />
-              )}
-              <Ionicons name="play" size={32} color="#fff" />
-            </TouchableOpacity>
-          )}
+          {showPlayButton &&
+            (isLiquidGlassAvailable() ? (
+              <GlassView style={styles.playButton} glassEffectStyle="clear" isInteractive>
+                <PlayButton />
+              </GlassView>
+            ) : (
+              <PlayButton />
+            ))}
           {isPlayed && (
             <View style={styles.playedOverlay}>
               <Ionicons name="checkmark-circle" size={24} color={accentColor} />
@@ -202,12 +210,12 @@ export function EpisodeCard({
       </TouchableOpacity>
     ),
     [
+      PlayButton,
       accentColor,
       borderColor,
       disabled,
       handleLongPressEnd,
       handleLongPressStart,
-      handlePlay,
       handlePress,
       hideText,
       imageInfo.blurhash,

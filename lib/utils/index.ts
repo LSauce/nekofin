@@ -32,12 +32,30 @@ export const formatTimeWorklet = (time: number) => {
   }
 };
 
-export const formatDurationFromTicks = (ticks?: number | null) => {
+export const formatDurationFromTicks = (
+  ticks?: number | null,
+  options?: { showUnits?: boolean },
+) => {
   if (!ticks) return '';
   const totalSeconds = Math.floor(ticksToSeconds(ticks));
   const hours = Math.floor(totalSeconds / 3600);
   const minutes = Math.floor((totalSeconds % 3600) / 60);
   const seconds = totalSeconds % 60;
+
+  if (options?.showUnits) {
+    const parts = [];
+    if (hours > 0) {
+      parts.push(`${hours}h`);
+    }
+    if (minutes > 0) {
+      parts.push(`${minutes}m`);
+    }
+    if (seconds > 0 || (hours === 0 && minutes === 0)) {
+      parts.push(`${seconds}s`);
+    }
+    return parts.join('');
+  }
+
   if (hours > 0) {
     return `${hours.toString().padStart(2, '0')}:${minutes
       .toString()

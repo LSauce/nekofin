@@ -1,6 +1,7 @@
 import { BottomSheetModal as GorhomBottomSheetModal } from '@gorhom/bottom-sheet';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRef } from 'react';
-import { StyleSheet, Text, TouchableOpacity } from 'react-native';
+import { StyleSheet, TouchableOpacity } from 'react-native';
 
 import { ThemedText } from '../ThemedText';
 import { FilterSheet } from './FilterSheet';
@@ -19,11 +20,21 @@ export const FilterButton = ({
   const sheetRef = useRef<GorhomBottomSheetModal | null>(null);
   return (
     <>
-      <TouchableOpacity style={styles.chip} onPress={() => sheetRef.current?.present()}>
-        <ThemedText style={styles.chipText} type="subtitle">
-          {label}
-        </ThemedText>
-      </TouchableOpacity>
+      <GlassView
+        style={[
+          styles.chip,
+          !isLiquidGlassAvailable() && {
+            backgroundColor: 'rgba(127,127,127,0.15)',
+          },
+        ]}
+        isInteractive
+      >
+        <TouchableOpacity onPress={() => sheetRef.current?.present()}>
+          <ThemedText style={styles.chipText} type="subtitle">
+            {label}
+          </ThemedText>
+        </TouchableOpacity>
+      </GlassView>
       <FilterSheet
         ref={sheetRef}
         title={title}
@@ -42,10 +53,6 @@ const styles = StyleSheet.create({
     paddingHorizontal: 10,
     paddingVertical: 6,
     borderRadius: 999,
-    backgroundColor: 'rgba(127,127,127,0.15)',
-  },
-  chipActive: {
-    backgroundColor: 'rgba(127,127,255,0.35)',
   },
   chipText: {
     fontSize: 12,

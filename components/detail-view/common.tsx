@@ -1,12 +1,49 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import { formatDurationFromTicks } from '@/lib/utils';
 import { MediaItem } from '@/services/media/types';
+import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
+import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { useRouter } from 'expo-router';
 import { useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextLayoutEvent, TouchableOpacity, View } from 'react-native';
 
 import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
+
+export const PlayButton = ({ item }: { item: MediaItem }) => {
+  const router = useRouter();
+  const { accentColor } = useAccentColor();
+  const textColor = '#000';
+
+  return (
+    <GlassView
+      style={[
+        detailViewStyles.playButton,
+        { borderColor: accentColor, backgroundColor: accentColor },
+        isLiquidGlassAvailable() && { borderRadius: 999, backgroundColor: 'transparent' },
+      ]}
+      isInteractive
+      tintColor={`${accentColor}20`}
+    >
+      <TouchableOpacity
+        onPress={() => {
+          router.push({ pathname: '/player', params: { itemId: item.id! } });
+        }}
+      >
+        <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
+          <Text style={[detailViewStyles.playButtonText, { color: textColor }]}>
+            {item.runTimeTicks
+              ? formatDurationFromTicks(item.runTimeTicks, { showUnits: true })
+              : '播放'}
+          </Text>
+          <Ionicons name="play-circle" size={24} color={textColor} />
+        </View>
+      </TouchableOpacity>
+    </GlassView>
+  );
+};
 
 export const ItemMeta = ({ item }: { item: MediaItem }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
@@ -209,9 +246,10 @@ export const detailViewStyles = StyleSheet.create({
     marginTop: 8,
     alignItems: 'center',
     justifyContent: 'center',
+    borderWidth: 1,
+    overflow: 'hidden',
   },
   playButtonText: {
-    color: '#fff',
     fontSize: 16,
     fontWeight: '600',
   },

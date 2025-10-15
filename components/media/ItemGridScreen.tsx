@@ -8,6 +8,7 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaSortBy } from '@/services/media/types';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
+import { GlassContainer } from 'expo-glass-effect';
 import { useNavigation } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
@@ -160,144 +161,145 @@ export function ItemGridScreen({
     return (
       <View style={styles.filterBar}>
         <ScrollView
-          style={{ marginHorizontal: -20 }}
+          style={{ marginHorizontal: -20, paddingVertical: 40, position: 'absolute', top: -50 }}
           horizontal
           showsHorizontalScrollIndicator={false}
-          contentContainerStyle={styles.filterRow}
         >
-          <FilterButton
-            label="年份"
-            title="选择年份"
-            options={[
-              { label: '不限' },
-              ...(availableFilters?.years ?? []).map((y) => ({
-                label: String(y),
-                value: String(y),
-                active: filters?.year === y,
-              })),
-            ]}
-            onSelect={(v) => {
-              onChangeFilters?.({
-                includeItemTypes: filters?.includeItemTypes,
-                sortBy: filters?.sortBy,
-                sortOrder: filters?.sortOrder,
-                year: v ? Number(v) : undefined,
-                tags: filters?.tags,
-                onlyUnplayed: filters?.onlyUnplayed,
-              });
-            }}
-          />
-          <FilterButton
-            label="标签"
-            title="选择标签"
-            options={[
-              { label: '不限' },
-              ...(availableFilters?.tags ?? []).map((t) => ({
-                label: t,
-                value: t,
-                active: !!filters?.tags?.includes(t),
-              })),
-            ]}
-            onSelect={(v) => {
-              if (!v) {
+          <GlassContainer spacing={8} style={styles.filterRow}>
+            <FilterButton
+              label="年份"
+              title="选择年份"
+              options={[
+                { label: '不限' },
+                ...(availableFilters?.years ?? []).map((y) => ({
+                  label: String(y),
+                  value: String(y),
+                  active: filters?.year === y,
+                })),
+              ]}
+              onSelect={(v) => {
                 onChangeFilters?.({
                   includeItemTypes: filters?.includeItemTypes,
                   sortBy: filters?.sortBy,
                   sortOrder: filters?.sortOrder,
-                  year: filters?.year,
-                  tags: undefined,
+                  year: v ? Number(v) : undefined,
+                  tags: filters?.tags,
                   onlyUnplayed: filters?.onlyUnplayed,
                 });
-              } else {
-                const nextTags = [v];
+              }}
+            />
+            <FilterButton
+              label="标签"
+              title="选择标签"
+              options={[
+                { label: '不限' },
+                ...(availableFilters?.tags ?? []).map((t) => ({
+                  label: t,
+                  value: t,
+                  active: !!filters?.tags?.includes(t),
+                })),
+              ]}
+              onSelect={(v) => {
+                if (!v) {
+                  onChangeFilters?.({
+                    includeItemTypes: filters?.includeItemTypes,
+                    sortBy: filters?.sortBy,
+                    sortOrder: filters?.sortOrder,
+                    year: filters?.year,
+                    tags: undefined,
+                    onlyUnplayed: filters?.onlyUnplayed,
+                  });
+                } else {
+                  const nextTags = [v];
+                  onChangeFilters?.({
+                    includeItemTypes: filters?.includeItemTypes,
+                    sortBy: filters?.sortBy,
+                    sortOrder: filters?.sortOrder,
+                    year: filters?.year,
+                    tags: nextTags,
+                    onlyUnplayed: filters?.onlyUnplayed,
+                  });
+                }
+              }}
+            />
+            <FilterButton
+              label="排序依据"
+              title="选择排序依据"
+              options={[
+                {
+                  label: '名称',
+                  value: 'SortName',
+                  active: (filters?.sortBy?.[0] ?? 'SortName') === 'SortName',
+                },
+                {
+                  label: '随机',
+                  value: 'Random',
+                  active: (filters?.sortBy?.[0] ?? '') === 'Random',
+                },
+                {
+                  label: '公众评分',
+                  value: 'CommunityRating',
+                  active: (filters?.sortBy?.[0] ?? '') === 'CommunityRating',
+                },
+                {
+                  label: '剧集添加日期',
+                  value: 'DateCreated',
+                  active: (filters?.sortBy?.[0] ?? '') === 'DateCreated',
+                },
+                {
+                  label: '播放日期',
+                  value: 'DatePlayed',
+                  active: (filters?.sortBy?.[0] ?? '') === 'DatePlayed',
+                },
+                {
+                  label: '家长分级',
+                  value: 'OfficialRating',
+                  active: (filters?.sortBy?.[0] ?? '') === 'OfficialRating',
+                },
+                {
+                  label: '发行日期',
+                  value: 'PremiereDate',
+                  active: (filters?.sortBy?.[0] ?? '') === 'PremiereDate',
+                },
+              ]}
+              onSelect={(v) => {
+                onChangeFilters?.({
+                  includeItemTypes: filters?.includeItemTypes,
+                  sortBy: v ? [v as MediaSortBy] : filters?.sortBy,
+                  sortOrder: filters?.sortOrder,
+                  year: filters?.year,
+                  tags: filters?.tags,
+                  onlyUnplayed: filters?.onlyUnplayed,
+                });
+              }}
+            />
+            <FilterButton
+              label="排序顺序"
+              title="选择排序顺序"
+              options={[
+                {
+                  label: '降序',
+                  value: 'Descending',
+                  active: (filters?.sortOrder ?? 'Descending') === 'Descending',
+                },
+                {
+                  label: '升序',
+                  value: 'Ascending',
+                  active: (filters?.sortOrder ?? 'Descending') === 'Ascending',
+                },
+              ]}
+              onSelect={(v) => {
                 onChangeFilters?.({
                   includeItemTypes: filters?.includeItemTypes,
                   sortBy: filters?.sortBy,
-                  sortOrder: filters?.sortOrder,
+                  sortOrder: (v as 'Ascending' | 'Descending') ?? filters?.sortOrder,
                   year: filters?.year,
-                  tags: nextTags,
+                  tags: filters?.tags,
                   onlyUnplayed: filters?.onlyUnplayed,
                 });
-              }
-            }}
-          />
-          <FilterButton
-            label="排序依据"
-            title="选择排序依据"
-            options={[
-              {
-                label: '名称',
-                value: 'SortName',
-                active: (filters?.sortBy?.[0] ?? 'SortName') === 'SortName',
-              },
-              {
-                label: '随机',
-                value: 'Random',
-                active: (filters?.sortBy?.[0] ?? '') === 'Random',
-              },
-              {
-                label: '公众评分',
-                value: 'CommunityRating',
-                active: (filters?.sortBy?.[0] ?? '') === 'CommunityRating',
-              },
-              {
-                label: '剧集添加日期',
-                value: 'DateCreated',
-                active: (filters?.sortBy?.[0] ?? '') === 'DateCreated',
-              },
-              {
-                label: '播放日期',
-                value: 'DatePlayed',
-                active: (filters?.sortBy?.[0] ?? '') === 'DatePlayed',
-              },
-              {
-                label: '家长分级',
-                value: 'OfficialRating',
-                active: (filters?.sortBy?.[0] ?? '') === 'OfficialRating',
-              },
-              {
-                label: '发行日期',
-                value: 'PremiereDate',
-                active: (filters?.sortBy?.[0] ?? '') === 'PremiereDate',
-              },
-            ]}
-            onSelect={(v) => {
-              onChangeFilters?.({
-                includeItemTypes: filters?.includeItemTypes,
-                sortBy: v ? [v as MediaSortBy] : filters?.sortBy,
-                sortOrder: filters?.sortOrder,
-                year: filters?.year,
-                tags: filters?.tags,
-                onlyUnplayed: filters?.onlyUnplayed,
-              });
-            }}
-          />
-          <FilterButton
-            label="排序顺序"
-            title="选择排序顺序"
-            options={[
-              {
-                label: '降序',
-                value: 'Descending',
-                active: (filters?.sortOrder ?? 'Descending') === 'Descending',
-              },
-              {
-                label: '升序',
-                value: 'Ascending',
-                active: (filters?.sortOrder ?? 'Descending') === 'Ascending',
-              },
-            ]}
-            onSelect={(v) => {
-              onChangeFilters?.({
-                includeItemTypes: filters?.includeItemTypes,
-                sortBy: filters?.sortBy,
-                sortOrder: (v as 'Ascending' | 'Descending') ?? filters?.sortOrder,
-                year: filters?.year,
-                tags: filters?.tags,
-                onlyUnplayed: filters?.onlyUnplayed,
-              });
-            }}
-          />
+              }}
+            />
+          </GlassContainer>
         </ScrollView>
       </View>
     );
@@ -430,8 +432,9 @@ const styles = StyleSheet.create({
     paddingVertical: 20,
   },
   filterBar: {
+    position: 'relative',
     paddingBottom: 8,
-    gap: 8,
+    height: 24,
   },
   filterRow: {
     flexDirection: 'row',

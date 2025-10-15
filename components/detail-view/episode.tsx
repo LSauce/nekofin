@@ -1,14 +1,12 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaPerson } from '@/services/media/types';
-import { useRouter } from 'expo-router';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 
 import { EpisodeCard, SeriesCard } from '../media/Card';
 import { ThemedText } from '../ThemedText';
-import { detailViewStyles, ItemOverview } from './common';
+import { detailViewStyles, ItemOverview, PlayButton } from './common';
 import { useDetailView } from './DetailViewContext';
 import { PersonItem } from './PersonItem';
 
@@ -27,8 +25,6 @@ export const EpisodeModeContent = ({
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
-  const router = useRouter();
-  const { accentColor } = useAccentColor();
   const { setTitle, setBackgroundImageUrl, setSelectedItem } = useDetailView();
   const mediaAdapter = useMediaAdapter();
 
@@ -69,16 +65,7 @@ export const EpisodeModeContent = ({
         </ThemedText>
       </View>
 
-      {!!selectedEpisode?.id && (
-        <TouchableOpacity
-          onPress={() => {
-            router.push({ pathname: '/player', params: { itemId: selectedEpisode.id! } });
-          }}
-          style={[detailViewStyles.playButton, { backgroundColor: accentColor }]}
-        >
-          <Text style={detailViewStyles.playButtonText}>播放</Text>
-        </TouchableOpacity>
-      )}
+      {!!selectedEpisode?.id && <PlayButton item={selectedEpisode} />}
 
       <ItemOverview item={selectedEpisode} />
 

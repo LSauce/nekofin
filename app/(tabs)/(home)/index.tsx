@@ -13,6 +13,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
+import { useIsFocused } from '@react-navigation/native';
 import { useQueries } from '@tanstack/react-query';
 import {
   useNavigation,
@@ -231,6 +232,7 @@ export default function HomeScreen() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselScrollOffset = useSharedValue(0);
   const carouselProgress = useSharedValue(0);
+  const isFocused = useIsFocused();
 
   const carouselItems = useMemo(() => {
     return randomItemsQuery.data ?? [];
@@ -362,7 +364,7 @@ export default function HomeScreen() {
 
   if (servers.length === 0 && isInitialized) {
     return (
-      <ThemedView style={[styles.emptyContainer, { paddingTop: insets.top }]}>
+      <ThemedView style={styles.emptyContainer}>
         <IconSymbol name="externaldrive.connected.to.line.below" size={48} color="#9AA0A6" />
         <ThemedText style={styles.emptyTitle}>还没有服务器</ThemedText>
         <ThemedText style={styles.emptySubtitle}>添加一个媒体服务器以开始使用</ThemedText>
@@ -393,7 +395,7 @@ export default function HomeScreen() {
               data={carouselItems}
               defaultScrollOffsetValue={carouselScrollOffset}
               loop={carouselItems.length > 1}
-              autoPlay={carouselItems.length > 1}
+              autoPlay={isFocused && carouselItems.length > 1}
               autoPlayInterval={6500}
               scrollAnimationDuration={900}
               pagingEnabled

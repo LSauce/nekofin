@@ -1,11 +1,9 @@
 import { useThemeColor } from '@/hooks/useThemeColor';
-import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaPerson } from '@/services/media/types';
-import { useRouter } from 'expo-router';
-import { FlatList, Text, TouchableOpacity, View } from 'react-native';
+import { FlatList, Text, View } from 'react-native';
 
 import { SeriesCard } from '../media/Card';
-import { detailViewStyles, ItemInfoList, ItemMeta, ItemOverview } from './common';
+import { detailViewStyles, ItemInfoList, ItemMeta, ItemOverview, PlayButton } from './common';
 import { PersonItem } from './PersonItem';
 
 export const MovieModeContent = ({
@@ -18,27 +16,11 @@ export const MovieModeContent = ({
   item: MediaItem;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
-  const { accentColor } = useAccentColor();
-  const router = useRouter();
 
   return (
     <>
       <ItemMeta item={item} />
-      {!!item.id && (
-        <TouchableOpacity
-          onPress={() => {
-            router.push({
-              pathname: '/player',
-              params: {
-                itemId: item.id!,
-              },
-            });
-          }}
-          style={[detailViewStyles.playButton, { backgroundColor: accentColor }]}
-        >
-          <Text style={detailViewStyles.playButtonText}>播放</Text>
-        </TouchableOpacity>
-      )}
+      {!!item.id && <PlayButton item={item} />}
       <ItemOverview item={item} />
       <ItemInfoList item={item} />
 
