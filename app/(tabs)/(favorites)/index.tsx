@@ -1,9 +1,9 @@
 import { ItemGridScreen } from '@/components/media/ItemGridScreen';
+import { useInfiniteQueryWithFocus } from '@/hooks/useInfiniteQueryWithFocus';
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useMediaFilters } from '@/hooks/useMediaFilters';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem } from '@/services/media/types';
-import { useInfiniteQuery } from '@tanstack/react-query';
 
 export default function FavoritesScreen() {
   const { currentServer } = useMediaServers();
@@ -13,7 +13,8 @@ export default function FavoritesScreen() {
 
   const { filters, setFilters } = useMediaFilters();
 
-  const query = useInfiniteQuery({
+  const query = useInfiniteQueryWithFocus({
+    refetchOnScreenFocus: true,
     enabled: !!currentServer,
     queryKey: ['favorites', currentServer?.id, filters],
     initialPageParam: 0,

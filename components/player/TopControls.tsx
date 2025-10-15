@@ -1,7 +1,6 @@
 import { formatBitrate, sleep } from '@/lib/utils';
 import { DandanComment } from '@/services/dandanplay';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { BlurView } from 'expo-blur';
 import * as Network from 'expo-network';
 import { useNetworkState } from 'expo-network';
 import { useNavigation, useRouter } from 'expo-router';
