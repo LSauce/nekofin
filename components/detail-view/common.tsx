@@ -6,8 +6,9 @@ import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetModal, BottomSheetView } from '@gorhom/bottom-sheet';
 import { GlassView, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useRouter } from 'expo-router';
-import { useMemo, useRef, useState } from 'react';
+import { useEffect, useMemo, useRef, useState } from 'react';
 import { StyleSheet, Text, TextLayoutEvent, TouchableOpacity, View } from 'react-native';
+import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
 
 import { BottomSheetBackdropModal } from '../BottomSheetBackdropModal';
 import { ThemedText } from '../ThemedText';
@@ -15,7 +16,37 @@ import { ThemedText } from '../ThemedText';
 export const PlayButton = ({ item }: { item: MediaItem }) => {
   const router = useRouter();
   const { accentColor } = useAccentColor();
-  const textColor = '#000';
+  const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
+
+  const progressPercent = useMemo(() => {
+    const pct = item.userData?.playedPercentage ?? (item.userData?.played ? 100 : 0);
+    if (typeof pct === 'number' && !Number.isNaN(pct)) {
+      return Math.max(0, Math.min(100, pct));
+    }
+    const pos = item.userData?.playbackPositionTicks ?? 0;
+    const duration = item.runTimeTicks ?? 0;
+    if (pos > 0 && duration > 0) {
+      return Math.max(0, Math.min(100, (pos / duration) * 100));
+    }
+    return 0;
+  }, [
+    item.userData?.played,
+    item.userData?.playedPercentage,
+    item.userData?.playbackPositionTicks,
+    item.runTimeTicks,
+  ]);
+
+  const animatedWidth = useSharedValue(0);
+
+  useEffect(() => {
+    animatedWidth.value = withTiming(progressPercent, {
+      duration: 800,
+    });
+  }, [progressPercent, animatedWidth]);
+
+  const animatedStyle = useAnimatedStyle(() => ({
+    width: `${animatedWidth.value}%`,
+  }));
 
   return (
     <GlassView
@@ -27,6 +58,19 @@ export const PlayButton = ({ item }: { item: MediaItem }) => {
       isInteractive
       tintColor={`${accentColor}20`}
     >
+      {progressPercent > 0 && (
+        <Animated.View
+          pointerEvents="none"
+          style={[
+            detailViewStyles.playButtonProgressFill,
+            {
+              backgroundColor: accentColor,
+              borderRadius: isLiquidGlassAvailable() ? 999 : 8,
+            },
+            animatedStyle,
+          ]}
+        />
+      )}
       <TouchableOpacity
         onPress={() => {
           router.push({ pathname: '/player', params: { itemId: item.id! } });
@@ -240,7 +284,6 @@ export const detailViewStyles = StyleSheet.create({
     textAlign: 'left',
   },
   playButton: {
-    paddingHorizontal: 16,
     paddingVertical: 12,
     borderRadius: 8,
     marginTop: 8,
@@ -252,6 +295,12 @@ export const detailViewStyles = StyleSheet.create({
   playButtonText: {
     fontSize: 16,
     fontWeight: '600',
+  },
+  playButtonProgressFill: {
+    position: 'absolute',
+    top: 0,
+    left: 0,
+    bottom: 0,
   },
   sectionBlock: {
     marginTop: 16,

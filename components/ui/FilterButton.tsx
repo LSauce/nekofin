@@ -19,22 +19,20 @@ export const FilterButton = ({
 }) => {
   const sheetRef = useRef<GorhomBottomSheetModal | null>(null);
   return (
-    <>
-      <GlassView
-        style={[
-          styles.chip,
-          !isLiquidGlassAvailable() && {
-            backgroundColor: 'rgba(127,127,127,0.15)',
-          },
-        ]}
-        isInteractive
-      >
-        <TouchableOpacity onPress={() => sheetRef.current?.present()}>
-          <ThemedText style={styles.chipText} type="subtitle">
-            {label}
-          </ThemedText>
-        </TouchableOpacity>
-      </GlassView>
+    <GlassView
+      style={[
+        styles.chip,
+        !isLiquidGlassAvailable() && {
+          backgroundColor: 'rgba(127,127,127,0.15)',
+        },
+      ]}
+      isInteractive
+    >
+      <TouchableOpacity onPress={() => sheetRef.current?.present()}>
+        <ThemedText style={styles.chipText} type="subtitle">
+          {label}
+        </ThemedText>
+      </TouchableOpacity>
       <FilterSheet
         ref={sheetRef}
         title={title}
@@ -44,7 +42,7 @@ export const FilterButton = ({
           sheetRef.current?.dismiss();
         }}
       />
-    </>
+    </GlassView>
   );
 };
 

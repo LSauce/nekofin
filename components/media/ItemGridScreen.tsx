@@ -8,7 +8,7 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaSortBy } from '@/services/media/types';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
-import { GlassContainer } from 'expo-glass-effect';
+import { GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
 import { useNavigation } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {
@@ -161,11 +161,17 @@ export function ItemGridScreen({
     return (
       <View style={styles.filterBar}>
         <ScrollView
-          style={{ marginHorizontal: -20, paddingVertical: 40, position: 'absolute', top: -50 }}
+          style={{
+            marginHorizontal: -20,
+            paddingVertical: 40,
+            position: 'absolute',
+            top: -50,
+            width: '200%',
+          }}
           horizontal
           showsHorizontalScrollIndicator={false}
         >
-          <GlassContainer spacing={8} style={styles.filterRow}>
+          <GlassContainer spacing={10} style={[styles.filterRow]}>
             <FilterButton
               label="年份"
               title="选择年份"
