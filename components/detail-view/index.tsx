@@ -30,7 +30,7 @@ export type DetailViewProps = {
 function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer } = useMediaServers();
-  const backgroundColor = useThemeColor({ light: '#FCFFFF', dark: '#000' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const { title, backgroundImageUrl, setItem, selectedItem } = useDetailView();
 

@@ -91,83 +91,82 @@ export default function ParallaxScrollView({
   });
 
   return (
-    <ThemedView style={[styles.container, containerStyle]}>
-      <Animated.ScrollView ref={scrollRef} scrollEventThrottle={16} {...props}>
-        <Animated.View
+    <Animated.ScrollView
+      style={[styles.container, containerStyle]}
+      ref={scrollRef}
+      scrollEventThrottle={16}
+      {...props}
+    >
+      <Animated.View
+        style={[
+          styles.header,
+          { backgroundColor: headerBackgroundColor?.[colorScheme], height: headerHeight },
+          headerAnimatedStyle,
+        ]}
+      >
+        {headerImage}
+      </Animated.View>
+      {enableMaskView ? (
+        <ThemedView
           style={[
-            styles.header,
-            { backgroundColor: headerBackgroundColor?.[colorScheme], height: headerHeight },
-            headerAnimatedStyle,
+            {
+              position: 'relative',
+              flex: 1,
+              top: -50,
+              backgroundColor: 'transparent',
+            },
+            maskViewStyle,
           ]}
         >
-          {headerImage}
-        </Animated.View>
-        {enableMaskView ? (
-          <ThemedView
-            style={[
-              {
-                position: 'relative',
-                flex: 1,
-                top: -50,
-                backgroundColor: 'transparent',
-              },
-              maskViewStyle,
-            ]}
-          >
-            {enableBlurEffect ? (
-              <MaskedView
-                maskElement={
-                  <LinearGradient
-                    locations={locations as unknown as readonly [number, number, ...number[]]}
-                    colors={colors as unknown as readonly [string, string, ...string[]]}
-                    style={StyleSheet.absoluteFill}
-                  />
-                }
-                style={[
-                  {
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    top: -180,
-                    height: 200,
-                  },
-                  gradientStyle,
-                ]}
-              >
-                <BlurView
-                  intensity={blurIntensity}
-                  tint={blurTint}
+          {enableBlurEffect ? (
+            <MaskedView
+              maskElement={
+                <LinearGradient
+                  locations={locations as unknown as readonly [number, number, ...number[]]}
+                  colors={colors as unknown as readonly [string, string, ...string[]]}
                   style={StyleSheet.absoluteFill}
                 />
-              </MaskedView>
-            ) : (
-              <LinearGradient
-                colors={
-                  gradientColors ?? (colors as unknown as readonly [string, string, ...string[]])
-                }
-                locations={
-                  gradientLocations ??
-                  (locations as unknown as readonly [number, number, ...number[]])
-                }
-                style={[
-                  {
-                    position: 'absolute',
-                    left: 0,
-                    right: 0,
-                    top: -180,
-                    height: 200,
-                  },
-                  gradientStyle,
-                ]}
-              />
-            )}
-            <ThemedView style={[styles.content, contentStyle]}>{children}</ThemedView>
-          </ThemedView>
-        ) : (
+              }
+              style={[
+                {
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: -180,
+                  height: 200,
+                },
+                gradientStyle,
+              ]}
+            >
+              <BlurView intensity={blurIntensity} tint={blurTint} style={StyleSheet.absoluteFill} />
+            </MaskedView>
+          ) : (
+            <LinearGradient
+              colors={
+                gradientColors ?? (colors as unknown as readonly [string, string, ...string[]])
+              }
+              locations={
+                gradientLocations ??
+                (locations as unknown as readonly [number, number, ...number[]])
+              }
+              style={[
+                {
+                  position: 'absolute',
+                  left: 0,
+                  right: 0,
+                  top: -180,
+                  height: 200,
+                },
+                gradientStyle,
+              ]}
+            />
+          )}
           <ThemedView style={[styles.content, contentStyle]}>{children}</ThemedView>
-        )}
-      </Animated.ScrollView>
-    </ThemedView>
+        </ThemedView>
+      ) : (
+        <ThemedView style={[styles.content, contentStyle]}>{children}</ThemedView>
+      )}
+    </Animated.ScrollView>
   );
 }
 

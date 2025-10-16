@@ -8,7 +8,7 @@ import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
 import { MediaItem, MediaSortBy } from '@/services/media/types';
 import { InfiniteData, UseInfiniteQueryResult, useQuery } from '@tanstack/react-query';
-import { GlassContainer, isLiquidGlassAvailable } from 'expo-glass-effect';
+import { GlassContainer } from 'expo-glass-effect';
 import { useNavigation } from 'expo-router';
 import React, { useCallback, useEffect, useMemo } from 'react';
 import {

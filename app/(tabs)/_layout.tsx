@@ -1,4 +1,5 @@
 import { useAccentColor } from '@/lib/contexts/ThemeColorContext';
+import { isGreaterThanOrEqual26 } from '@/lib/utils';
 import { Icon, Label, NativeTabs } from 'expo-router/unstable-native-tabs';
 
 export default function TabLayout() {
@@ -18,7 +19,7 @@ export default function TabLayout() {
       <NativeTabs.Trigger
         name="(search)"
         options={{
-          role: 'search',
+          role: isGreaterThanOrEqual26 ? 'search' : undefined,
         }}
       >
         <Label>搜索</Label>

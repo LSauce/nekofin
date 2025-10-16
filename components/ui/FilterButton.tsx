@@ -28,7 +28,13 @@ export const FilterButton = ({
       ]}
       isInteractive
     >
-      <TouchableOpacity onPress={() => sheetRef.current?.present()}>
+      <TouchableOpacity
+        onPress={() => sheetRef.current?.present()}
+        style={{
+          paddingHorizontal: 10,
+          paddingVertical: 6,
+        }}
+      >
         <ThemedText style={styles.chipText} type="subtitle">
           {label}
         </ThemedText>
@@ -48,8 +54,6 @@ export const FilterButton = ({
 
 const styles = StyleSheet.create({
   chip: {
-    paddingHorizontal: 10,
-    paddingVertical: 6,
     borderRadius: 999,
   },
   chipText: {

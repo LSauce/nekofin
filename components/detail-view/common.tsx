@@ -75,6 +75,12 @@ export const PlayButton = ({ item }: { item: MediaItem }) => {
         onPress={() => {
           router.push({ pathname: '/player', params: { itemId: item.id! } });
         }}
+        style={{
+          paddingVertical: 12,
+          width: '100%',
+          justifyContent: 'center',
+          alignItems: 'center',
+        }}
       >
         <View style={{ flexDirection: 'row', alignItems: 'center', gap: 8 }}>
           <Text style={[detailViewStyles.playButtonText, { color: textColor }]}>
@@ -284,7 +290,6 @@ export const detailViewStyles = StyleSheet.create({
     textAlign: 'left',
   },
   playButton: {
-    paddingVertical: 12,
     borderRadius: 8,
     marginTop: 8,
     alignItems: 'center',

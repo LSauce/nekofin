@@ -201,7 +201,7 @@ export default function HomeScreen() {
   const rootNavigationState = useRootNavigationState();
   const mediaAdapter = useMediaAdapter();
 
-  const backgroundColor = useThemeColor({ light: '#FCFFFF', dark: '#000' }, 'background');
+  const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
 
   const carouselPlaceholderColor = useThemeColor(
     { light: '#d1d1d6', dark: '#2b2b2b' },
