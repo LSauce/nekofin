@@ -136,6 +136,7 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
         }),
         startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
         deviceId: getDeviceId(),
+        alwaysBurnInSubtitleWhenTranscoding: storage.getBoolean('enableSubtitleBurnIn') ?? false,
       });
     },
     enabled: !!currentServer && !!itemDetail,

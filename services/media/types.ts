@@ -239,6 +239,7 @@ export interface GetStreamInfoParams {
   height?: number;
   mediaSourceId?: string | null;
   deviceId?: string | null;
+  alwaysBurnInSubtitleWhenTranscoding?: boolean;
 }
 export interface UpdateFavoriteItemParams {
   userId: string;

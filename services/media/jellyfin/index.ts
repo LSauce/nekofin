@@ -686,6 +686,7 @@ export const getStreamInfo = async ({
   subtitleStreamIndex = undefined,
   mediaSourceId,
   deviceId,
+  alwaysBurnInSubtitleWhenTranscoding,
 }: {
   api: Api | null | undefined;
   item: BaseItemDto | null | undefined;
@@ -699,6 +700,7 @@ export const getStreamInfo = async ({
   height?: number;
   mediaSourceId?: string | null;
   deviceId?: string | null;
+  alwaysBurnInSubtitleWhenTranscoding?: boolean;
 }): Promise<StreamInfo | null> => {
   if (!api || !userId || !item?.Id) {
     console.warn('Missing required parameters for getStreamInfo');
@@ -723,6 +725,7 @@ export const getStreamInfo = async ({
           autoOpenLiveStream: true,
           maxStreamingBitrate,
           audioStreamIndex,
+          alwaysBurnInSubtitleWhenTranscoding,
         },
         data: {
           deviceProfile,

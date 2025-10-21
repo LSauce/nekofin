@@ -499,6 +499,7 @@ class JellyfinAdapter implements MediaAdapter {
     height,
     mediaSourceId,
     deviceId,
+    alwaysBurnInSubtitleWhenTranscoding,
   }: GetStreamInfoParams & { deviceProfile: DeviceProfile }) {
     const api = getApiInstance();
     if (!api) throw new Error('API instance is not set');
@@ -515,6 +516,7 @@ class JellyfinAdapter implements MediaAdapter {
       height,
       mediaSourceId,
       deviceId,
+      alwaysBurnInSubtitleWhenTranscoding,
     });
   }
 
