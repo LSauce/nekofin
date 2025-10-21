@@ -2,6 +2,7 @@ import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useDanmakuSettings } from '@/lib/contexts/DanmakuSettingsContext';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { generateDeviceProfile } from '@/lib/profiles/native';
+import { storage } from '@/lib/storage';
 import {
   formatBitrate,
   getCommentsByItem,
@@ -127,7 +128,12 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
       return await mediaAdapter.getStreamInfo({
         item: itemDetail,
         userId: currentServer.userId,
-        deviceProfile: generateDeviceProfile(),
+        deviceProfile: generateDeviceProfile({
+          transcode: storage.getBoolean('enableTranscoding') ?? false,
+          maxBitrate: storage.getNumber('maxBitrate') ?? 20000000,
+          subtitleBurnIn: storage.getBoolean('enableSubtitleBurnIn') ?? false,
+          codec: storage.getString('selectedCodec') ?? 'h264',
+        }),
         startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
         deviceId: getDeviceId(),
       });

@@ -1,20 +1,21 @@
 import React from 'react';
-import { Switch, View } from 'react-native';
+import { Switch, SwitchProps, View } from 'react-native';
 
 import { SettingsRow } from './SettingsRow';
 
-export interface SwitchSettingProps {
+export type SwitchSettingProps = {
   title: string;
   value: boolean;
   onValueChange: (value: boolean) => void;
   subtitle?: string;
-}
+} & SwitchProps;
 
 export const SwitchSetting: React.FC<SwitchSettingProps> = ({
   title,
   value,
   onValueChange,
   subtitle,
+  ...switchProps
 }) => {
   return (
     <SettingsRow
@@ -29,7 +30,7 @@ export const SwitchSetting: React.FC<SwitchSettingProps> = ({
             height: 24,
           }}
         >
-          <Switch value={value} onValueChange={onValueChange} />
+          <Switch value={value} onValueChange={onValueChange} {...switchProps} />
         </View>
       }
     />

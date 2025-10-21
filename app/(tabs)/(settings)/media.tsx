@@ -4,19 +4,17 @@ import { BottomSheetBackdropModal } from '@/components/BottomSheetBackdropModal'
 import PageScrollView from '@/components/PageScrollView';
 import { ThemedText } from '@/components/ThemedText';
 import { Section } from '@/components/ui/Section';
+import { SelectSetting } from '@/components/ui/SelectSetting';
 import { SettingsRow } from '@/components/ui/SettingsRow';
 import { useSettingsColors } from '@/hooks/useSettingsColors';
 import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaServerInfo } from '@/services/media/types';
-import Ionicons from '@expo/vector-icons/Ionicons';
 import { BottomSheetModal } from '@gorhom/bottom-sheet';
-import { MenuView } from '@react-native-menu/menu';
 import { useRef, useState } from 'react';
 import { StyleSheet, View } from 'react-native';
 
 export default function MediaScreen() {
   const { servers, removeServer, setCurrentServer, currentServer } = useMediaServers();
-  const { secondaryTextColor } = useSettingsColors();
 
   const bottomSheetRef = useRef<BottomSheetModal>(null);
   const [isAddServerVisible, setIsAddServerVisible] = useState(false);
@@ -35,57 +33,52 @@ export default function MediaScreen() {
     await removeServer(id);
   };
 
-  const handleSetCurrentServer = (server: MediaServerInfo) => {
-    setCurrentServer(server);
+  const handleSetCurrentServer = (serverId: string) => {
+    const server = servers.find((s) => s.id === serverId);
+    if (server) {
+      setCurrentServer(server);
+    }
   };
 
-  const renderServerItem = (server: MediaServerInfo) => {
-    const isCurrentServer = currentServer?.id === server.id;
+  const serverOptions = servers.map((server) => ({
+    id: server.id,
+    title: server.name,
+    subtitle: `${server.type} • ${server.address}`,
+    value: server.id,
+  }));
 
+  const renderServerItem = (server: MediaServerInfo) => {
     return (
-      <SettingsRow
+      <SelectSetting
         key={server.id}
         title={server.name}
         subtitle={`${server.type} • ${server.address}`}
+        value={server.id}
+        options={[
+          { title: server.name, subtitle: `${server.type} • ${server.address}`, value: server.id },
+        ]}
         icon={server.userAvatar ? undefined : 'link'}
-        showArrow={false}
+        showSelectionMenu={false}
         leftComponent={
-          <AvatarImage
-            avatarUri={server.userAvatar}
-            style={{
-              width: 24,
-              height: 24,
-              borderRadius: 12,
-              marginRight: 12,
-            }}
-          />
+          server.userAvatar ? (
+            <AvatarImage
+              avatarUri={server.userAvatar}
+              style={{
+                width: 24,
+                height: 24,
+                borderRadius: 12,
+                marginRight: 12,
+              }}
+            />
+          ) : undefined
         }
-        rightComponent={
-          <MenuView
-            isAnchoredToRight
-            title="服务器操作"
-            onPressAction={({ nativeEvent }) => {
-              const action = nativeEvent.event;
-              if (action === 'set-current') {
-                handleSetCurrentServer(server);
-              } else if (action === 'remove') {
-                handleRemoveServer(server.id);
-              }
-            }}
-            actions={[
-              {
-                id: 'set-current',
-                title: isCurrentServer ? '当前服务器' : '设为当前服务器',
-              },
-              {
-                id: 'remove',
-                title: '删除服务器',
-              },
-            ]}
-          >
-            <Ionicons name="chevron-expand" size={20} color={secondaryTextColor} />
-          </MenuView>
-        }
+        customActions={[
+          {
+            id: 'remove',
+            title: '删除服务器',
+            onPress: () => handleRemoveServer(server.id),
+          },
+        ]}
       />
     );
   };
@@ -94,6 +87,17 @@ export default function MediaScreen() {
     <PageScrollView style={styles.container}>
       <Section title="服务器管理">
         <SettingsRow title="添加服务器" icon="add" onPress={handleAddServer} />
+        {servers.length > 0 && (
+          <SelectSetting
+            title="当前服务器"
+            subtitle="选择要使用的媒体服务器"
+            value={currentServer?.id || ''}
+            options={serverOptions}
+            onValueChange={handleSetCurrentServer}
+            placeholder="请选择服务器"
+            menuTitle="选择服务器"
+          />
+        )}
       </Section>
 
       {servers.length > 0 && (

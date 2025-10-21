@@ -40,6 +40,12 @@ export default function HomeLayout() {
           headerTitle: '弹幕设置',
         }}
       />
+      <Stack.Screen
+        name="transcoding"
+        options={{
+          headerTitle: '转码设置',
+        }}
+      />
     </Stack>
   );
 }
