@@ -50,6 +50,16 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Setup EAS
         uses: expo/expo-github-action@v8
         with:
@@ -58,6 +68,18 @@ jobs:
 
       - name: Install dependencies
         run: bun install
+
+      - name: Cache EAS build
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.gradle/caches
+            ~/.gradle/wrapper
+            ~/.android/build-cache
+            .expo
+          key: ${{ runner.os }}-eas-android-${{ hashFiles('**/eas.json', '**/app.config.ts', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-eas-android-
 
       - name: Build Android
         run: eas build --local --platform android --profile ${{ inputs.android_profile || 'production' }} --non-interactive
@@ -92,11 +114,41 @@ jobs:
         with:
           bun-version: latest
 
+      - name: Cache Bun dependencies
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/.bun/install/cache
+            node_modules
+          key: ${{ runner.os }}-bun-${{ hashFiles('**/bun.lockb') }}
+          restore-keys: |
+            ${{ runner.os }}-bun-
+
       - name: Install dependencies
         run: bun install
 
+      - name: Cache Expo prebuild
+        uses: actions/cache@v4
+        with:
+          path: |
+            ios
+            .expo
+          key: ${{ runner.os }}-expo-prebuild-${{ hashFiles('**/app.config.ts', '**/package.json') }}
+          restore-keys: |
+            ${{ runner.os }}-expo-prebuild-
+
       - name: Run Expo Prebuild
         run: bunx expo prebuild -p ios
+
+      - name: Cache Xcode DerivedData
+        uses: actions/cache@v4
+        with:
+          path: |
+            ~/Library/Developer/Xcode/DerivedData
+            ios/build
+          key: ${{ runner.os }}-xcode-${{ hashFiles('**/ios/**/*.pbxproj', '**/ios/**/*.xcconfig') }}
+          restore-keys: |
+            ${{ runner.os }}-xcode-
 
       - name: Build Unsigned Archive
         run: |
