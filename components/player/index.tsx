@@ -60,6 +60,11 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   const prevRateRef = useRef<number>(1);
   const [mediaStats, setMediaStats] = useState<MediaStats | null>(null);
 
+  const enableTranscoding = storage.getBoolean('enableTranscoding') ?? false;
+  const enableSubtitleBurnIn = storage.getBoolean('enableSubtitleBurnIn') ?? false;
+  const maxBitrate = storage.getNumber('maxBitrate') ?? 0;
+  const selectedCodec = storage.getString('selectedCodec') ?? 'h264';
+
   const [danmakuEpisodeInfo, setDanmakuEpisodeInfo] = useState<
     { animeTitle: string; episodeTitle: string } | undefined
   >(undefined);
@@ -122,24 +127,34 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
   };
 
   const { data: streamInfo } = useQuery({
-    queryKey: ['streamInfo', itemId, currentServer?.userId],
+    queryKey: [
+      'streamInfo',
+      itemId,
+      currentServer?.userId,
+      enableTranscoding,
+      maxBitrate,
+      enableSubtitleBurnIn,
+      selectedCodec,
+    ],
     queryFn: async () => {
       if (!currentServer || !itemDetail) return null;
       return await mediaAdapter.getStreamInfo({
         item: itemDetail,
         userId: currentServer.userId,
         deviceProfile: generateDeviceProfile({
-          transcode: storage.getBoolean('enableTranscoding') ?? false,
-          maxBitrate: storage.getNumber('maxBitrate') ?? 20000000,
-          subtitleBurnIn: storage.getBoolean('enableSubtitleBurnIn') ?? false,
-          codec: storage.getString('selectedCodec') ?? 'h264',
+          transcode: enableTranscoding,
+          maxBitrate: maxBitrate,
+          subtitleBurnIn: enableSubtitleBurnIn,
+          codec: selectedCodec,
         }),
         startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
         deviceId: getDeviceId(),
-        alwaysBurnInSubtitleWhenTranscoding: storage.getBoolean('enableSubtitleBurnIn') ?? false,
+        alwaysBurnInSubtitleWhenTranscoding: enableSubtitleBurnIn,
       });
     },
     enabled: !!currentServer && !!itemDetail,
+    staleTime: 0,
+    gcTime: 0,
   });
 
   const allSubs = useMemo(() => {
@@ -248,31 +263,39 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
 
   useEffect(() => {
     (async () => {
-      const audioTracks = await player.current?.getAudioTracks();
-      let subtitleTracks = await player.current?.getSubtitleTracks();
+      try {
+        const audioTracks = await player.current?.getAudioTracks();
+        let subtitleTracks = await player.current?.getSubtitleTracks();
 
-      if (streamInfo?.mediaSource?.TranscodingUrl && subtitleTracks && subtitleTracks.length > 1) {
-        subtitleTracks = [subtitleTracks[0], ...subtitleTracks.slice(1).reverse()];
+        if (
+          streamInfo?.mediaSource?.TranscodingUrl &&
+          subtitleTracks &&
+          subtitleTracks.length > 1
+        ) {
+          subtitleTracks = [subtitleTracks[0], ...subtitleTracks.slice(1).reverse()];
+        }
+
+        let embedSubIndex = 1;
+        const processedSubs = allSubs?.map((sub) => {
+          const shouldIncrement =
+            sub.DeliveryMethod === SubtitleDeliveryMethod.Embed ||
+            sub.DeliveryMethod === SubtitleDeliveryMethod.Hls ||
+            sub.DeliveryMethod === SubtitleDeliveryMethod.External;
+          if (shouldIncrement) embedSubIndex++;
+          return {
+            name: sub.DisplayTitle || 'Undefined Subtitle',
+            index: sub.Index ?? -1,
+          };
+        });
+
+        setTracks((prev) => ({
+          ...prev,
+          audio: audioTracks ?? [],
+          subtitle: processedSubs.sort((a, b) => a.index - b.index) ?? [],
+        }));
+      } catch (error) {
+        console.error('Error setting tracks:', error);
       }
-
-      let embedSubIndex = 1;
-      const processedSubs = allSubs?.map((sub) => {
-        const shouldIncrement =
-          sub.DeliveryMethod === SubtitleDeliveryMethod.Embed ||
-          sub.DeliveryMethod === SubtitleDeliveryMethod.Hls ||
-          sub.DeliveryMethod === SubtitleDeliveryMethod.External;
-        if (shouldIncrement) embedSubIndex++;
-        return {
-          name: sub.DisplayTitle || 'Undefined Subtitle',
-          index: sub.Index ?? -1,
-        };
-      });
-
-      setTracks((prev) => ({
-        ...prev,
-        audio: audioTracks ?? [],
-        subtitle: processedSubs.sort((a, b) => a.index - b.index) ?? [],
-      }));
     })();
   }, [player, isLoaded, streamInfo?.mediaSource?.TranscodingUrl, allSubs]);
 
