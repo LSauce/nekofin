@@ -31,6 +31,7 @@ export type SelectSettingProps = {
   icon?: keyof typeof Ionicons.glyphMap;
   customActions?: CustomAction[];
   showSelectionMenu?: boolean;
+  disabled?: boolean;
 };
 
 export const SelectSetting: React.FC<SelectSettingProps> = ({
@@ -45,6 +46,7 @@ export const SelectSetting: React.FC<SelectSettingProps> = ({
   icon,
   customActions = [],
   showSelectionMenu = true,
+  disabled = false,
 }) => {
   const { secondaryTextColor } = useSettingsColors();
 
@@ -94,16 +96,19 @@ export const SelectSetting: React.FC<SelectSettingProps> = ({
           isAnchoredToRight
           title={menuTitle}
           onPressAction={handleMenuAction}
-          actions={menuActions}
+          actions={disabled ? [] : menuActions}
         >
           <View
-            style={{
-              flexDirection: 'row',
-              alignItems: 'center',
-              paddingHorizontal: 8,
-              paddingVertical: 4,
-              gap: 4,
-            }}
+            style={[
+              {
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 8,
+                paddingVertical: 4,
+                gap: 4,
+              },
+              disabled && { opacity: 0.5 },
+            ]}
           >
             <ThemedText>{displayText}</ThemedText>
             <Ionicons name="chevron-expand" size={16} color={secondaryTextColor} />
@@ -143,6 +148,7 @@ export const SelectSetting: React.FC<SelectSettingProps> = ({
     options.length,
     customActions.length,
     menuTitle,
+    disabled,
     handleMenuAction,
     menuActions,
     displayText,

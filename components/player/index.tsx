@@ -138,6 +138,17 @@ export const VideoPlayer = ({ itemId }: { itemId: string }) => {
     ],
     queryFn: async () => {
       if (!currentServer || !itemDetail) return null;
+
+      if (!enableTranscoding) {
+        return await mediaAdapter.getStreamInfo({
+          item: itemDetail,
+          userId: currentServer.userId,
+          deviceProfile: generateDeviceProfile(),
+          startTimeTicks: itemDetail.userData?.playbackPositionTicks || 0,
+          deviceId: getDeviceId(),
+        });
+      }
+
       return await mediaAdapter.getStreamInfo({
         item: itemDetail,
         userId: currentServer.userId,

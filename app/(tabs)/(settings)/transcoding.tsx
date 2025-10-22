@@ -1,7 +1,6 @@
 import PageScrollView from '@/components/PageScrollView';
 import { Section } from '@/components/ui/Section';
 import { SelectSetting } from '@/components/ui/SelectSetting';
-import { SliderSetting } from '@/components/ui/SliderSetting';
 import { SwitchSetting } from '@/components/ui/SwitchSetting';
 import { storage } from '@/lib/storage';
 import { useNavigation } from 'expo-router';
@@ -82,6 +81,7 @@ export default function TranscodingSettingsScreen() {
           onValueChange={handleTranscodingToggle}
         />
         <SelectSetting
+          disabled={!enableTranscoding}
           title="最大码率"
           subtitle="设置转码时的最大码率"
           value={maxBitrate.toString()}
@@ -89,6 +89,7 @@ export default function TranscodingSettingsScreen() {
           onValueChange={handleBitrateChange}
         />
         <SwitchSetting
+          disabled={!enableTranscoding}
           title="字幕烧录"
           subtitle="转码时将字幕烧录到视频中"
           value={enableSubtitleBurnIn}
@@ -98,6 +99,7 @@ export default function TranscodingSettingsScreen() {
 
       <Section title="编码设置">
         <SelectSetting
+          disabled={!enableTranscoding}
           title="编码器"
           subtitle="选择视频编码器"
           value={selectedCodec}
