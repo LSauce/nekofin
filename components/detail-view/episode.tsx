@@ -1,8 +1,12 @@
 import { useMediaAdapter } from '@/hooks/useMediaAdapter';
 import { useThemeColor } from '@/hooks/useThemeColor';
+import { useMediaServers } from '@/lib/contexts/MediaServerContext';
 import { MediaItem, MediaPerson } from '@/services/media/types';
+import Ionicons from '@expo/vector-icons/Ionicons';
+import { MenuView } from '@react-native-menu/menu';
+import { useQuery } from '@tanstack/react-query';
 import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
-import { FlatList, Text, View } from 'react-native';
+import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 import { EpisodeCard, SeriesCard } from '../media/Card';
 import { ThemedText } from '../ThemedText';
@@ -16,24 +20,59 @@ export const EpisodeModeContent = ({
   people,
   similarItems,
   item,
+  seasonId,
 }: {
   seasons: MediaItem[];
   episodes?: MediaItem[];
   people: MediaPerson[];
   similarItems: MediaItem[];
   item: MediaItem;
+  seasonId?: string;
 }) => {
   const textColor = useThemeColor({ light: '#000', dark: '#fff' }, 'text');
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { setTitle, setBackgroundImageUrl, setSelectedItem } = useDetailView();
   const mediaAdapter = useMediaAdapter();
+  const { currentServer } = useMediaServers();
+
+  const [selectedSeasonId, setSelectedSeasonId] = useState<string>(() => {
+    return seasonId || (seasons.length > 0 ? seasons[0].id : '');
+  });
 
   const [selectedEpisode, setSelectedEpisode] = useState<MediaItem>(item ?? episodes[0]);
   const flatListRef = useRef<FlatList<MediaItem>>(null);
 
+  const { data: currentSeasonEpisodes = [] } = useQuery({
+    queryKey: ['episodes', selectedSeasonId, currentServer?.userId],
+    queryFn: async () => {
+      if (!currentServer || !selectedSeasonId) return [];
+      const response = await mediaAdapter.getEpisodesBySeason({
+        seasonId: selectedSeasonId,
+        userId: currentServer.userId,
+      });
+      return response.data.Items ?? [];
+    },
+    enabled: !!currentServer && !!selectedSeasonId,
+  });
+
+  const displayEpisodes = selectedSeasonId ? currentSeasonEpisodes : episodes;
+
   const initialIndex = useMemo(() => {
-    return episodes.findIndex((e) => e.id === selectedEpisode.id);
-  }, [episodes, selectedEpisode]);
+    return displayEpisodes.findIndex((e) => e.id === selectedEpisode.id);
+  }, [displayEpisodes, selectedEpisode]);
+
+  useEffect(() => {
+    if (displayEpisodes.length > 0 && !displayEpisodes.find((e) => e.id === selectedEpisode.id)) {
+      setSelectedEpisode(displayEpisodes[0]);
+    }
+  }, [displayEpisodes, selectedEpisode]);
+
+  // 当季度改变时，重置选中的剧集为第一集
+  useEffect(() => {
+    if (currentSeasonEpisodes.length > 0) {
+      setSelectedEpisode(currentSeasonEpisodes[0]);
+    }
+  }, [currentSeasonEpisodes]);
 
   const scrollToIndex = useCallback((index: number) => {
     if (flatListRef.current) {
@@ -69,15 +108,51 @@ export const EpisodeModeContent = ({
 
       <ItemOverview item={selectedEpisode} />
 
-      {episodes && episodes.length > 0 && (
+      {seasons && seasons.length > 0 && (
+        <View
+          style={[
+            detailViewStyles.sectionBlock,
+            { flexDirection: 'row', alignItems: 'center', gap: 12 },
+          ]}
+        >
+          <ThemedText style={{ fontSize: 16, fontWeight: '500' }}>季度:</ThemedText>
+          <MenuView
+            actions={seasons.map((season) => ({
+              id: season.id!,
+              title: season.name || `第${season.indexNumber}季`,
+              state: season.id === selectedSeasonId ? 'on' : 'off',
+            }))}
+            onPressAction={({ nativeEvent }) => {
+              setSelectedSeasonId(nativeEvent.event);
+            }}
+          >
+            <TouchableOpacity
+              style={{
+                flexDirection: 'row',
+                alignItems: 'center',
+                paddingHorizontal: 12,
+                paddingVertical: 8,
+                backgroundColor: 'rgba(255, 255, 255, 0.1)',
+                borderRadius: 8,
+                gap: 6,
+              }}
+            >
+              <Text style={{ color: textColor, fontSize: 14 }}>
+                {seasons.find((s) => s.id === selectedSeasonId)?.name ||
+                  `第${seasons.find((s) => s.id === selectedSeasonId)?.indexNumber}季`}
+              </Text>
+              <Ionicons name="chevron-down" size={16} color={textColor} />
+            </TouchableOpacity>
+          </MenuView>
+        </View>
+      )}
+
+      {displayEpisodes && displayEpisodes.length > 0 && (
         <View style={detailViewStyles.sectionBlock}>
-          <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>
-            更多来自 {selectedEpisode.seriesName}
-          </Text>
           <FlatList
             ref={flatListRef}
             horizontal
-            data={episodes}
+            data={displayEpisodes}
             style={detailViewStyles.edgeToEdge}
             onScrollToIndexFailed={() => {
               setTimeout(() => {
@@ -100,20 +175,6 @@ export const EpisodeModeContent = ({
                 />
               );
             }}
-            keyExtractor={(item) => item.id!}
-            showsHorizontalScrollIndicator={false}
-            contentContainerStyle={detailViewStyles.horizontalList}
-          />
-        </View>
-      )}
-      {seasons && seasons.length > 0 && (
-        <View style={detailViewStyles.sectionBlock}>
-          <Text style={[detailViewStyles.sectionTitle, { color: textColor }]}>季度</Text>
-          <FlatList
-            horizontal
-            data={seasons}
-            style={detailViewStyles.edgeToEdge}
-            renderItem={({ item }) => <SeriesCard item={item} imgType="Primary" hideSubtitle />}
             keyExtractor={(item) => item.id!}
             showsHorizontalScrollIndicator={false}
             contentContainerStyle={detailViewStyles.horizontalList}

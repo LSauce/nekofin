@@ -348,10 +348,16 @@ export default function HomeScreen() {
           router.push({ pathname: '/series/[id]', params: { id: item.id } });
           return;
         case 'Season':
-          router.push({ pathname: '/season/[id]', params: { id: item.id } });
+          router.push({
+            pathname: '/episode',
+            params: { seasonId: item.id },
+          });
           return;
         case 'Episode':
-          router.push({ pathname: '/episode/[id]', params: { id: item.id } });
+          router.push({
+            pathname: '/episode',
+            params: { episodeId: item.id, seasonId: item.seasonId },
+          });
           return;
         default:
           if (item.seriesId) {

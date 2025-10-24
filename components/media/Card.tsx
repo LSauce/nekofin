@@ -112,12 +112,10 @@ export function EpisodeCard({
     }
 
     router.push({
-      pathname: '/episode/[id]',
-      params: {
-        id: item.id,
-      },
+      pathname: '/episode',
+      params: { episodeId: item.id, seasonId: item.seasonId },
     });
-  }, [item.id, item.type, router, isLongPressing]);
+  }, [item.id, item.type, item.seasonId, isLongPressing, router]);
 
   const playedPercentage =
     typeof currentUserData?.playedPercentage === 'number'
@@ -309,7 +307,10 @@ export function SeriesCard({
     const type = item.type;
 
     if (type === 'Season') {
-      router.push({ pathname: '/season/[id]', params: { id: item.id! } });
+      router.push({
+        pathname: '/episode',
+        params: { seasonId: item.id },
+      });
       return;
     }
 

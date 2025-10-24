@@ -6,7 +6,7 @@ const DEFAULT_SCREEN_OPTIONS = {
   headerBlurEffect: 'none',
 } as const;
 
-const ROUTE_NAMES = ['series/[id]', 'season/[id]', 'movie/[id]', 'episode/[id]'] as const;
+const ROUTE_NAMES = ['series/[id]', 'movie/[id]', 'episode/index'] as const;
 
 export function GroupedStackRoutes() {
   return ROUTE_NAMES.map((name) => (

@@ -18,16 +18,16 @@ import { detailViewStyles } from './common';
 import { DetailViewProvider, useDetailView } from './DetailViewContext';
 import { EpisodeModeContent } from './episode';
 import { MovieModeContent } from './movie';
-import { SeasonModeContent } from './season';
 import { SeriesModeContent } from './series';
 
 export type DetailViewProps = {
   itemId: string;
-  mode: 'series' | 'season' | 'movie' | 'episode';
+  mode: 'series' | 'movie' | 'episode';
   query: UseQueryResult<DetailBundle, Error>;
+  seasonId?: string;
 };
 
-function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
+function DetailViewContent({ itemId, mode, query, seasonId }: DetailViewProps) {
   const navigation = useNavigation();
   const { currentServer } = useMediaServers();
   const backgroundColor = useThemeColor({ light: '#fff', dark: '#000' }, 'background');
@@ -70,7 +70,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
 
     navigation.setOptions({
       headerRight: () =>
-        mode !== 'season' && currentItemId ? (
+        currentItemId ? (
           <View style={{ flexDirection: 'row', alignItems: 'center', paddingHorizontal: 4 }}>
             <HeaderButton
               onPress={async () => {
@@ -165,7 +165,6 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
           item={item}
         />
       ),
-      season: <SeasonModeContent episodes={episodes} item={item} />,
       movie: (
         <MovieModeContent
           people={(item?.people ?? []).slice(0, 20)}
@@ -180,6 +179,7 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
           item={item}
           people={(item?.people ?? []).slice(0, 20)}
           similarItems={similarMovies}
+          seasonId={seasonId}
         />
       ),
     };
@@ -226,12 +226,12 @@ function DetailViewContent({ itemId, mode, query }: DetailViewProps) {
   );
 }
 
-export default function DetailView({ itemId, mode }: Omit<DetailViewProps, 'query'>) {
+export default function DetailView({ itemId, mode, ...rest }: Omit<DetailViewProps, 'query'>) {
   const query = useDetailBundle(mode, itemId);
 
   return (
-    <DetailViewProvider itemId={itemId} mode={mode} query={query}>
-      <DetailViewContent itemId={itemId} mode={mode} query={query} />
+    <DetailViewProvider itemId={itemId} mode={mode} query={query} {...rest}>
+      <DetailViewContent itemId={itemId} mode={mode} query={query} {...rest} />
     </DetailViewProvider>
   );
 }
