@@ -6,6 +6,7 @@ import {
   ScrollView,
   StyleProp,
   StyleSheet,
+  useWindowDimensions,
   View,
   ViewStyle,
 } from 'react-native';
@@ -163,7 +164,10 @@ export function SkeletonItemGrid({
 }
 
 export function SkeletonDetailHeader() {
-  return <View style={styles.detailHeader} />;
+  const { height: windowHeight } = useWindowDimensions();
+  const headerHeight = windowHeight * 0.7;
+
+  return <View style={[styles.detailHeader, { height: headerHeight }]} />;
 }
 
 export function SkeletonDetailContent({

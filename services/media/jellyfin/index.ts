@@ -455,7 +455,7 @@ export async function getRandomItems(
     userId,
     limit,
     recursive: true,
-    includeItemTypes: ['Movie', 'Series', 'Episode'],
+    includeItemTypes: ['Movie', 'Series'],
     sortBy: ['Random'],
     imageTypeLimit: 0,
     enableTotalRecordCount: false,

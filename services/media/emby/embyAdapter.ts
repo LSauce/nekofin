@@ -535,7 +535,7 @@ class EmbyAdapter implements MediaAdapter {
     const res = await getEmbyApiClient().get<{ Items?: BaseItemDto[] }>(`/Users/${userId}/Items`, {
       UserId: userId,
       Recursive: true,
-      IncludeItemTypes: 'Movie,Series,Episode',
+      IncludeItemTypes: 'Movie,Series',
       SortBy: 'Random',
       Limit: limit,
     });

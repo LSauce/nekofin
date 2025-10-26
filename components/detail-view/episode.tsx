@@ -75,7 +75,7 @@ export const EpisodeModeContent = ({
   }, [currentSeasonEpisodes]);
 
   const scrollToIndex = useCallback((index: number) => {
-    if (flatListRef.current) {
+    if (flatListRef.current && index >= 0) {
       flatListRef.current.scrollToIndex({ index, animated: true, viewOffset: 20 });
     }
   }, []);
@@ -115,7 +115,6 @@ export const EpisodeModeContent = ({
             { flexDirection: 'row', alignItems: 'center', gap: 12 },
           ]}
         >
-          <ThemedText style={{ fontSize: 16, fontWeight: '500' }}>季度:</ThemedText>
           <MenuView
             actions={seasons.map((season) => ({
               id: season.id!,
@@ -137,7 +136,7 @@ export const EpisodeModeContent = ({
                 gap: 6,
               }}
             >
-              <Text style={{ color: textColor, fontSize: 14 }}>
+              <Text style={{ color: textColor, fontSize: 16 }}>
                 {seasons.find((s) => s.id === selectedSeasonId)?.name ||
                   `第${seasons.find((s) => s.id === selectedSeasonId)?.indexNumber}季`}
               </Text>

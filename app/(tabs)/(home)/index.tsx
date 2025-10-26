@@ -15,6 +15,7 @@ import { MediaItem, MediaServerInfo } from '@/services/media/types';
 import { MenuAction, MenuView } from '@react-native-menu/menu';
 import { useIsFocused } from '@react-navigation/native';
 import { useQueries } from '@tanstack/react-query';
+import { Image } from 'expo-image';
 import {
   useNavigation,
   useNavigationContainerRef,
@@ -34,7 +35,6 @@ import {
 import { easeGradient } from 'react-native-easing-gradient';
 import { useSharedValue } from 'react-native-reanimated';
 import Carousel from 'react-native-reanimated-carousel';
-import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 type HomeSection = {
   key: string;
@@ -219,12 +219,11 @@ export default function HomeScreen() {
       1: { color: gradientEndColor },
     },
     easing: Easing.bezier(0.4, 0.0, 0.2, 1),
-    extraColorStopsPerTransition: 6,
+    extraColorStopsPerTransition: 12,
   });
 
-  const insets = useSafeAreaInsets();
   const { height: windowHeight, width: windowWidth } = useWindowDimensions();
-  const carouselHeight = windowHeight * 0.6;
+  const carouselHeight = windowHeight * 0.7;
 
   const router = useRouter();
 
@@ -232,11 +231,33 @@ export default function HomeScreen() {
   const [carouselIndex, setCarouselIndex] = useState(0);
   const carouselScrollOffset = useSharedValue(0);
   const carouselProgress = useSharedValue(0);
+  const carouselTextProgress = useSharedValue(0);
   const isFocused = useIsFocused();
 
   const carouselItems = useMemo(() => {
     return randomItemsQuery.data ?? [];
   }, [randomItemsQuery.data]);
+
+  const carouselImageInfos = useMemo(() => {
+    return carouselItems.map((item) => {
+      const imageInfo = mediaAdapter.getImageInfo({
+        item,
+        opts: {
+          preferBackdrop: true,
+          preferThumb: true,
+        },
+      });
+      const logoImageInfo = mediaAdapter.getImageInfo({
+        item,
+        opts: { preferLogo: true, width: 400 },
+      });
+      return {
+        imageUrl: imageInfo.url,
+        blurhash: imageInfo.blurhash,
+        logoImageUrl: logoImageInfo.url?.replace('Primary', 'Logo'),
+      };
+    });
+  }, [carouselItems, mediaAdapter]);
 
   const handleServerSelect = useCallback(
     (serverId: string) => {
@@ -368,6 +389,81 @@ export default function HomeScreen() {
     [router],
   );
 
+  const renderMainCarouselItem = useCallback(
+    ({ item, index }: { item: MediaItem; index: number }) => {
+      const imageInfo = carouselImageInfos[index];
+      const imageUrl = imageInfo?.imageUrl;
+
+      return (
+        <View style={[styles.carouselItemWrapper, { height: carouselHeight }]}>
+          <TouchableOpacity
+            activeOpacity={0.9}
+            style={styles.carouselCard}
+            onPress={() => handleCarouselItemPress(item)}
+          >
+            {imageUrl ? (
+              <ItemImage
+                uri={imageUrl}
+                style={[styles.carouselImage, { backgroundColor }]}
+                contentFit="cover"
+                cachePolicy="memory-disk"
+                placeholderBlurhash={imageInfo.blurhash}
+              />
+            ) : (
+              <View
+                style={[
+                  styles.carouselImage,
+                  styles.carouselPlaceholder,
+                  { backgroundColor: carouselPlaceholderColor },
+                ]}
+              >
+                <IconSymbol name="video.fill" size={48} color="rgba(255,255,255,0.9)" />
+              </View>
+            )}
+          </TouchableOpacity>
+        </View>
+      );
+    },
+    [
+      carouselImageInfos,
+      carouselHeight,
+      handleCarouselItemPress,
+      backgroundColor,
+      carouselPlaceholderColor,
+    ],
+  );
+
+  const renderTextCarouselItem = useCallback(
+    ({ item, index }: { item: MediaItem; index: number }) => {
+      const title = item.seriesName || item.name || '未知标题';
+      const subtitle = getSubtitle(item);
+      const imageInfo = carouselImageInfos[index];
+      const logoImageUrl = imageInfo?.logoImageUrl;
+
+      return (
+        <View style={styles.carouselTextContainer}>
+          {logoImageUrl ? (
+            <Image
+              source={{ uri: logoImageUrl }}
+              style={styles.carouselLogo}
+              contentFit="contain"
+            />
+          ) : (
+            <ThemedText style={styles.carouselTitle} numberOfLines={1}>
+              {title}
+            </ThemedText>
+          )}
+          {subtitle ? (
+            <ThemedText style={styles.carouselSubtitle} numberOfLines={1}>
+              {subtitle}
+            </ThemedText>
+          ) : null}
+        </View>
+      );
+    },
+    [carouselImageInfos],
+  );
+
   if (servers.length === 0 && isInitialized) {
     return (
       <ThemedView style={styles.emptyContainer}>
@@ -410,46 +506,7 @@ export default function HomeScreen() {
                 return panGesture.activeOffsetX([-5, 5]).failOffsetY([-20, 20]);
               }}
               onProgressChange={carouselProgress}
-              renderItem={({ item }) => {
-                const imageInfo = mediaAdapter.getImageInfo({
-                  item,
-                  opts: {
-                    preferBackdrop: true,
-                    preferThumb: true,
-                  },
-                });
-                const imageUrl = imageInfo.url;
-
-                return (
-                  <View style={[styles.carouselItemWrapper, { height: carouselHeight }]}>
-                    <TouchableOpacity
-                      activeOpacity={0.9}
-                      style={styles.carouselCard}
-                      onPress={() => handleCarouselItemPress(item)}
-                    >
-                      {imageUrl ? (
-                        <ItemImage
-                          uri={imageUrl}
-                          style={[styles.carouselImage, { backgroundColor }]}
-                          contentFit="cover"
-                          cachePolicy="memory-disk"
-                          placeholderBlurhash={imageInfo.blurhash}
-                        />
-                      ) : (
-                        <View
-                          style={[
-                            styles.carouselImage,
-                            styles.carouselPlaceholder,
-                            { backgroundColor: carouselPlaceholderColor },
-                          ]}
-                        >
-                          <IconSymbol name="video.fill" size={48} color="rgba(255,255,255,0.9)" />
-                        </View>
-                      )}
-                    </TouchableOpacity>
-                  </View>
-                );
-              }}
+              renderItem={renderMainCarouselItem}
             />
           )}
         </View>
@@ -459,7 +516,7 @@ export default function HomeScreen() {
         {carouselItems.length > 0 && (
           <Carousel
             width={windowWidth}
-            height={100}
+            height={120}
             data={carouselItems}
             defaultScrollOffsetValue={carouselScrollOffset}
             loop={carouselItems.length > 1}
@@ -469,25 +526,9 @@ export default function HomeScreen() {
             onConfigurePanGesture={(panGesture) => {
               return panGesture.activeOffsetX([-10, 10]);
             }}
-            onProgressChange={carouselProgress}
+            onProgressChange={carouselTextProgress}
             style={styles.carouselContainer}
-            renderItem={({ item }) => {
-              const title = item.seriesName || item.name || '未知标题';
-              const subtitle = getSubtitle(item);
-
-              return (
-                <View style={styles.carouselTextContainer}>
-                  <ThemedText style={styles.carouselTitle} numberOfLines={1}>
-                    {title}
-                  </ThemedText>
-                  {subtitle ? (
-                    <ThemedText style={styles.carouselSubtitle} numberOfLines={1}>
-                      {subtitle}
-                    </ThemedText>
-                  ) : null}
-                </View>
-              );
-            }}
+            renderItem={renderTextCarouselItem}
           />
         )}
         {carouselItems.length > 1 && (
@@ -609,13 +650,19 @@ const styles = StyleSheet.create({
     right: 20,
     gap: 6,
     zIndex: 2,
+    textAlign: 'center',
   },
   carouselTitle: {
     fontSize: 24,
     fontWeight: '700',
+    textAlign: 'center',
   },
   carouselSubtitle: {
     fontSize: 15,
+    textAlign: 'center',
+  },
+  carouselLogo: {
+    height: 60,
   },
   carouselIndicators: {
     position: 'absolute',

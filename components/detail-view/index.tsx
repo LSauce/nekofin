@@ -10,7 +10,7 @@ import { UseQueryResult } from '@tanstack/react-query';
 import { Image } from 'expo-image';
 import { useNavigation } from 'expo-router';
 import { useEffect, useState } from 'react';
-import { RefreshControl, Text, View } from 'react-native';
+import { RefreshControl, Text, useWindowDimensions, View } from 'react-native';
 
 import { ItemImage } from '../ItemImage';
 import { SkeletonDetailContent, SkeletonDetailHeader } from '../ui/Skeleton';
@@ -37,6 +37,9 @@ function DetailViewContent({ itemId, mode, query, seasonId }: DetailViewProps) {
   const [isFavorite, setIsFavorite] = useState<boolean>(false);
   const [isWatched, setIsWatched] = useState<boolean>(false);
   const { data: bundle, isLoading, refetch } = query;
+
+  const { height: windowHeight } = useWindowDimensions();
+  const headerHeight = windowHeight * 0.7;
 
   const mediaAdapter = useMediaAdapter();
 
@@ -190,7 +193,7 @@ function DetailViewContent({ itemId, mode, query, seasonId }: DetailViewProps) {
   return (
     <ParallaxScrollView
       enableMaskView
-      headerHeight={500}
+      headerHeight={headerHeight}
       showsVerticalScrollIndicator={false}
       refreshControl={<RefreshControl refreshing={refreshing} onRefresh={onRefresh} />}
       headerBackgroundColor={{ light: '#eee', dark: '#222' }}
