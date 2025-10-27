@@ -29,12 +29,7 @@ export const PlayButton = ({ item }: { item: MediaItem }) => {
       return Math.max(0, Math.min(100, (pos / duration) * 100));
     }
     return 0;
-  }, [
-    item.userData?.played,
-    item.userData?.playedPercentage,
-    item.userData?.playbackPositionTicks,
-    item.runTimeTicks,
-  ]);
+  }, [item]);
 
   const animatedWidth = useSharedValue(0);
 
