@@ -1,50 +1,55 @@
-# Welcome to your Expo app 👋
+# Nekofin
 
-This is an [Expo](https://expo.dev) project created with [`create-expo-app`](https://www.npmjs.com/package/create-expo-app).
+<div align="center">
+  <img src="https://socialify.git.ci/lonzzi/nekofin/image?logo=https%3A%2F%2Fgithub.com%2Flonzzi%2Fnekofin%2Fblob%2Fmain%2Fassets%2Fimages%2Fsplash-icon.png%3Fraw%3Dtrue&name=1&owner=1&pattern=Solid&stargazers=1&theme=Dark" alt="nekofin" />
+</div>
 
-## Get started
+一个基于 Expo 开发的跨平台媒体播放客户端，支持 Jellyfin 和 Emby 媒体服务器。
 
-1. Install dependencies
+## 📸 预览
 
-   ```bash
-   npm install
-   ```
+<div align="center">
+  <img src="docs/screenshots/home.png" width="200" alt="首页" />
+  <img src="docs/screenshots/detail.png" width="200" alt="详情" />
+  <img src="docs/screenshots/player.png" width="200" alt="播放器" />
+  <img src="docs/screenshots/search.png" width="200" alt="搜索" />
+</div>
 
-2. Start the app
+## ✨ 功能特色
 
-   ```bash
-   npx expo start
-   ```
+- 📱 跨平台支持：iOS 和 Android 双平台
+- 🎬 媒体播放：基于 VLC 的高性能视频播放器
+- 💬 弹幕支持：集成弹弹play，支持弹幕搜索和显示
+- 🎯 多服务器：同时支持 Jellyfin 和 Emby（实验性支持）媒体服务器
 
-In the output, you'll find options to open the app in a
+## 🛠 技术栈
 
-- [development build](https://docs.expo.dev/develop/development-builds/introduction/)
-- [Android emulator](https://docs.expo.dev/workflow/android-studio-emulator/)
-- [iOS simulator](https://docs.expo.dev/workflow/ios-simulator/)
-- [Expo Go](https://expo.dev/go), a limited sandbox for trying out app development with Expo
+- React Native
+- Expo
+- VLC Player
 
-You can start developing by editing the files inside the **app** directory. This project uses [file-based routing](https://docs.expo.dev/router/introduction).
+## 📥 下载
 
-## Get a fresh project
+目前只在 [actions](https://github.com/lonzzi/nekofin/actions) 中构建，可以下载最新版本 APK 和 IPA 文件。
 
-When you're ready, run:
+## 🗺️ Roadmap
 
-```bash
-npm run reset-project
-```
+- [x] 基础播放功能
+- [x] 弹幕支持
+- [x] Jellyfin 服务器支持
+- [x] 多服务器管理
+- [ ] Emby 完整支持
+- [ ] 下载功能
+- [ ] 完善版本切换和字幕切换
+- [ ] 支持在播放器内切换转码码率
 
-This command will move the starter code to the **app-example** directory and create a blank **app** directory where you can start developing.
+## 🙏 致谢
 
-## Learn more
+- [Streamyfin](https://github.com/streamyfin/streamyfin)
+- [Jellyfin](https://jellyfin.org/)
+- [弹弹play (DanDanPlay)](https://www.dandanplay.com/)
+- [expo-libvlc-player](https://github.com/cornejobarraza/expo-libvlc-player)
 
-To learn more about developing your project with Expo, look at the following resources:
+## 📄 License
 
-- [Expo documentation](https://docs.expo.dev/): Learn fundamentals, or go into advanced topics with our [guides](https://docs.expo.dev/guides).
-- [Learn Expo tutorial](https://docs.expo.dev/tutorial/introduction/): Follow a step-by-step tutorial where you'll create a project that runs on Android, iOS, and the web.
-
-## Join the community
-
-Join our community of developers creating universal apps.
-
-- [Expo on GitHub](https://github.com/expo/expo): View our open source platform and contribute.
-- [Discord community](https://chat.expo.dev): Chat with Expo users and ask questions.
+[MPL-2.0](LICENSE)
