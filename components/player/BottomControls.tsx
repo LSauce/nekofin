@@ -37,7 +37,7 @@ export function BottomControls() {
     hideControlsWithDelay,
     episodes,
     isMovie,
-    episodeListModalRef,
+    episodeListDrawerRef,
   } = usePlayer();
   const currentTimeMs = useCurrentTime({ time: currentTime });
 
@@ -92,7 +92,7 @@ export function BottomControls() {
 
   const handleEpisodeListPress = () => {
     if (!isMovie && episodes.length > 0) {
-      episodeListModalRef.current?.present();
+      episodeListDrawerRef.current?.present();
     }
   };
 

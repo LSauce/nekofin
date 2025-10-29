@@ -2,7 +2,7 @@ import { useThemeColor } from '@/hooks/useThemeColor';
 import { formatDurationFromTicks } from '@/lib/utils';
 import { MediaItem } from '@/services/media/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
-import { useCallback, useImperativeHandle, useRef, useState } from 'react';
+import { useCallback, useEffect, useImperativeHandle, useRef, useState } from 'react';
 import {
   FlatList,
   StyleSheet,
@@ -11,97 +11,50 @@ import {
   useWindowDimensions,
   View,
 } from 'react-native';
-import { Gesture, GestureDetector } from 'react-native-gesture-handler';
-import Animated, { useAnimatedStyle, useSharedValue, withTiming } from 'react-native-reanimated';
-import { scheduleOnRN } from 'react-native-worklets';
+import { Drawer } from 'react-native-drawer-layout';
 
 import { EpisodeCard } from '../media/Card';
 import { usePlayer } from './PlayerContext';
 
-export interface EpisodeListModalRef {
+export interface EpisodeListDrawerRef {
   present: () => void;
   dismiss: () => void;
 }
 
-export function EpisodeListModal({ ref }: { ref: React.RefObject<EpisodeListModalRef | null> }) {
+export function EpisodeListDrawer({ ref }: { ref: React.RefObject<EpisodeListDrawerRef | null> }) {
   const { episodes, currentItem, onEpisodeSelect } = usePlayer();
   const [open, setOpen] = useState(false);
   const subtitleColor = useThemeColor({ light: '#666', dark: '#999' }, 'text');
   const { width: screenWidth } = useWindowDimensions();
   const flatListRef = useRef<FlatList>(null);
 
-  const translateX = useSharedValue(screenWidth);
-  const opacity = useSharedValue(0);
-
   const present = useCallback(() => {
-    translateX.value = withTiming(0, { duration: 300 });
-    opacity.value = withTiming(1, { duration: 200 });
-    scheduleOnRN(setOpen, true);
-
-    scheduleOnRN(
-      setTimeout,
-      () => {
-        if (currentItem && episodes.length > 0) {
-          const currentIndex = episodes.findIndex((episode) => episode.id === currentItem.id);
-          if (currentIndex >= 0) {
-            flatListRef.current?.scrollToIndex({
-              index: currentIndex,
-              animated: true,
-              viewPosition: 0,
-            });
-          }
-        }
-      },
-      350,
-    );
-  }, [translateX, opacity, currentItem, episodes]);
+    setOpen(true);
+  }, []);
 
   const dismiss = useCallback(() => {
-    translateX.value = withTiming(screenWidth, { duration: 300 });
-    opacity.value = withTiming(0, { duration: 200 });
-    scheduleOnRN(
-      setTimeout,
-      () => {
-        setOpen(false);
-      },
-      300,
-    );
-  }, [translateX, screenWidth, opacity]);
+    setOpen(false);
+  }, []);
 
   useImperativeHandle(ref, () => ({
     present,
     dismiss,
   }));
 
-  const panGesture = Gesture.Pan()
-    .onUpdate((event) => {
-      if (event.translationX > 0) {
-        translateX.value = event.translationX;
-      }
-    })
-    .onEnd((event) => {
-      if (event.translationX > screenWidth * 0.3 || event.velocityX > 500) {
-        scheduleOnRN(dismiss);
-      } else {
-        translateX.value = withTiming(0, { duration: 200 });
-      }
-    });
-
-  const modalAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      transform: [{ translateX: translateX.value }],
-    };
-  });
-
-  const backdropAnimatedStyle = useAnimatedStyle(() => {
-    return {
-      opacity: opacity.value,
-    };
-  });
-
-  const handleBackdropPress = () => {
-    dismiss();
-  };
+  useEffect(() => {
+    if (open && currentItem && episodes.length > 0) {
+      setTimeout(() => {
+        const currentIndex = episodes.findIndex((episode) => episode.id === currentItem.id);
+        if (currentIndex >= 0) {
+          flatListRef.current?.scrollToIndex({
+            index: currentIndex,
+            animated: true,
+            viewPosition: 0,
+          });
+        }
+      }, 350);
+    }
+  }, [open, currentItem, episodes]);
 
   const handleEpisodePress = useCallback(
     (episode: MediaItem) => {
@@ -156,64 +109,59 @@ export function EpisodeListModal({ ref }: { ref: React.RefObject<EpisodeListModa
     [currentItem?.id, handleEpisodePress, subtitleColor],
   );
 
-  if (!open) {
-    return null;
-  }
-
   return (
-    <>
-      <Animated.View style={[styles.backdrop, backdropAnimatedStyle]} pointerEvents="auto">
-        <TouchableOpacity
-          style={StyleSheet.absoluteFill}
-          onPress={handleBackdropPress}
-          activeOpacity={1}
-        />
-      </Animated.View>
+    <View
+      style={[StyleSheet.absoluteFill, styles.container, { opacity: open ? 100 : 0 }]}
+      pointerEvents={open ? 'box-none' : 'none'}
+    >
+      <Drawer
+        open={open}
+        onOpen={() => setOpen(true)}
+        onClose={() => setOpen(false)}
+        drawerPosition="right"
+        drawerStyle={[styles.drawer, { width: screenWidth * 0.4 }]}
+        overlayStyle={styles.overlay}
+        swipeEnabled={false}
+        drawerType="front"
+        renderDrawerContent={() => (
+          <View style={styles.drawerContent} pointerEvents="auto">
+            <View style={styles.header}>
+              <Text style={styles.headerTitle}>剧集列表</Text>
+              <TouchableOpacity onPress={dismiss} style={styles.closeButton}>
+                <Ionicons name="close" size={24} color="#fff" />
+              </TouchableOpacity>
+            </View>
 
-      <GestureDetector gesture={panGesture}>
-        <Animated.View style={[styles.modal, { width: screenWidth * 0.4 }, modalAnimatedStyle]}>
-          <View style={styles.header}>
-            <Text style={styles.headerTitle}>剧集列表</Text>
-            <TouchableOpacity onPress={dismiss} style={styles.closeButton}>
-              <Ionicons name="close" size={24} color="#fff" />
-            </TouchableOpacity>
+            <FlatList
+              ref={flatListRef}
+              data={episodes}
+              renderItem={renderEpisodeItem}
+              keyExtractor={(item) => item.id}
+              style={styles.list}
+              contentContainerStyle={styles.listContent}
+              showsVerticalScrollIndicator={false}
+              onScrollToIndexFailed={() => {
+                flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
+              }}
+            />
           </View>
-
-          <FlatList
-            ref={flatListRef}
-            data={episodes}
-            renderItem={renderEpisodeItem}
-            keyExtractor={(item) => item.id}
-            style={styles.list}
-            contentContainerStyle={styles.listContent}
-            showsVerticalScrollIndicator={false}
-            onScrollToIndexFailed={() => {
-              flatListRef.current?.scrollToOffset({ offset: 0, animated: true });
-            }}
-          />
-        </Animated.View>
-      </GestureDetector>
-    </>
+        )}
+      >
+        <View style={{ flex: 1 }} pointerEvents="none" />
+      </Drawer>
+    </View>
   );
 }
 
 const styles = StyleSheet.create({
-  backdrop: {
-    position: 'absolute',
-    top: 0,
-    left: 0,
-    right: 0,
-    bottom: 0,
-    backgroundColor: 'rgba(0, 0, 0, 0.5)',
-    zIndex: 100,
+  container: {
+    zIndex: 1000,
   },
-  modal: {
-    position: 'absolute',
-    top: 0,
-    right: 0,
-    bottom: 0,
+  overlay: {
+    backgroundColor: 'rgba(0, 0, 0, 0.5)',
+  },
+  drawer: {
     backgroundColor: '#1a1a1a',
-    zIndex: 101,
     shadowColor: '#000',
     shadowOffset: {
       width: -2,
@@ -221,7 +169,10 @@ const styles = StyleSheet.create({
     },
     shadowOpacity: 0.25,
     shadowRadius: 3.84,
-    elevation: 5,
+    elevation: 10,
+  },
+  drawerContent: {
+    flex: 1,
   },
   header: {
     flexDirection: 'row',

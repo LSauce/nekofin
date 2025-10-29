@@ -6,7 +6,7 @@ import { SharedValue, useSharedValue, withTiming } from 'react-native-reanimated
 import { scheduleOnRN } from 'react-native-worklets';
 
 import { BottomControls } from './BottomControls';
-import { EpisodeListModal, EpisodeListModalRef } from './EpisodeListModal';
+import { EpisodeListDrawer, EpisodeListDrawerRef } from './EpisodeListDrawer';
 import { GestureHandler } from './GestureHandler';
 import { BottomOverlayGradient, TopOverlayGradient } from './OverlayGradients';
 import { PlayerContext } from './PlayerContext';
@@ -71,7 +71,7 @@ export function Controls({
   const [menuOpen, setMenuOpen] = useState(false);
   const [showControls, setShowControls] = useState(false);
   const [isDragging, setIsDragging] = useState(false);
-  const episodeListModalRef = useRef<EpisodeListModalRef | null>(null);
+  const episodeListDrawerRef = useRef<EpisodeListDrawerRef | null>(null);
   const isGestureSeekingActive = useSharedValue(false);
   const isVolumeGestureActive = useSharedValue(false);
   const isBrightnessGestureActive = useSharedValue(false);
@@ -179,18 +179,18 @@ export function Controls({
     episodes,
     currentItem,
     isMovie: currentItem?.type === 'Movie',
-    episodeListModalRef,
+    episodeListDrawerRef,
     onEpisodeSelect,
   };
 
   return (
     <PlayerContext.Provider value={contextValue}>
+      <EpisodeListDrawer ref={episodeListDrawerRef} />
       <TopOverlayGradient />
       <BottomOverlayGradient />
       <TopControls />
       <BottomControls />
       <GestureHandler />
-      <EpisodeListModal ref={episodeListModalRef} />
     </PlayerContext.Provider>
   );
 }

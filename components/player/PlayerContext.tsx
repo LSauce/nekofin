@@ -4,7 +4,7 @@ import { MediaItem } from '@/services/media/types';
 import { createContext, useContext } from 'react';
 import { SharedValue } from 'react-native-reanimated';
 
-import { EpisodeListModalRef } from './EpisodeListModal';
+import { EpisodeListDrawerRef } from './EpisodeListDrawer';
 
 export type PlayerContextValue = {
   title: string;
@@ -49,7 +49,7 @@ export type PlayerContextValue = {
   episodes: MediaItem[];
   currentItem?: MediaItem | null;
   isMovie: boolean;
-  episodeListModalRef: React.RefObject<EpisodeListModalRef | null>;
+  episodeListDrawerRef: React.RefObject<EpisodeListDrawerRef | null>;
   onEpisodeSelect: (episodeId: string) => void;
 };
 
