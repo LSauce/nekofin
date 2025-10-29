@@ -5,7 +5,7 @@ import { MediaItem, MediaPerson } from '@/services/media/types';
 import Ionicons from '@expo/vector-icons/Ionicons';
 import { MenuView } from '@react-native-menu/menu';
 import { useQuery } from '@tanstack/react-query';
-import { useCallback, useEffect, useMemo, useRef, useState } from 'react';
+import { useEffect, useRef, useState } from 'react';
 import { FlatList, Text, TouchableOpacity, View } from 'react-native';
 
 import { EpisodeCard, SeriesCard } from '../media/Card';
@@ -57,44 +57,29 @@ export const EpisodeModeContent = ({
 
   const displayEpisodes = selectedSeasonId ? currentSeasonEpisodes : episodes;
 
-  const initialIndex = useMemo(() => {
-    return displayEpisodes.findIndex((e) => e.id === selectedEpisode.id);
-  }, [displayEpisodes, selectedEpisode]);
-
   useEffect(() => {
-    if (displayEpisodes.length > 0 && !displayEpisodes.find((e) => e.id === selectedEpisode.id)) {
+    if (displayEpisodes.length === 0) return;
+
+    const episodeExists = displayEpisodes.some((e) => e.id === selectedEpisode.id);
+    if (!episodeExists) {
       setSelectedEpisode(displayEpisodes[0]);
     }
   }, [displayEpisodes, selectedEpisode]);
 
-  // 当季度改变时，重置选中的剧集为第一集
   useEffect(() => {
-    if (currentSeasonEpisodes.length > 0) {
-      setSelectedEpisode(currentSeasonEpisodes[0]);
-    }
-  }, [currentSeasonEpisodes]);
-
-  const scrollToIndex = useCallback((index: number) => {
+    const index = displayEpisodes.findIndex((e) => e.id === selectedEpisode.id);
     if (flatListRef.current && index >= 0) {
       flatListRef.current.scrollToIndex({ index, animated: true, viewOffset: 20 });
     }
-  }, []);
-
-  useEffect(() => {
-    scrollToIndex(initialIndex);
-  }, [initialIndex, scrollToIndex]);
+  }, [displayEpisodes, selectedEpisode]);
 
   useEffect(() => {
     setTitle(selectedEpisode.name);
     setSelectedItem(selectedEpisode);
-  }, [selectedEpisode.name, selectedEpisode, setTitle, setSelectedItem]);
 
-  useEffect(() => {
-    const imageInfo = mediaAdapter.getImageInfo({
-      item: selectedEpisode,
-    });
+    const imageInfo = mediaAdapter.getImageInfo({ item: selectedEpisode });
     setBackgroundImageUrl(imageInfo.url);
-  }, [mediaAdapter, selectedEpisode, setBackgroundImageUrl]);
+  }, [selectedEpisode, setTitle, setSelectedItem, mediaAdapter, setBackgroundImageUrl]);
 
   return (
     <>
@@ -155,7 +140,10 @@ export const EpisodeModeContent = ({
             style={detailViewStyles.edgeToEdge}
             onScrollToIndexFailed={() => {
               setTimeout(() => {
-                scrollToIndex(initialIndex);
+                const index = displayEpisodes.findIndex((e) => e.id === selectedEpisode.id);
+                if (flatListRef.current && index >= 0) {
+                  flatListRef.current.scrollToIndex({ index, animated: true, viewOffset: 20 });
+                }
               }, 50);
             }}
             renderItem={({ item: ep }) => {
