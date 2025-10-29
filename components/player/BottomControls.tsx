@@ -9,6 +9,7 @@ import Animated, {
   useDerivedValue,
   useSharedValue,
 } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { usePlayer } from './PlayerContext';
 import { SettingsButtons } from './SettingsButtons';
@@ -16,6 +17,8 @@ import { useOverlayInsets } from './useOverlayInsets';
 
 export function BottomControls() {
   const { side, bottomExtra } = useOverlayInsets();
+  const insets = useSafeAreaInsets();
+
   const {
     isPlaying,
     isLoading,
@@ -97,7 +100,7 @@ export function BottomControls() {
     <Animated.View
       style={[
         styles.container,
-        { left: side, right: side, bottom: 30 + bottomExtra },
+        { left: side, right: side, bottom: insets.bottom + 10 + bottomExtra },
         fadeAnimatedStyle,
       ]}
       pointerEvents={showControls ? 'auto' : 'none'}
@@ -189,7 +192,6 @@ export function BottomControls() {
 const styles = StyleSheet.create({
   container: {
     position: 'absolute',
-    bottom: 30,
     zIndex: 10,
     gap: 8,
   },

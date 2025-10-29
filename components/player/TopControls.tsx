@@ -7,6 +7,7 @@ import { useNavigation, useRouter } from 'expo-router';
 import { useCallback, useEffect, useRef, useState } from 'react';
 import { Platform, StyleSheet, Text, TouchableOpacity, View } from 'react-native';
 import Animated, { useAnimatedStyle } from 'react-native-reanimated';
+import { useSafeAreaInsets } from 'react-native-safe-area-context';
 
 import { DanmakuSearchModal, DanmakuSearchModalRef } from './DanmakuSearchModal';
 import { usePlayer } from './PlayerContext';
@@ -14,6 +15,7 @@ import { useOverlayInsets } from './useOverlayInsets';
 
 export function TopControls() {
   const { side, topExtra } = useOverlayInsets();
+  const insets = useSafeAreaInsets();
 
   const {
     title,
@@ -72,24 +74,27 @@ export function TopControls() {
     <>
       <Animated.View
         style={[
-          { top: 50 + topExtra, left: side, position: 'absolute', zIndex: 10 },
+          {
+            position: 'absolute',
+            left: side,
+            right: side,
+            top: insets.top + 10 + topExtra,
+            zIndex: 10,
+          },
           fadeAnimatedStyle,
         ]}
-        pointerEvents={showControls ? 'auto' : 'none'}
+        pointerEvents="box-none"
       >
-        <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
-          <Ionicons name="chevron-back" size={24} color="white" />
-        </TouchableOpacity>
-      </Animated.View>
+        <View
+          style={{ position: 'absolute', top: 40 }}
+          pointerEvents={showControls ? 'auto' : 'none'}
+        >
+          <TouchableOpacity style={styles.backButtonTouchable} onPress={handleBackPress}>
+            <Ionicons name="chevron-back" size={24} color="white" />
+          </TouchableOpacity>
+        </View>
 
-      <Animated.View
-        style={[
-          { position: 'absolute', top: 10 + topExtra, left: side, zIndex: 10 },
-          fadeAnimatedStyle,
-        ]}
-        pointerEvents="none"
-      >
-        <Animated.View style={styles.netRow}>
+        <View style={styles.netRow}>
           {networkType === Network.NetworkStateType.WIFI && (
             <Ionicons name="wifi" size={14} color="#fff" />
           )}
@@ -108,70 +113,47 @@ export function TopControls() {
               {formatBitrate(mediaStats.inputBitrate)}
             </Text>
           )}
-        </Animated.View>
-      </Animated.View>
+        </View>
 
-      <Animated.View
-        style={[
-          {
+        <View
+          style={{
             position: 'absolute',
-            top: 32 + topExtra,
-            left: side,
-            zIndex: 10,
+            top: 22,
+            left: 0,
             flexDirection: 'row',
             alignItems: 'center',
             gap: 4,
-            marginBottom: 2,
-          },
-          fadeAnimatedStyle,
-        ]}
-        pointerEvents="none"
-      >
-        {danmakuEpisodeInfo && (
-          <View style={styles.danmakuInfoRow}>
-            <Ionicons name="chatbubble-ellipses" size={12} color="#fff" />
-            <Text style={[styles.textShadow, styles.danmakuInfoText]}>
-              {danmakuEpisodeInfo.animeTitle} - {danmakuEpisodeInfo.episodeTitle}
+          }}
+        >
+          {danmakuEpisodeInfo && (
+            <View style={styles.danmakuInfoRow}>
+              <Ionicons name="chatbubble-ellipses" size={12} color="#fff" />
+              <Text style={[styles.textShadow, styles.danmakuInfoText]}>
+                {danmakuEpisodeInfo.animeTitle} - {danmakuEpisodeInfo.episodeTitle}
+              </Text>
+            </View>
+          )}
+          {danmakuComments.length > 0 && (
+            <Text style={[styles.textShadow, styles.danmakuCountText]}>
+              {danmakuComments.length} 条弹幕
+            </Text>
+          )}
+        </View>
+
+        {!!now && (
+          <View style={{ position: 'absolute', top: 0, right: 0 }}>
+            <Text style={[styles.textShadow, styles.clockText]}>{now}</Text>
+          </View>
+        )}
+
+        {!!title && (
+          <View style={{ position: 'absolute', top: 0, left: 0, right: 0, alignItems: 'center' }}>
+            <Text style={[styles.textShadow, styles.title]} numberOfLines={1} ellipsizeMode="tail">
+              {title}
             </Text>
           </View>
         )}
-        {danmakuComments.length > 0 && (
-          <Text style={[styles.textShadow, styles.danmakuCountText]}>
-            {danmakuComments.length} 条弹幕
-          </Text>
-        )}
       </Animated.View>
-
-      <Animated.View
-        style={[
-          { position: 'absolute', top: 10 + topExtra, right: side, zIndex: 10 },
-          fadeAnimatedStyle,
-        ]}
-        pointerEvents="none"
-      >
-        {!!now && <Text style={[styles.textShadow, styles.clockText]}>{now}</Text>}
-      </Animated.View>
-
-      {!!title && (
-        <Animated.View
-          style={[
-            {
-              position: 'absolute',
-              top: 10 + topExtra,
-              left: side,
-              right: side,
-              alignItems: 'center',
-              zIndex: 10,
-            },
-            fadeAnimatedStyle,
-          ]}
-          pointerEvents="none"
-        >
-          <Text style={[styles.textShadow, styles.title]} numberOfLines={1} ellipsizeMode="tail">
-            {title}
-          </Text>
-        </Animated.View>
-      )}
 
       <DanmakuSearchModal ref={danmakuSearchModalRef} onCommentsLoaded={handleCommentsLoaded} />
     </>
