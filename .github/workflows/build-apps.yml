@@ -147,18 +147,8 @@ jobs:
       - name: Install dependencies
         run: bun install
 
-      - name: Cache Expo prebuild
-        uses: actions/cache@v4
-        with:
-          path: |
-            ios
-            .expo
-          key: ${{ runner.os }}-expo-prebuild-${{ hashFiles('**/app.config.ts', '**/package.json') }}
-          restore-keys: |
-            ${{ runner.os }}-expo-prebuild-
-
       - name: Run Expo Prebuild
-        run: bunx expo prebuild -p ios
+        run: bunx expo prebuild -p ios --clean
 
       - name: Cache Xcode DerivedData
         uses: actions/cache@v4
