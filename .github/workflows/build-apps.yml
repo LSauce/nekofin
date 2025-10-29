@@ -125,7 +125,9 @@ jobs:
           xcode-version: '26.0'
 
       - name: Install Xcode platforms
-        run: xcodebuild -downloadPlatform iOS
+        run: |
+          xcrun simctl list > /dev/null # https://github.com/actions/runner-images/issues/12862#issuecomment-3239326872
+          xcodebuild -downloadPlatform iOS
 
       - name: Setup Bun
         uses: oven-sh/setup-bun@v2
